@@ -28,6 +28,8 @@
 //
 // 编译方法：
 // go build -o mooon_ssh mooon_ssh.go
+// 上述编译会依赖glibc，如果不想依赖，这样编译：
+// go build -o mooon_ssh -ldflags '-linkmode "external" -extldflags "-static"' mooon_ssh.go
 
 // main函数的package名只能为main，否则运行报：
 // cannot run non-main package

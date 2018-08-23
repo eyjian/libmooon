@@ -40,6 +40,8 @@
 //
 // 编译方法：
 // go build -o mooon_upload mooon_upload.go
+// 上述编译会依赖glibc，如果不想依赖，这样编译：
+// go build -o mooon_upload -ldflags '-linkmode "external" -extldflags "-static"' mooon_upload.go
 
 // main函数的package名只能为main，否则运行报：
 // cannot run non-main package
