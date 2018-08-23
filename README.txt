@@ -1,3 +1,15 @@
+C++版本批量命令工具
+https://github.com/eyjian/libmooon/blob/master/tools/mooon_ssh.cpp
+C++版本批量上传工具
+https://github.com/eyjian/libmooon/blob/master/tools/mooon_upload.cpp
+C++版本批量下载工具：
+https://github.com/eyjian/libmooon/blob/master/tools/mooon_download.cpp
+
+GO版本批量命令工具
+https://github.com/eyjian/libmooon/blob/master/tools/mooon_ssh.go
+GO版本批量上传工具
+https://github.com/eyjian/libmooon/blob/master/tools/mooon_upload.go
+
 cmake安装方法：
 cmake -DCMAKE_INSTALL_PREFIX=<installation directory> .
 
