@@ -16,6 +16,10 @@
  *
  * Author: eyjian@qq.com or eyjian@gmail.com
  */
+// 编译方法：
+// 编译libmooon即可生成mooon_upload
+// 但libmooon依赖开源的libssh2库（http://www.libssh2.org/）
+//
 // 批量远程执行shell命令工具
 // 使用示例（-p指定端口，-P指定密码）：
 // mooon_ssh -u=root -P=test -p=2016 -h="127.0.0.1,192.168.0.1" -c='ls /tmp&&ps aux|grep -c test'

@@ -1,4 +1,4 @@
-// Writed by yijian on 2018/1/29
+// Writed by yijian on 2018/1/29, eyjian@qq.com
 //
 // Linux批量上传到远程机器工具
 // 相比C++版本，借助go的特性，不依赖libc和libc++等库，编译出的二进制应用相对广泛

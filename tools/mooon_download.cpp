@@ -16,6 +16,10 @@
  *
  * Author: eyjian@qq.com or eyjian@gmail.com
  */
+// 编译方法：
+// 编译libmooon即可生成mooon_upload
+// 但libmooon依赖开源的libssh2库（http://www.libssh2.org/）
+//
 // 下载工具
 // 使用示例：
 // ./mooon_download -h=192.168.10.11 -p=6000 -u=root -P='root123' -s=/etc/hosts,/etc/passwd -d=/tmp/
