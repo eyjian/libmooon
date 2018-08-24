@@ -214,21 +214,23 @@ void stat_thread_proc()
 
 void move_thread_proc(uint8_t i)
 {
-    uint32_t num_moved = 0; // 已移动的数目
-    uint32_t old_num_moved = 0; // 上一次移动的数目
+    const int batch = mooon::argument::batch->value();
+    const uint8_t num_queues = mooon::argument::queues->value();
     const uint32_t retry_interval = mooon::argument::retry_interval->value();
-    const std::string& src_key = get_src_key(i);
-    const std::string& dst_key = get_dst_key(i);
+    const std::string& src_key = get_src_key(i % num_queues); // 源key
+    const std::string& dst_key = get_dst_key(i % num_queues); // 目标key
     r3c::CRedisClient src_redis(mooon::argument::src_redis->value());
     r3c::CRedisClient dst_redis(mooon::argument::dst_redis->value());
     std::vector<std::string> values;
+    uint32_t num_moved = 0; // 已移动的数目
+    uint32_t old_num_moved = 0; // 上一次移动的数目
 
     MYLOG_INFO("[%s] => [%s]\n", src_key.c_str(), dst_key.c_str());
     while (!g_stop)
     {
         values.clear();
 
-        for (int k=0; !g_stop&&k<mooon::argument::batch->value(); ++k)
+        for (int k=0; !g_stop&&k<batch; ++k)
         {
             try
             {
