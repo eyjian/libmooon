@@ -134,6 +134,17 @@ int main(int argc, char* argv[])
 #endif
 
         mooon::sys::g_logger = mooon::sys::create_safe_logger();
+        MYLOG_INFO("source redis: %s\n", mooon::argument::src_redis->c_value());
+        MYLOG_INFO("destination redis: %s\n", mooon::argument::dst_redis->c_value());
+        MYLOG_INFO("source key prefix: %s\n", mooon::argument::src_prefix->c_value());
+        MYLOG_INFO("destination key prefix: %s\n", mooon::argument::dst_prefix->c_value());
+        MYLOG_INFO("number of queues: %d\n", mooon::argument::queues->value());
+        MYLOG_INFO("factor of threads: %d\n", mooon::argument::threads->value());
+        MYLOG_INFO("number of threads: %d\n", mooon::argument::threads->value() * mooon::argument::queues->value());
+        MYLOG_INFO("number of batch to move: %d\n", mooon::argument::batch->value());
+        MYLOG_INFO("only prefix of source: %d\n", mooon::argument::src_only_prefix->value());
+        MYLOG_INFO("only prefix of destination: %d\n", mooon::argument::dst_only_prefix->value());
+
         mooon::sys::CThreadEngine* signal_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&signal_thread_proc));
         mooon::sys::CThreadEngine* stat_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&stat_thread_proc));
 
