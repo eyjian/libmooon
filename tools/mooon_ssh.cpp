@@ -50,6 +50,12 @@ INTEGER_ARG_DEFINE(uint16_t, t, 60, 1, 65535, "The number of seconds before conn
 // 被执行的命令，可为一条或多条命令，如：ls /&&whoami
 STRING_ARG_DEFINE(c, "", "The command is executed on the remote machines, example: -c='grep ERROR /tmp/*.log'");
 
+// 输出级别
+// 0 静默模式
+// 1 最详细
+// 2 只输出总结
+INTEGER_ARG_DEFINE(uint8_t, v, 1, 0, 2, "Verbosity, how much troubleshooting info to print");
+
 // 结果信息
 struct ResultInfo
 {
@@ -214,8 +220,11 @@ int main(int argc, char* argv[])
         const std::string& remote_host_ip = hosts_ip[i];
         results[i].ip = remote_host_ip;
 
-        fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"]\n", remote_host_ip.c_str());
-        fprintf(stdout, PRINT_COLOR_GREEN);
+        if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
+        {
+            fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"]\n", remote_host_ip.c_str());
+            fprintf(stdout, PRINT_COLOR_GREEN);
+        }
 
         mooon::sys::CStopWatch stop_watch;
         try
@@ -229,7 +238,11 @@ int main(int argc, char* argv[])
             if ((0 == exitcode) && exitsignal.empty())
             {
                 results[i].success = true;
-                fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS\n", remote_host_ip.c_str());
+
+                if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
+                {
+                    fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS\n", remote_host_ip.c_str());
+                }
             }
             else
             {
@@ -256,40 +269,61 @@ int main(int argc, char* argv[])
         }
         catch (mooon::sys::CSyscallException& ex)
         {
-            if (color)
-                fprintf(stdout, PRINT_COLOR_NONE); // color = true;
+            if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
+            {
+                if (color)
+                    fprintf(stdout, PRINT_COLOR_NONE); // color = true;
 
-            fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
+                fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
+            }
         }
         catch (mooon::utils::CException& ex)
         {
-            if (color)
-                fprintf(stdout, PRINT_COLOR_NONE); // color = true;
+            if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
+            {
+                if (color)
+                    fprintf(stdout, PRINT_COLOR_NONE); // color = true;
 
-            fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
+                fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
+            }
         }
 
         results[i].seconds = stop_watch.get_elapsed_microseconds() / 1000000;
-        std::cout << std::endl;
+        if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
+        {
+            std::cout << std::endl;
+        }
     } // for
     mooon::net::CLibssh2::fini();
 
-    // 输出总结
     std::cout << std::endl;
-    std::cout << "================================" << std::endl;
+    if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
+    {
+        // 输出总结
+        std::cout << "================================" << std::endl;
+    }
+
     int num_success = 0; // 成功的个数
     int num_failure = 0; // 失败的个数
     for (std::vector<struct ResultInfo>::size_type i=0; i<results.size(); ++i)
     {
         const struct ResultInfo& result_info = results[i];
-        std::cout << result_info << std::endl;
+
+        if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 2))
+        {
+            std::cout << result_info << std::endl;
+        }
 
         if (result_info.success)
             ++num_success;
         else
             ++num_failure;
     }
-    std::cout << "SUCCESS: " << num_success << ", FAILURE: " << num_failure << std::endl;
+
+    if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 2))
+    {
+        std::cout << "SUCCESS: " << num_success << ", FAILURE: " << num_failure << std::endl;
+    }
 #else
     fprintf(stderr, "NOT IMPLEMENT! please install libssh2 (https://www.libssh2.org/) into /usr/local/libssh2 and recompile.\n");
 #endif // MOOON_HAVE_LIBSSH2 == 1
