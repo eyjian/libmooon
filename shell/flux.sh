@@ -4,6 +4,7 @@
 # 可带一个两个：
 # 参数1：网卡名，如eth0或eth1等
 # 参数2：统计次数
+# 参数3：统计间隔（秒）
 # 输出格式：统计时间,入流量(Kbps),入流量(Mbps),出流量(Kbps),出流量(Mbps)
 
 # Please edit the followings
@@ -12,13 +13,38 @@ StatFreq=2 # Seconds
 StatTimes=0 # 统计几次后退出，0表示永远循环
 i=0
 
+function usage()
+{
+    echo "Usage: `basename $0` [ethX] [times] [seconds]"
+    echo "Example1: `basename $0` eth0"
+    echo "Example2: `basename $0` eth0 10"
+    echo "Example3: `basename $0` eth0 0 2"
+}
+
 if test $# -ge 1; then
 	EthXname=$1
+else
+    usage
 fi
 echo "Destination: $EthXname"
+echo ""
 
+# 统计多少次
 if test $# -ge 2; then
 	StatTimes=$2
+fi
+# 不能小于1
+if test $StatTimes -lt 0; then
+    StatTimes=0
+fi
+
+# 统计间隔（秒）
+if test $# -ge 2; then
+	StatFreq=$3
+fi
+# 不能小于1
+if test $StatFreq -lt 1; then
+    StatFreq=1
 fi
 
 # Don't change
@@ -29,25 +55,30 @@ outflux_mbps=0
 unsigned_long_max=4294967295
 
 # 检查是否存在EthXname
-Ethname=`cat /proc/net/dev|grep $EthXname|awk -F"[: ]+" '{ printf("%s", $2); }'`
+#Ethname=`cat /proc/net/dev|grep $EthXname|awk -F"[: ]+" '{ printf("%s", $2); }'`
+Ethname=`cat /proc/net/dev | awk -F [\:\ ]+ -v EthXname=$EthXname '{ if ($2 == EthXname) printf("%s", $2); }'`
 if test "$EthXname" != "$Ethname"; then
 	echo "Please set EthXname first before running"
-	echo "Usage: flux.sh ethX times"
-	echo "Example: flux.sh eth1 2"
+	echo ""
+    usage
+    echo ""
 	exit 1
 fi
 # 进一步检查是否存在EthXname
 netstat -ie|grep $EthXname> /dev/null 2>&1 
 if test $? -ne 0; then
 	echo "Please set EthXname first before running"
-	echo "Usage: flux.sh ethX"
-	echo "Example: flux.sh eth0"
+	echo ""
+    usage
+    echo ""
 	exit 1
 fi
 
 # 初始化
-influx1_byte=`cat /proc/net/dev|grep $EthXname|awk -F"[: ]+" '{ printf("%d", $3); }'`
-outflux1_byte=`cat /proc/net/dev|grep $EthXname|awk -F"[: ]+" '{ printf("%d", $11); }'`
+#influx1_byte=`cat /proc/net/dev|grep $EthXname|awk -F"[: ]+" '{ printf("%d", $3); }'`
+#outflux1_byte=`cat /proc/net/dev|grep $EthXname|awk -F"[: ]+" '{ printf("%d", $11); }'`
+influx1_byte=`cat /proc/net/dev | awk -F"[: ]+" -v EthXname=$EthXname '{ if ($2 == EthXname) printf("%d", $3); }'`
+outflux1_byte=`cat /proc/net/dev | awk -F"[: ]+" -v EthXname=$EthXname '{ if ($2 == EthXname) printf("%d", $11); }'`
 
 printf "\033[1;33mDate,IN-Kbps,IN-Mbps,OUT-Kbps,OUT-Mbps\033[m\n"
 while test 2 -gt 1;
@@ -55,7 +86,8 @@ do
 	sleep $StatFreq
 	#influx2_byte=`cat /proc/net/dev|grep $EthXname|awk -F"[: ]+" '{ printf("%d", $3); }'`
 	#outflux2_byte=`cat /proc/net/dev|grep $EthXname|awk -F"[: ]+" '{ printf("%d", $11); }'`
-	inout_bytes=`awk -F"[: ]+" /$EthXname/'{ printf("%s %s", $3, $11) }' /proc/net/dev`
+	#inout_bytes=`awk -F"[: ]+" /$EthXname/'{ printf("%s %s", $3, $11) }' /proc/net/dev`
+    inout_bytes=`awk -F"[: ]+" -v EthXname=$EthXname '{ if ($2 == EthXname) printf("%s %s", $3, $11) }' /proc/net/dev`
 	inout_bytes_array=($inout_bytes)
 	influx2_byte=${inout_bytes_array[0]}
 	outflux2_byte=${inout_bytes_array[1]}
