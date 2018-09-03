@@ -87,10 +87,10 @@ do
         if test $flag -eq 1 -o $num_drops -ne 0; then
             line="`date '+%Y-%m-%d %H:%M:%S'` $num_drops"
 
-            # 得到日志文件大小（1073741824 = 1024 \* 1024 \* 1024）    
+            # 得到日志文件大小（5368709120 = 5 \* 1024 \* 1024 \* 1024）    
             logfile_size=`ls -l --time-style=long-iso $logfile 2>/dev/null| awk -F[\ ]+ '{ printf("%s\n", $5); }'`
             if test ! -z "$logfile_size"; then
-                if test $logfile_size -gt 1073741824; then
+                if test $logfile_size -gt 5368709120; then
                     echo $line | tee -a $logfile
                     mv $logfile $bak_logfile
                     rm -f $logfile
