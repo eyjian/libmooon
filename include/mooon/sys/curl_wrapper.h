@@ -55,7 +55,9 @@ public:
     // 对于CGI等单线程程序，nosignal为false即可，并且也不用指定c-ares，
     // 但对于多线程使用curl的程序，则nosignal应当设定为true，并且应当指定c-ares，
     // 指定nosignal为true时，DNS解析将不带超时，为此需要configure生成Makefile时指定c-ares（c-ares是一个异步DNS解析库）
-    CCurlWrapper(int data_timeout_seconds=2, int connect_timeout_seconds=2, bool nosignal=false) throw (utils::CException);
+    //
+    // keepalive特性要求libcurl版本不低于7.25.0，否则忽略
+    CCurlWrapper(int data_timeout_seconds=2, int connect_timeout_seconds=2, bool nosignal=false, bool keepalive=false, int keepidle=120, int keepseconds=60) throw (utils::CException);
     ~CCurlWrapper() throw ();
 
     // 重置操作
@@ -91,6 +93,11 @@ private:
     int _data_timeout_seconds;
     int _connect_timeout_seconds;
     bool _nosignal;
+
+private:
+    bool _keepalive;
+    int _keepidle;
+    int _keepseconds;
 };
 
 /*

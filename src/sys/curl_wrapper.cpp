@@ -99,8 +99,12 @@ static size_t on_write_response_header(void* buffer, size_t size, size_t nmemb, 
     return size * nmemb;
 }
 
-CCurlWrapper::CCurlWrapper(int data_timeout_seconds, int connect_timeout_seconds, bool nosignal) throw (utils::CException)
-    : _data_timeout_seconds(data_timeout_seconds), _connect_timeout_seconds(connect_timeout_seconds), _nosignal(nosignal)
+CCurlWrapper::CCurlWrapper(
+        int data_timeout_seconds, int connect_timeout_seconds, bool nosignal,
+        bool keepalive, int keepidle, int keepseconds)
+    throw (utils::CException)
+    : _data_timeout_seconds(data_timeout_seconds), _connect_timeout_seconds(connect_timeout_seconds), _nosignal(nosignal),
+      _keepalive(keepalive), _keepidle(keepidle), _keepseconds(keepseconds)
 {
     _curl_version_info = curl_version_info(CURLVERSION_NOW);
 
@@ -138,6 +142,7 @@ CCurlWrapper::~CCurlWrapper() throw ()
 
 void CCurlWrapper::reset() throw (utils::CException)
 {
+    const curl_version_info_data* curl_version_info = (curl_version_info_data*)_curl_version_info;
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
     curl_slist* head_list = static_cast<curl_slist*>(_head_list);
@@ -173,6 +178,25 @@ void CCurlWrapper::reset() throw (utils::CException)
     errcode = curl_easy_setopt(curl, CURLOPT_TIMEOUT, _data_timeout_seconds);
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // enable TCP keep-alive for this transfer
+    if (_keepalive && (curl_version_info->version_num >= 0x071900))
+    {
+        // Added in 7.25.0
+        errcode = curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // keep-alive idle time to _keepidle seconds
+        errcode = curl_easy_setopt(curl, CURLOPT_TCP_KEEPIDLE, _keepidle);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // interval time between keep-alive probes: _keepseconds seconds
+        errcode = curl_easy_setopt(curl, CURLOPT_TCP_KEEPINTVL, _keepseconds);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+    }
 
     // CURLOPT_CONNECTTIMEOUT
     // In unix-like systems, this might cause signals to be used unless CURLOPT_NOSIGNAL is set.
