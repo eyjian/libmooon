@@ -12,3 +12,9 @@ process_stopper.sh
 
 mem.sh
 可用于间隔统计指定进程内存，可用于分析某程序是否存在内存泄漏
+
+flux.sh
+网卡流量统计工具
+
+udp_drops.sh
+UDP丢包统计工具
