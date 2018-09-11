@@ -105,7 +105,7 @@ bool CMySQLConnection::is_disconnected_exception(CDBException& db_error) const
 
     // ER_QUERY_INTERRUPTED：比如mysqld进程挂了
     // CR_SERVER_GONE_ERROR：比如客户端将连接close了
-    // CR_SERVER_LOST: 比如强制kill了MySQL连接
+    // CR_SERVER_LOST: 比如强制kill了MySQL连接（If connect_timeout > 0 and it took longer than connect_timeout seconds to connect to the server or if the server died while executing the init-command.）
     // ER_SERVER_SHUTDOWN(1053) Server shutdown in progress 当执行关闭MySQL时
     return (ER_QUERY_INTERRUPTED == errcode) ||  // Query execution was interrupted
            (CR_CONN_HOST_ERROR == errcode) ||    // Can't connect to MySQL server
@@ -429,6 +429,10 @@ void CMySQLConnection::do_open() throw (CDBException)
 
     try
     {
+        // CLIENT_MULTI_STATEMENTS
+        // Tell the server that the client may send multiple statements in a single string (separated by ; characters).
+        // If this flag is not set, multiple-statement execution is disabled.
+        // See the note following this table for more information about this flag.
         if (NULL == mysql_real_connect(mysql_handle,
                                        _db_ip.c_str(), _db_user.c_str(), _db_password.c_str(),
                                        _db_name.c_str(), _db_port, NULL, 0))
