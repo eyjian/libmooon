@@ -409,6 +409,21 @@ void CMySQLConnection::do_open() throw (CDBException)
     // 分配或初始化与mysql_real_connect()相适应的MYSQL对象。如果mysql是NULL指针，该函数将分配、初始化、并返
     // 回新对象。否则，将初始化对象，并返回对象的地址。如果mysql_init()分配了新的对象，当调用mysql_close()来关闭
     // 连接时，将释放该对象。
+    //
+    // https://dev.mysql.com/doc/refman/5.7/en/mysql-thread-init.html
+    // mysql_thread_init()
+    // This function must be called early within each created thread to initialize thread-specific variables.
+    // However, you may not necessarily need to invoke it explicitly: mysql_thread_init() is automatically called by my_init(),
+    // which itself is automatically called by mysql_init(), mysql_library_init(), mysql_server_init(), and mysql_connect().
+    // If you invoke any of those functions, mysql_thread_init() is called for you.
+    //
+    // https://dev.mysql.com/doc/refman/5.7/en/mysql-thread-end.html
+    // mysql_thread_end()
+    // Call this function before calling pthread_exit() to free memory allocated by mysql_thread_init().
+    // mysql_thread_end() is not invoked automatically by the client library.
+    // For release/production builds without debugging support enabled, mysql_thread_end() need not be called.
+    // For debug builds, mysql_thread_init() allocates debugging information for the DBUG package (see Section 28.5.3, “The DBUG Package”).
+    // mysql_thread_end() must be called for each mysql_thread_init() call to avoid a memory leak.
     _mysql_handle = mysql_init(NULL);
     MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
     MOOON_ASSERT(mysql_handle != NULL);
