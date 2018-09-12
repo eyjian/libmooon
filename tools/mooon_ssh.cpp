@@ -90,7 +90,7 @@ inline std::ostream& operator <<(std::ostream& out, const struct ResultInfo& res
 }
 
 // 取得线程数
-static int get_num_of_threads();
+static int get_num_of_threads(int num_hosts);
 
 // thread 是否运行在线程中
 static void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote_host_ip, int port, const std::string& user, const std::string& password, const std::string& commands);
@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
     }
 
     // 先创建线程对象，但不要启动线程
-    const int num_threads = get_num_of_threads();
+    const int num_threads = get_num_of_threads((int)hosts_ip.size());
     std::vector<CSShThread*> ssh_threads;
     if (num_threads > 1)
     {
@@ -337,7 +337,7 @@ int main(int argc, char* argv[])
     return (0 == num_failure)? 0: 1;
 }
 
-int get_num_of_threads()
+int get_num_of_threads(int num_hosts)
 {
     int num_threads = mooon::argument::thr->value();
 
@@ -348,6 +348,8 @@ int get_num_of_threads()
             num_threads = mooon::argument::thr->value();
     }
 
+    if (num_threads > num_hosts)
+        num_threads = num_hosts;
     return num_threads;
 }
 
