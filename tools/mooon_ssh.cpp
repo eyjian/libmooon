@@ -217,13 +217,16 @@ int main(int argc, char* argv[])
         int exitcode = 0;
         std::string exitsignal;
         std::string errmsg;
+        std::string screen, str;
         const std::string& remote_host_ip = hosts_ip[i];
         results[i].ip = remote_host_ip;
 
         if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
         {
-            fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"]\n", remote_host_ip.c_str());
-            fprintf(stdout, PRINT_COLOR_GREEN);
+            str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"]\n", remote_host_ip.c_str());
+            str += PRINT_COLOR_GREEN;
+            screen += str;
+            fprintf(stdout, "%s", str.c_str());
         }
 
         mooon::sys::CStopWatch stop_watch;
@@ -232,7 +235,9 @@ int main(int argc, char* argv[])
             mooon::net::CLibssh2 libssh2(remote_host_ip, port, user, password, mooon::argument::t->value());
 
             libssh2.remotely_execute(commands, std::cout, &exitcode, &exitsignal, &errmsg, &num_bytes);
-            fprintf(stdout, PRINT_COLOR_NONE);
+            str = PRINT_COLOR_NONE;
+            screen += str;
+            fprintf(stdout, "%s", str.c_str());
             color = false; // color = true;
 
             if ((0 == exitcode) && exitsignal.empty())
@@ -241,7 +246,9 @@ int main(int argc, char* argv[])
 
                 if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
                 {
-                    fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS\n", remote_host_ip.c_str());
+                    str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS\n", remote_host_ip.c_str());
+                    screen += str;
+                    fprintf(stdout, "%s", str.c_str());
                 }
             }
             else
@@ -251,19 +258,41 @@ int main(int argc, char* argv[])
                 if (exitcode != 0)
                 {
                     if (1 == exitcode)
-                        fprintf(stderr, "command return %d\n", exitcode);
+                    {
+                        str = mooon::utils::CStringUtils::format_string("command return %d\n", exitcode);
+                        screen += str;
+                        fprintf(stderr, "%s", str.c_str());
+                    }
                     else if (126 == exitcode)
-                        fprintf(stderr, "%d: command not executable\n", exitcode);
+                    {
+                        str = mooon::utils::CStringUtils::format_string("%d: command not executable\n", exitcode);
+                        screen += str;
+                        fprintf(stderr, "%s", str.c_str());
+                    }
                     else if (127 == exitcode)
-                        fprintf(stderr, "%d: command not found\n", exitcode);
+                    {
+                        str = mooon::utils::CStringUtils::format_string("%d: command not found\n", exitcode);
+                        screen += str;
+                        fprintf(stderr, "%s", str.c_str());
+                    }
                     else if (255 == exitcode)
-                        fprintf(stderr, "%d: command not found\n", 127);
+                    {
+                        str = mooon::utils::CStringUtils::format_string("%d: command not found\n", 127);
+                        screen += str;
+                        fprintf(stderr, "%s", str.c_str());
+                    }
                     else
-                        fprintf(stderr, "%d: %s\n", exitcode, mooon::sys::Error::to_string(exitcode).c_str());
+                    {
+                        str = mooon::utils::CStringUtils::format_string("%d: %s\n", exitcode, mooon::sys::Error::to_string(exitcode).c_str());
+                        screen += str;
+                        fprintf(stderr, "%s", str.c_str());
+                    }
                 }
                 else if (!exitsignal.empty())
                 {
-                    fprintf(stderr, "%s: %s\n", exitsignal.c_str(), errmsg.c_str());
+                    str = mooon::utils::CStringUtils::format_string("%s: %s\n", exitsignal.c_str(), errmsg.c_str());
+                    screen += str;
+                    fprintf(stderr, "%s", str.c_str());
                 }
             }
         }
@@ -272,9 +301,15 @@ int main(int argc, char* argv[])
             if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
             {
                 if (color)
-                    fprintf(stdout, PRINT_COLOR_NONE); // color = true;
+                {
+                    screen += PRINT_COLOR_NONE; // color = true;
+                    screen += str;
+                    fprintf(stdout, "%s", str.c_str());
+                }
 
-                fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
+                str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
+                screen += str;
+                fprintf(stderr, "%s", str.c_str());
             }
         }
         catch (mooon::utils::CException& ex)
@@ -282,16 +317,24 @@ int main(int argc, char* argv[])
             if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
             {
                 if (color)
-                    fprintf(stdout, PRINT_COLOR_NONE); // color = true;
+                {
+                    str = PRINT_COLOR_NONE; // color = true;
+                    screen += str;
+                    fprintf(stdout, "%s", str.c_str());
+                }
 
-                fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
+                str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
+                screen += str;
+                fprintf(stderr, "%s", str.c_str());
             }
         }
 
         results[i].seconds = stop_watch.get_elapsed_microseconds() / 1000000;
         if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
         {
-            std::cout << std::endl;
+            str = "\n";
+            screen += str;
+            fprintf(stdout, "%s", str.c_str());
         }
     } // for
     mooon::net::CLibssh2::fini();
