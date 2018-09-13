@@ -87,7 +87,11 @@ inline std::ostream& operator <<(std::ostream& out, const struct ResultInfo& res
 // 取得线程数
 static int get_num_of_threads(int num_hosts);
 
+// 上传
 static void mooon_upload(bool thread, const struct UploadTask& task);
+
+// 隐藏密码
+static void hide_password(int argc, char* argv[]);
 
 struct UploadTask
 {
@@ -145,6 +149,7 @@ int main(int argc, char* argv[])
     mooon::utils::CStringUtils::trim(hosts);
     mooon::utils::CStringUtils::trim(user);
     mooon::utils::CStringUtils::trim(password);
+    hide_password(argc, argv);
 
     // 检查参数（-P）
     const char* port_ = getenv("PORT");
@@ -432,6 +437,22 @@ void mooon_upload(bool thread, const struct UploadTask& task)
         fprintf(stderr, "%s", str.c_str());
     else
         write(STDIN_FILENO, screen.c_str(), screen.size());
+}
+
+void hide_password(int argc, char* argv[])
+{
+    for (int i=0; i<argc; ++i)
+    {
+        if (0 == strncmp(argv[i], "-p=", 3))
+        {
+            const size_t n = strlen(argv[i]);
+            for (size_t j=3; j<n; ++j)
+            {
+                argv[i][j] = 'X';
+            }
+            break;
+        }
+    }
 }
 
 void CUploadThread::add_task(const struct UploadTask& task)

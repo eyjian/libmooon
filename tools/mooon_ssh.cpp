@@ -95,6 +95,9 @@ static int get_num_of_threads(int num_hosts);
 // thread 是否运行在线程中
 static void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote_host_ip, int port, const std::string& user, const std::string& password, const std::string& commands);
 
+// 隐藏密码
+static void hide_password(int argc, char* argv[]);
+
 struct SshTask
 {
     struct ResultInfo* result;
@@ -151,6 +154,7 @@ int main(int argc, char* argv[])
     mooon::utils::CStringUtils::trim(hosts);
     mooon::utils::CStringUtils::trim(user);
     mooon::utils::CStringUtils::trim(password);
+    hide_password(argc, argv);
 
     // 检查参数（-P）
     const char* port_ = getenv("PORT");
@@ -508,6 +512,22 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
     if (thread)
     {
         write(STDIN_FILENO, screen.c_str(), screen.size());
+    }
+}
+
+void hide_password(int argc, char* argv[])
+{
+    for (int i=0; i<argc; ++i)
+    {
+        if (0 == strncmp(argv[i], "-p=", 3))
+        {
+            const size_t n = strlen(argv[i]);
+            for (size_t j=3; j<n; ++j)
+            {
+                argv[i][j] = 'X';
+            }
+            break;
+        }
     }
 }
 
