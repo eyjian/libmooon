@@ -275,14 +275,13 @@ int main(int argc, char* argv[])
     	    const std::string remote_filepath = directory + std::string("/") + mooon::utils::CStringUtils::extract_filename(source_files[j]);
 
     	    struct UploadTask task;
-    	    task.result = &results[k];
+    	    task.result = &results[k++];
     	    task.remote_host_ip = hosts_ip[i];
     	    task.port = port;
     	    task.user = user;
     	    task.password = password;
     	    task.source_filepath = source_files[j];
     	    task.remote_filepath = remote_filepath;
-			++k;
 
 			if (num_threads <= 1)
 			{
