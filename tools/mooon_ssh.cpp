@@ -61,7 +61,7 @@ STRING_ARG_DEFINE(c, "", "The command is executed on the remote machines, exampl
 INTEGER_ARG_DEFINE(uint8_t, v, 1, 0, 2, "Verbosity, how much troubleshooting info to print");
 
 // 线程数（parallel），多线程并行执行
-INTEGER_ARG_DEFINE(int, thr, 1, 0, 2018, "The number of threads to parallel execute, can be replaced by environment variable 'THR'");
+INTEGER_ARG_DEFINE(int, thr, 1, 0, 2018, "The number of threads to parallel execute (0: number of hosts), can be replaced by environment variable 'THR'");
 
 // 结果信息
 struct ResultInfo
