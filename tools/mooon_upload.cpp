@@ -55,7 +55,7 @@ STRING_ARG_DEFINE(s, "", "The local source files uploaded, separated by comma, e
 STRING_ARG_DEFINE(d, "", "The remote destination directory, example: -d='/tmp/'");
 
 // 线程数（parallel），多线程并行执行
-INTEGER_ARG_DEFINE(int, thr, 0, 0, 2018, "The number of threads to parallel upload, can be replaced by environment variable 'THR'");
+INTEGER_ARG_DEFINE(int, thr, 1, 0, 2018, "The number of threads to parallel upload, can be replaced by environment variable 'THR'");
 
 // 结果信息
 struct ResultInfo
@@ -354,7 +354,7 @@ int get_num_of_threads(int num_hosts)
             num_threads = mooon::argument::thr->value();
     }
 
-    if (num_threads > num_hosts)
+    if ((num_threads > num_hosts) || (0 == num_threads))
         num_threads = num_hosts;
     return num_threads;
 }
