@@ -385,6 +385,7 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
             fprintf(stdout, "%s", str.c_str());
         color = false; // color = true;
 
+        result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
         if ((0 == exitcode) && exitsignal.empty())
         {
             result.success = true;
@@ -395,7 +396,7 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
                 screen += out.str();
             if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
             {
-                str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS\n", remote_host_ip.c_str());
+                str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS (%u seconds)\n", remote_host_ip.c_str(), result.seconds);
                 screen += str;
                 if (!thread)
                     fprintf(stdout, "%s", str.c_str());
@@ -458,6 +459,8 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
     }
     catch (mooon::sys::CSyscallException& ex)
     {
+        result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
+
         if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
         {
             if (color)
@@ -476,6 +479,8 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
     }
     catch (mooon::utils::CException& ex)
     {
+        result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
+
         if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
         {
             if (color)
@@ -493,7 +498,6 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
         }
     }
 
-    result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
     if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
     {
         str = "\n";

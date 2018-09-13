@@ -384,7 +384,8 @@ void mooon_upload(bool thread, const struct UploadTask& task)
         mooon::net::CLibssh2 libssh2(task.remote_host_ip, task.port, task.user, task.password, mooon::argument::t->value());
         libssh2.upload(task.source_filepath, task.remote_filepath, &file_size);
 
-        str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS: %d bytes (%s)\n", task.remote_host_ip.c_str(), file_size, task.source_filepath.c_str());
+        result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
+        str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS (%u seconds): %d bytes (%s)\n", task.remote_host_ip.c_str(), result.seconds, file_size, task.source_filepath.c_str());
         screen += str;
         if (!thread)
             fprintf(stdout, "%s", str.c_str());
@@ -392,6 +393,8 @@ void mooon_upload(bool thread, const struct UploadTask& task)
     }
     catch (mooon::sys::CSyscallException& ex)
     {
+        result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
+
         if (color)
         {
             str = PRINT_COLOR_NONE; // color = true;
@@ -407,6 +410,8 @@ void mooon_upload(bool thread, const struct UploadTask& task)
     }
     catch (mooon::utils::CException& ex)
     {
+        result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
+
         if (color)
         {
             str = PRINT_COLOR_NONE; // color = true;
@@ -427,7 +432,6 @@ void mooon_upload(bool thread, const struct UploadTask& task)
         fprintf(stderr, "%s", str.c_str());
     else
         write(STDIN_FILENO, screen.c_str(), screen.size());
-    result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
 }
 
 void CUploadThread::add_task(const struct UploadTask& task)
