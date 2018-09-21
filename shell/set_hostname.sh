@@ -2,7 +2,7 @@
 # https://github.com/eyjian/mooon
 # Created by yijian on 2018/8/10
 # 根据IP设置机器名工具，
-# 结合mooon_ssh和mooon_upload两个工具，可实现批量操作
+# 结合mooon_ssh和mooon_upload两个工具，可实现批量操作，需要以root运行
 #
 # 参数：
 # IP和机器名映射关系配置文件
@@ -21,7 +21,7 @@
 # 3）利用mooon_ssh，批量执行本脚本完成主机名设置
 
 # 本机IP所在网卡
-ethX=eth1
+ethX=eth0
 
 # 参数检查
 if test $# -ne 1; then
@@ -57,16 +57,30 @@ if test $? -ne 0; then
     exit 1
 fi
 
-# 取得hostname的配置文件
-# 注意不同Linux发行版本的hostname文件可能不同
-hostname_file=/etc/hostname
-if test ! -w $hostname_file; then
-    echo "can not write $hostname_file, or $hostname_file not exits"
+# 重启之前需要hostnamectl来使用hostname对全系统有效
+which hostnamectl  > /dev/null 2>&1
+if test $? -ne 0; then
+    echo "\`hostnamectl\` command \033[0;32;31mnot available\033[m"
     exit 1
 fi
 
+# 取得hostname的配置文件
+# 注意不同Linux发行版本的hostname文件可能不同
+hostname_file=/etc/hostname
+if test -w $hostname_file; then
+    echo "checked $hostname_file ok"
+else
+    hostname_file=/etc/HOSTNAME
+    if test -w $hostname_file; then
+        echo "checked $hostname_file ok"
+    else
+        echo "can not write $hostname_file, or $hostname_file not exits"
+        exit 1
+    fi
+fi
+
 # 取本地IP
-local_ip=`netstat -ie|awk -F'[ :]+' -v ethX=$ethX 'BEGIN{ok=0;} {if (match($0, ethX)) ok=1; if ((1==ok) && match($0,"inet")) { ok=0; if (7==NF) printf("%s\n",$3); else printf("%s\n",$4); } }'`
+local_ip=`netstat -ie|awk -F'[ :]+' -v ethX=$ethX 'BEGIN{ok=0;} {if ($1==ethX) ok=1; if ((1==ok) && match($0,"inet")) { ok=0; if (7==NF) printf("%s\n",$3); else printf("%s\n",$4); } }'`
 if test -z "$local_ip"; then
     echo "can not get local IP of \`$ethX\`"
     exit 1
@@ -84,7 +98,8 @@ do
     if test "$ip" = "$local_ip"; then
         echo "$ip => $hostname"
         echo "$hostname" > $hostname_file
-        exit 0
+        hostnamectl --transient set-hostname $hostname
+        exit $?
     fi
 done < $conffile
 
