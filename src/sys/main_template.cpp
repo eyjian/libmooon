@@ -24,19 +24,12 @@
 #include <stdexcept>
 #include <sys/wait.h>
 #include <utils/string_utils.h>
-#include "sys/report_self.h"
 #include "sys/safe_logger.h"
 #include "sys/signal_handler.h"
 #include "sys/utils.h"
 #include "sys/main_template.h"
 #include "utils/args_parser.h"
-
-// 指定ReportSelf的配置文件（值为空时表示不上报）
-STRING_ARG_DEFINE(report_self_conf, "/etc/mooon_report_self.conf", "report self conf file, will not report if empty");
-
-// ReportSelf上报间隔（单位：秒，值为0时表示不上报）
-INTEGER_ARG_DEFINE(int, report_self_interval, 3600, 0, std::numeric_limits<int>::max(), "interval to report in seconds, will not report if 0");
-
+#include "utils/scoped_ptr.h"
 SYS_NAMESPACE_BEGIN
 
 /***
@@ -52,7 +45,7 @@ static bool self_restart(IMainHelper* main_helper);
 /***
   * 子进程处理逻辑
   */
-static void child_process(IMainHelper* main_helper, int argc, char* argv[]);
+static void child_process(IMainHelper* main_helper, int argc, char* argv[], IReportSelf* report_self);
 
 /***
   * 父进程处理逻辑
@@ -104,10 +97,11 @@ static void* signal_thread_proc(void* param)
   *     return main_template(argc, argv);
   * }
   */
-int main_template(IMainHelper* main_helper, int argc, char* argv[])
+int main_template(IMainHelper* main_helper, int argc, char* argv[], IReportSelf* report_self)
 {
     // 退出代码，由子进程决定
     int exit_code = 1;
+    utils::ScopedPtr<IReportSelf> report_self_((report_self != NULL)? report_self: new CNullReportSelf);
 
     // 忽略掉PIPE信号
     if (main_helper->ignore_pipe_signal())
@@ -130,7 +124,7 @@ int main_template(IMainHelper* main_helper, int argc, char* argv[])
         }
         else if (0 == pid)
         {
-            child_process(main_helper, argc, argv);
+            child_process(main_helper, argc, argv, report_self_.get());
         }
         else if (!parent_process(main_helper, pid, exit_code))
         {
@@ -155,7 +149,7 @@ bool self_restart(IMainHelper* main_helper)
         && (0 == strcasecmp(restart, "true"));
 }
 
-void child_process(IMainHelper* main_helper, int argc, char* argv[])
+void child_process(IMainHelper* main_helper, int argc, char* argv[], IReportSelf* report_self)
 {
     int errcode = 0;
     //sigset_t sigset;
@@ -205,18 +199,13 @@ void child_process(IMainHelper* main_helper, int argc, char* argv[])
         exit(1);
     }
 
-    // 启动上报，
-    // 不关心返回值，因为report_conf指定的配置文件不一定存在
-    if ((!argument::report_self_conf->value().empty()) &&
-        (argument::report_self_interval->value() > 0))
-    {
-        (void)start_report_self(argument::report_self_conf->value(), argument::report_self_interval->value());
-    }
+    // 启动上报
+    report_self->start_report_self();
 
     if (!main_helper->run())
 	{
 		//fprintf(stderr, "Main helper run failed.\n");
-        stop_report_self();
+        report_self->stop_report_self();
 		main_helper->fini();
 		exit(1);
 	}
@@ -237,7 +226,7 @@ void child_process(IMainHelper* main_helper, int argc, char* argv[])
         }
     }
 
-    stop_report_self();
+    report_self->stop_report_self();
     main_helper->fini();
     exit(errcode);
 }

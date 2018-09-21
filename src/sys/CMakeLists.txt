@@ -34,6 +34,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/event.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/main_template.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/report_self_decorator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mysql_db.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/safe_logger.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared_memory.cpp
