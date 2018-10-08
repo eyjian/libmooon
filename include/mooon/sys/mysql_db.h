@@ -25,8 +25,13 @@
 #if MOOON_HAVE_MYSQL==1
 SYS_NAMESPACE_BEGIN
 
+// (1317)Query execution was interrupted
 // (1040)Too many connections MySQL连接数过多
+// (144)is marked as crashed and last (automatic?) repair failed
 // (145)is marked as crashed and should be repaired 表crash了
+// (29)not found (Errcode: 30 - Read-only file system)
+
+// (126)Incorrect key file for table
 
 /**
  * MySQL版本的DB连接
