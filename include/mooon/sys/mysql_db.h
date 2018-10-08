@@ -25,6 +25,9 @@
 #if MOOON_HAVE_MYSQL==1
 SYS_NAMESPACE_BEGIN
 
+// (1040)Too many connections MySQL连接数过多
+// (145)is marked as crashed and should be repaired 表crash了
+
 /**
  * MySQL版本的DB连接
  */
