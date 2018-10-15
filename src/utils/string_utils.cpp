@@ -1016,16 +1016,26 @@ std::string CStringUtils::replace_suffix(const std::string& filepath, const std:
 
 std::string CStringUtils::to_hex(const std::string& source, bool lowercase)
 {
+    static unsigned char lower_hex_table[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    static unsigned char upper_hex_table[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
     std::string hex;
     hex.resize(source.size()*2);
 
     char* hex_p = const_cast<char*>(hex.data());
     for (std::string::size_type i=0; i<source.size(); ++i)
     {
+        unsigned char c = source[i];
+
         if (lowercase)
-            snprintf(hex_p, 3, "%02x", source[i]);
+        {
+            hex_p[0] = lower_hex_table[(c >> 4) & 0x0F];
+            hex_p[1] = lower_hex_table[c & 0x0F];
+        }
         else
-            snprintf(hex_p, 3, "%02X", source[i]);
+        {
+            hex_p[0] = upper_hex_table[(c >> 4) & 0x0F];
+            hex_p[1] = upper_hex_table[c & 0x0F];
+        }
 
         hex_p += 2;
     }

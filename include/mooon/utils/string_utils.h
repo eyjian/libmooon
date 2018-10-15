@@ -356,6 +356,13 @@ public:
     // 将一个字符流转换成十六进制字符串
     // source 注意它是一个字节流，不一定是字符串
     // 返回十六进制字符串
+    //
+    // 示例：
+    // int m = 2018;
+    // const std::string str(reinterpret_cast<char*>(&m), sizeof(m));
+    // const std::string hex_str = to_hex(str);
+    // 注意这里转换出的是主机字节序的字符串，使用Windows等计算器得到的是大字节序字符串
+    // 以2018为例，计算器得到的是7E2，而在x86上得到的是E2070000
     static std::string to_hex(const std::string& source, bool lowercase=true);
 
     // URL编码
