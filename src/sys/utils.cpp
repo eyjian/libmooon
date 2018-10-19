@@ -766,4 +766,10 @@ CUtils::killall(const std::string& process_name, int signo, bool regex)
     return ret;
 }
 
+bool CUtils::process_exists(const std::string& process_name, bool regex)
+{
+    std::vector<int64_t> pid_array;
+    return get_all_pid(process_name, &pid_array, regex) > 0;
+}
+
 SYS_NAMESPACE_END

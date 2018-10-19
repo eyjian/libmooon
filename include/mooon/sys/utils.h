@@ -257,6 +257,9 @@ public:
     // 如果出错，则第一个值为-1，第二个值为系统出错代码（即errno值）
     static std::pair<int, int>
     killall(const std::string& process_name, int signo, bool regex=false);
+
+    // 指定名称的进程是否存在
+    static bool process_exists(const std::string& process_name, bool regex=false);
 };
 
 SYS_NAMESPACE_END
