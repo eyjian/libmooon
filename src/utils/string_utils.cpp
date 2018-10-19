@@ -792,6 +792,8 @@ const char* CStringUtils::extract_filename(const char* filepath)
 // 1) 当str为"abc"时，它的返回值的大小是3，"abc"的字符个数刚好是3；
 // 2) 当str为"1234567890"时，它的返回值大小是10，"1234567890"的字符个数刚好是10；
 // 3) 当str为"1234567890X"时，它的返回值大小是11，"1234567890X"的字符个数刚好是11。
+//
+// int asprintf(char **strp, const char *fmt, ...);
 std::string CStringUtils::format_string(const char* format, ...)
 {
     va_list ap;

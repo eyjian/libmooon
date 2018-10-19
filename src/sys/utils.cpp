@@ -19,6 +19,7 @@
 #include "sys/utils.h"
 #include "sys/atomic.h"
 #include "sys/close_helper.h"
+#include "sys/dir_utils.h"
 #include "utils/string_utils.h"
 #include <dirent.h>
 #include <execinfo.h> // backtrace和backtrace_symbols函数
@@ -26,6 +27,8 @@
 #include <ftw.h> // ftw
 #include <libgen.h> // dirname&basename
 #include <pwd.h> // getpwuid
+#include <regex.h>
+#include <signal.h>
 #include <sys/time.h>
 #include <sys/prctl.h> // prctl
 #include <sys/resource.h>
@@ -655,6 +658,108 @@ std::string CUtils::get_random_string()
 
     atomic_add(3, &s_random_factor);
     return utils::CStringUtils::format_string("%" PRIu64"%" PRIu64"%u%" PRIu64"%" PRIu64"%" PRIu64, static_cast<uint64_t>(tv.tv_sec), static_cast<uint64_t>(tv.tv_usec), random_factor, m1, m2, m3);
+}
+
+bool CUtils::process_exists(int64_t pid)
+{
+    return 0 == kill(pid, 0);
+}
+
+// int asprintf(char **strp, const char *fmt, ...);
+std::string CUtils::get_process_name(int64_t pid)
+{
+    const std::string& filepath = utils::CStringUtils::format_string("/proc/%" PRId64"/comm", pid);
+    const int fd = open(filepath.c_str(), O_RDONLY);
+    char process_name[PATH_MAX];
+
+    if (-1 == fd)
+    {
+        process_name[0] = '\0';
+    }
+    else
+    {
+
+        const int n = read(fd, process_name, sizeof(process_name)-1);
+        if (n > 0)
+            process_name[n] = '\0';
+        else
+            process_name[0] = '\0';
+        if ('\n' == process_name[n-1])
+            process_name[n-1] = '\0'; // 删除结尾的“\n”
+        close(fd);
+    }
+
+    return process_name;
+}
+
+int CUtils::get_all_pid(const std::string& process_name, std::vector<int64_t>* pid_array, bool regex)
+{
+    regex_t preg;
+
+    if (regex)
+    {
+        if (regcomp(&preg, process_name.c_str(), REG_EXTENDED) != 0)
+        {
+            return -1;
+        }
+    }
+    try
+    {
+        std::vector<std::string> subdir_names; // pid数组
+        CDirUtils::list("/proc", &subdir_names, NULL, NULL);
+
+        for (std::vector<std::string>::size_type i=0; i<subdir_names.size(); ++i)
+        {
+            const std::string& pid_str = subdir_names[i];
+            uint32_t pid = 0;
+
+            if (utils::CStringUtils::string2int(pid_str.c_str(), pid))
+            {
+                const std::string& process_name_ = get_process_name(pid);
+
+                if (!regex)
+                {
+                    if (process_name_ == process_name)
+                        pid_array->push_back(pid);
+                }
+                else
+                {
+                    regmatch_t pmatch[1]; // 存放匹配结果
+                    if (0 == regexec(&preg, process_name_.c_str(), 1, pmatch, 0))
+                        pid_array->push_back(pid);
+                }
+            }
+        }
+
+        if (regex)
+            regfree(&preg);
+        return static_cast<int>(pid_array->size());
+    }
+    catch (sys::CSyscallException& ex)
+    {
+        if (regex)
+            regfree(&preg);
+        return -1;
+    }
+}
+
+std::pair<int, int>
+CUtils::killall(const std::string& process_name, int signo, bool regex)
+{
+    std::pair<int, int> ret;
+    std::vector<int64_t> pid_array;
+    const int n = get_all_pid(process_name, & pid_array, regex);
+
+    for (int i=0; i<n; ++i)
+    {
+        const int64_t pid = pid_array[i];
+        if (0 == kill(pid, signo))
+            ++ret.first;
+        else
+            ++ret.second;
+    }
+
+    return ret;
 }
 
 SYS_NAMESPACE_END

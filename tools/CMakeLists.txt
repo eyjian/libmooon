@@ -15,6 +15,14 @@ target_link_libraries(md5 libmooon_utils.a)
 add_executable(disk_benchmark disk_benchmark.cpp)
 target_link_libraries(disk_benchmark libmooon_sys.a libmooon_utils.a)
 
+# pidof
+add_executable(pidof pidof.cpp)
+target_link_libraries(pidof libmooon_sys.a libmooon_utils.a)
+
+# killall
+add_executable(killall killall.cpp)
+target_link_libraries(killall libmooon_sys.a libmooon_utils.a)
+
 if (MOOON_HAVE_LIBSSH2)
 	# 远程命令工具
 	add_executable(mooon_ssh mooon_ssh.cpp)

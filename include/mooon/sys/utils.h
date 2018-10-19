@@ -235,6 +235,28 @@ public:
 
     // 取一个随机字符串
     static std::string get_random_string();
+
+    // 指定进程ID的进程是否存在
+    static bool process_exists(int64_t pid);
+
+    // 根据进程ID，得到进程名（为top看到的名称，非ps看到的名称，所以对killall有效）
+    // 如果进程不存在，或没有权限，没返回空字符串
+    static std::string get_process_name(int64_t pid);
+
+    // 取得指定名称的所有进程ID
+    // regex 是否正则匹配
+    //
+    // 出错返回-1，否则返回符合的个数
+    static int get_all_pid(const std::string& process_name, std::vector<int64_t>* pid_array, bool regex=false);
+
+    // 杀死指定名称的进程
+    // process_name 需要杀死的进程名
+    // 限制 除非为root，否则没有权限杀死其它用户的进程
+    //
+    // 返回被杀死的个数和出错的个数（包含不存在的），
+    // 如果出错，则第一个值为-1，第二个值为系统出错代码（即errno值）
+    static std::pair<int, int>
+    killall(const std::string& process_name, int signo, bool regex=false);
 };
 
 SYS_NAMESPACE_END
