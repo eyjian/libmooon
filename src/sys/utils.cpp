@@ -753,10 +753,14 @@ CUtils::killall(const std::string& process_name, int signo, bool regex)
     for (int i=0; i<n; ++i)
     {
         const int64_t pid = pid_array[i];
-        if (0 == kill(pid, signo))
-            ++ret.first;
-        else
-            ++ret.second;
+
+        if (pid > 0)
+        {
+            if (0 == kill(pid, signo))
+                ++ret.first;
+            else
+                ++ret.second;
+        }
     }
 
     return ret;
