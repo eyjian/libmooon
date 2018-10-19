@@ -260,6 +260,10 @@ public:
 
     // 指定名称的进程是否存在
     static bool process_exists(const std::string& process_name, bool regex=false);
+
+    // 杀死进程
+    // 返回操作成功的个数
+    static int killall(const std::vector<int64_t>& pid_array, int signo);
 };
 
 SYS_NAMESPACE_END

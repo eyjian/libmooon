@@ -772,4 +772,22 @@ bool CUtils::process_exists(const std::string& process_name, bool regex)
     return get_all_pid(process_name, &pid_array, regex) > 0;
 }
 
+int CUtils::killall(const std::vector<int64_t>& pid_array, int signo)
+{
+    int success = 0;
+
+    for (std::vector<int64_t>::size_type i=0; i<pid_array.size(); ++i)
+    {
+        const pid_t pid = static_cast<pid_t>(pid_array[i]);
+
+        if (pid > 0)
+        {
+            if (0 == kill(pid, signo))
+                ++success;
+        }
+    }
+
+    return success;
+}
+
 SYS_NAMESPACE_END
