@@ -163,15 +163,15 @@ public:
     static std::string get_dirpath(const std::string& filepath);
 
     /***
-      * 设置线程的名称
-      * @new_name 新的名字，通过ps或top查看线程时，可以看到线程的名字
+      * 设置线程的名称，即“/proc/PID/comm”，对killall有效
+      * @new_name 新的名字，通过top查看线程时（不是ps），可以看到线程的名字
       * @exception: 如果调用出错，则抛出CSyscallException异常
       */
     static void set_process_name(const std::string& new_name);
     static void set_process_name(const char* format, ...);
 
     /***
-      * 设置进程标题，ps命令看到的结果，
+      * 设置进程标题，ps命令看到的结果（不是top），，对killall无效
       * 必须先调用init_program_title()后，才可以调用set_program_title()
       */
     static void init_process_title(int argc, char *argv[]);    
