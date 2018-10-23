@@ -116,16 +116,16 @@ public:
     // exitcode 远程命令执行结束后的退出代码，如：0
     // exitsignal 远程命令执行时接收到的信号，如：TERM
     // num_bytes 远程命令吐出的字节数
-    void remotely_execute(const std::string& command, std::ostream& out, int* exitcode, std::string* exitsignal, std::string* errmsg, int* num_bytes) throw (utils::CException, sys::CSyscallException);
+    void remotely_execute(const std::string& command, std::ostream& out, int* exitcode, std::string* exitsignal, std::string* errmsg, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException);
 
     // 下载远端的文件到本地
     // remote_filepath 被下载的远端文件
     // num_bytes 远端文件的字节数
-    void download(const std::string& remote_filepath, std::ostream& out, int* num_bytes) throw (utils::CException, sys::CSyscallException);
+    void download(const std::string& remote_filepath, std::ostream& out, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException);
 
     // 上传本地文件到远端
     // num_bytes 本地文件的字节数
-    void upload(const std::string& local_filepath, const std::string& remote_filepath, int* num_bytes) throw (utils::CException, sys::CSyscallException);
+    void upload(const std::string& local_filepath, const std::string& remote_filepath, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException);
 
 private:
     int get_session_errcode() const;
@@ -137,13 +137,13 @@ private:
     bool timedwait_socket();
     void handshake();
     void* open_ssh_channel();
-    void* open_scp_read_channel(const std::string& remote_filepath);
+    void* open_scp_read_channel(const std::string& remote_filepath, struct stat* fileinfo);
 
     // mtime 最近一次修改时间
     // atime 最近一次访问时间
     void* open_scp_write_channel(const std::string& remote_filepath, int filemode, size_t filesize, time_t mtime, time_t atime);
     int close_ssh_channel(void* channel, std::string* exitsignal, std::string* errmsg);
-    int read_channel(void* channel, std::ostream& out);
+    int64_t read_channel(void* channel, std::ostream& out, const struct stat* fileinfo);
     void write_channel(void* channel, const char *buffer, size_t buffer_size);
 
 private:

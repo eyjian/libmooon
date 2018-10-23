@@ -134,7 +134,7 @@ CLibssh2::~CLibssh2()
 
 void CLibssh2::remotely_execute(
     const std::string& command, std::ostream& out,
-    int* exitcode, std::string* exitsignal, std::string* errmsg, int* num_bytes) throw (utils::CException, sys::CSyscallException)
+    int* exitcode, std::string* exitsignal, std::string* errmsg, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException)
 {
     LIBSSH2_CHANNEL* channel = static_cast<LIBSSH2_CHANNEL*>(open_ssh_channel());
 
@@ -157,7 +157,7 @@ void CLibssh2::remotely_execute(
             }
         }
 
-        *num_bytes = read_channel(channel, out);
+        *num_bytes = read_channel(channel, out, NULL);
     }
     catch (...)
     {
@@ -170,13 +170,14 @@ void CLibssh2::remotely_execute(
     *exitcode = close_ssh_channel(channel, exitsignal, errmsg);
 }
 
-void CLibssh2::download(const std::string& remote_filepath, std::ostream& out, int* num_bytes) throw (utils::CException, sys::CSyscallException)
+void CLibssh2::download(const std::string& remote_filepath, std::ostream& out, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException)
 {
-    LIBSSH2_CHANNEL* channel = static_cast<LIBSSH2_CHANNEL*>(open_scp_read_channel(remote_filepath));
+    struct stat fileinfo;
+    LIBSSH2_CHANNEL* channel = static_cast<LIBSSH2_CHANNEL*>(open_scp_read_channel(remote_filepath, &fileinfo));
 
     try
     {
-        *num_bytes = read_channel(channel, out);
+        *num_bytes = read_channel(channel, out, &fileinfo);
         libssh2_channel_free(channel);
     }
     catch (...)
@@ -186,7 +187,7 @@ void CLibssh2::download(const std::string& remote_filepath, std::ostream& out, i
     }
 }
 
-void CLibssh2::upload(const std::string& local_filepath, const std::string& remote_filepath, int* num_bytes) throw (utils::CException, sys::CSyscallException)
+void CLibssh2::upload(const std::string& local_filepath, const std::string& remote_filepath, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException)
 {
     int local_fd = -1;
     LIBSSH2_CHANNEL* channel = NULL;
@@ -233,6 +234,9 @@ void CLibssh2::upload(const std::string& local_filepath, const std::string& remo
             {
                 *num_bytes += bytes;
                 write_channel(channel, buffer, bytes);
+
+                if (*num_bytes >= fileinfo.st_size)
+                    break;
             }
         }
 
@@ -525,15 +529,14 @@ void* CLibssh2::open_ssh_channel()
     return channel;
 }
 
-void* CLibssh2::open_scp_read_channel(const std::string& remote_filepath)
+void* CLibssh2::open_scp_read_channel(const std::string& remote_filepath, struct stat* fileinfo)
 {
     LIBSSH2_CHANNEL* channel = NULL;
     LIBSSH2_SESSION* session = static_cast<LIBSSH2_SESSION*>(_session);
 
     for (;;)
     {
-        struct stat fileinfo;
-        channel = libssh2_scp_recv(session, remote_filepath.c_str(), &fileinfo);
+        channel = libssh2_scp_recv(session, remote_filepath.c_str(), fileinfo);
         if (channel != NULL)
             break;
 
@@ -632,15 +635,15 @@ int CLibssh2::close_ssh_channel(void* channel, std::string* exitsignal, std::str
     return exitcode;
 }
 
-int CLibssh2::read_channel(void* channel, std::ostream& out)
+int64_t CLibssh2::read_channel(void* channel, std::ostream& out, const struct stat* fileinfo)
 {
-    int num_bytes = 0;
+    int64_t num_bytes = 0;
     LIBSSH2_CHANNEL* channel_ = static_cast<LIBSSH2_CHANNEL*>(channel);
 
     while (true)
     {
         char buffer[4096];
-        int bytes = libssh2_channel_read(channel_, buffer, sizeof(buffer)-1);
+        const int bytes = libssh2_channel_read(channel_, buffer, sizeof(buffer)-1);
 
         if (0 == bytes)
         {
@@ -655,6 +658,8 @@ int CLibssh2::read_channel(void* channel, std::ostream& out)
             //小于也是正常的，是否完毕由“if (0 == bytes)”决定
             //if (bytes < static_cast<int>(sizeof(buffer)-1))
             //    break;
+            if ((fileinfo != NULL) && (num_bytes >= fileinfo->st_size))
+                break;
         }
         else
         {

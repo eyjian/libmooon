@@ -388,12 +388,12 @@ void mooon_upload(bool thread, const struct UploadTask& task)
     mooon::sys::CStopWatch stop_watch;
     try
     {
-        int file_size = 0;
+        int64_t file_size = 0;
         mooon::net::CLibssh2 libssh2(task.remote_host_ip, task.port, task.user, task.password, mooon::argument::t->value());
         libssh2.upload(task.source_filepath, task.remote_filepath, &file_size);
 
         result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
-        str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS (%u seconds): %d bytes (%s)\n", task.remote_host_ip.c_str(), result.seconds, file_size, task.source_filepath.c_str());
+        str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS (%u seconds): %" PRId64" bytes (%s)\n", task.remote_host_ip.c_str(), result.seconds, file_size, task.source_filepath.c_str());
         screen += str;
         if (!thread)
             fprintf(stdout, "%s", str.c_str());

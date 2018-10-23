@@ -221,11 +221,11 @@ int main(int argc, char* argv[])
         mooon::sys::CStopWatch stop_watch;
         try
         {
-            int file_size = 0;
+            int64_t file_size = 0;
             mooon::net::CLibssh2 libssh2(host, port, user, password, mooon::argument::t->value());
             libssh2.download(source_files[j], local_fs, &file_size);
 
-            fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS: %d bytes (%s)\n", host.c_str(), file_size, source_files[j].c_str());
+            fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS: %" PRId64" bytes (%s)\n", host.c_str(), file_size, source_files[j].c_str());
             results[j].success = true;
         }
         catch (mooon::sys::CSyscallException& ex)

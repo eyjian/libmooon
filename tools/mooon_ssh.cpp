@@ -360,7 +360,7 @@ int get_num_of_threads(int num_hosts)
 void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote_host_ip, int port, const std::string& user, const std::string& password, const std::string& commands)
 {
     bool color = true;
-    int num_bytes = 0;
+    int64_t num_bytes = 0;
     int exitcode = 0;
     std::string exitsignal;
     std::string errmsg;
