@@ -643,7 +643,10 @@ int64_t CLibssh2::read_channel(void* channel, std::ostream& out, const struct st
     while (true)
     {
         char buffer[4096];
-        const int bytes = libssh2_channel_read(channel_, buffer, sizeof(buffer)-1);
+        int amount = sizeof(buffer) - 1;
+        if((fileinfo->st_size - num_bytes) < amount)
+            amount = static_cast<int>(fileinfo->st_size - num_bytes);
+        const int bytes = libssh2_channel_read(channel_, buffer, amount);
 
         if (0 == bytes)
         {
@@ -653,13 +656,16 @@ int64_t CLibssh2::read_channel(void* channel, std::ostream& out, const struct st
         {
             num_bytes += bytes;
             buffer[bytes] = '\0';
-            out << buffer;
+            out.write(buffer, bytes); // out << std::string(buffer, bytes);
 
             //小于也是正常的，是否完毕由“if (0 == bytes)”决定
             //if (bytes < static_cast<int>(sizeof(buffer)-1))
             //    break;
             if ((fileinfo != NULL) && (num_bytes >= fileinfo->st_size))
+            {
+                out.flush();
                 break;
+            }
         }
         else
         {

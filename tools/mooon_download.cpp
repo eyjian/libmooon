@@ -217,33 +217,43 @@ int main(int argc, char* argv[])
         results[j].source = source_files[j];
         results[j].success = false;
 
-        std::ofstream local_fs(local_filepath.c_str());
-        mooon::sys::CStopWatch stop_watch;
-        try
-        {
-            int64_t file_size = 0;
-            mooon::net::CLibssh2 libssh2(host, port, user, password, mooon::argument::t->value());
-            libssh2.download(source_files[j], local_fs, &file_size);
-
-            fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS: %" PRId64" bytes (%s)\n", host.c_str(), file_size, source_files[j].c_str());
-            results[j].success = true;
-        }
-        catch (mooon::sys::CSyscallException& ex)
+        std::ofstream local_fs(local_filepath.c_str(), std::ios_base::out|std::ios::binary|std::ios::trunc);
+        if (!local_fs)
         {
             if (color)
                 fprintf(stdout, PRINT_COLOR_NONE); // color = true;
-
-            fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s (%s)\n", host.c_str(), ex.str().c_str(), source_files[j].c_str());
+            fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s (%s)\n", host.c_str(), strerror(errno), local_filepath.c_str());
         }
-        catch (mooon::utils::CException& ex)
+        else
         {
-            if (color)
-                fprintf(stdout, PRINT_COLOR_NONE); // color = true;
+            mooon::sys::CStopWatch stop_watch;
 
-            fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s (%s)\n", host.c_str(), ex.str().c_str(), source_files[j].c_str());
+            try
+            {
+                int64_t file_size = 0;
+                mooon::net::CLibssh2 libssh2(host, port, user, password, mooon::argument::t->value());
+                libssh2.download(source_files[j], local_fs, &file_size);
+
+                fprintf(stdout, "[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS: %" PRId64" bytes (%s)\n", host.c_str(), file_size, source_files[j].c_str());
+                results[j].success = true;
+            }
+            catch (mooon::sys::CSyscallException& ex)
+            {
+                if (color)
+                    fprintf(stdout, PRINT_COLOR_NONE); // color = true;
+
+                fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s (%s)\n", host.c_str(), ex.str().c_str(), source_files[j].c_str());
+            }
+            catch (mooon::utils::CException& ex)
+            {
+                if (color)
+                    fprintf(stdout, PRINT_COLOR_NONE); // color = true;
+
+                fprintf(stderr, "[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s (%s)\n", host.c_str(), ex.str().c_str(), source_files[j].c_str());
+            }
+
+            results[j].seconds = stop_watch.get_elapsed_microseconds() / 1000000;
         }
-
-        results[j].seconds = stop_watch.get_elapsed_microseconds() / 1000000;
     }
     mooon::net::CLibssh2::fini();
 
