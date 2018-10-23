@@ -29,8 +29,26 @@ SYS_NAMESPACE_BEGIN
 // (144)is marked as crashed and last (automatic?) repair failed
 // (145)is marked as crashed and should be repaired 表crash了
 // (29)not found (Errcode: 30 - Read-only file system)
-
 // (126)Incorrect key file for table
+
+// 如果以工厂方式：
+// mooon::sys::DBConnection* db = (mooon::sys::DBConnection*)mooon::utils::CObjectFacotry::get_singleton()->create_object("mysql_connection");
+// 使用CMySQLConnection，则编译时需要指定链接参数“-whole-archive”，
+// 否则CMySQLConnection不会被链入，但这会产生副作用，需要链接libmooon.a所依赖的所有第三方库，
+// 带“-whole-archive”的编译示例：
+// g++ -g -o x x.cpp -I/usr/local/mooon/include -Wl,-whole-archive /usr/local/mooon/lib/libmooon.a -Wl,-no-whole-archive /usr/local/libssh2/lib/libssh2.a  -ldl -pthread /usr/local/sqlite3/lib/libsqlite3.a /usr/local/mysql/lib/libmysqlclient.a   /usr/local/curl/lib/libcurl.a /usr/local/libidn/lib/libidn.a /usr/local/c-ares/lib/libcares.a /usr/local/thrift/lib/libthrift.a /usr/local/openssl/lib/libssl.a /usr/local/openssl/lib/libcrypto.a
+//
+// 工厂方式示例：
+// $ cat x.cpp
+// #include <mooon/sys/simple_db.h>
+// #include <mooon/utils/object.h>
+//
+// int main()
+// {
+//     mooon::sys::DBConnection* db = (mooon::sys::DBConnection*)mooon::utils::CObjectFacotry::get_singleton()->create_object("mysql_connection");
+//     printf("%p\n", db); // 不指定“-whole-archive”时的db值为NULL
+//     return 0;
+// }
 
 /**
  * MySQL版本的DB连接
