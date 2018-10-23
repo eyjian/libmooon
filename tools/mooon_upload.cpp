@@ -28,6 +28,10 @@
 // 可环境变量HOSTS替代参数“-h”
 // 可环境变量USER替代参数“-u”
 // 可环境变量PASSWORD替代参数“-p”
+//
+// 如果不想依赖glibc++库，编译时静态链接：
+// -Wl,-Bstatic -static-libgcc -static-libstdc++ -lrt -lz
+// 但并不所有机器上都可以如此编译，比如有些机器可能没有libstdc++的静态库。
 #include "mooon/net/libssh2.h"
 #include "mooon/sys/stop_watch.h"
 #include "mooon/sys/thread_engine.h"

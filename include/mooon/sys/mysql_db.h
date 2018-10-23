@@ -19,7 +19,6 @@
 #ifndef MOOON_SYS_MYSQL_DB_H
 #define MOOON_SYS_MYSQL_DB_H
 #include "mooon/sys/simple_db.h"
-#include "mooon/utils/object.h"
 #include <stdarg.h>
 
 #if MOOON_HAVE_MYSQL==1
@@ -36,7 +35,7 @@ SYS_NAMESPACE_BEGIN
 /**
  * MySQL版本的DB连接
  */
-class CMySQLConnection: public CDBConnectionBase, public utils::CObject
+class CMySQLConnection: public CDBConnectionBase
 {
 public:
     // Call this function to initialize the MySQL library before you call any other MySQL function

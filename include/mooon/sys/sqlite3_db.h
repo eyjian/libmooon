@@ -32,7 +32,7 @@ SYS_NAMESPACE_BEGIN
 /**
  * SQLite3版本的DB连接
  */
-class CSQLite3Connection: public CDBConnectionBase, public utils::CObject
+class CSQLite3Connection: public CDBConnectionBase
 {
 public:
     CSQLite3Connection(size_t sql_max=8192);

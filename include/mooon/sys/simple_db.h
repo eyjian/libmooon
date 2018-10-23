@@ -18,6 +18,7 @@
  */
 #ifndef MOOON_SYS_SIMPLE_DB_H
 #define MOOON_SYS_SIMPLE_DB_H
+#include "mooon/utils/object.h"
 #include "mooon/sys/db_exception.h"
 #include <string>
 #include <vector>
@@ -64,7 +65,7 @@ delete db_connection;
  */
 
 // 请不要跨线程使用
-class DBConnection
+class DBConnection: public utils::CObject
 {
 public:
     virtual ~DBConnection() {}
