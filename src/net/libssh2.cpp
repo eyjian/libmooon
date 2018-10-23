@@ -644,10 +644,13 @@ int64_t CLibssh2::read_channel(void* channel, std::ostream& out, const struct st
     {
         char buffer[4096];
         int amount = sizeof(buffer) - 1;
-        if((fileinfo->st_size - num_bytes) < amount)
-            amount = static_cast<int>(fileinfo->st_size - num_bytes);
-        const int bytes = libssh2_channel_read(channel_, buffer, amount);
+        if (fileinfo != NULL)
+        {
+            if ((fileinfo->st_size - num_bytes) < amount)
+                amount = static_cast<int>(fileinfo->st_size - num_bytes);
+        }
 
+        const int bytes = libssh2_channel_read(channel_, buffer, amount);
         if (0 == bytes)
         {
             break; // connection closed now
