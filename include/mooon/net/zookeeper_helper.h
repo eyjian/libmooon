@@ -37,170 +37,12 @@ NET_NAMESPACE_BEGIN
 // 可以调用zoo_set_log_stream(FILE*)设置输出到文件中
 // 还可以调用zoo_set_debug_level(ZooLogLevel)控制日志级别！！！
 
-// 提供基于zookeeper的主备切换接口
+// 提供基于zookeeper的主备切换接口和读取数据等接口
 //
 // 使用示例：
 //
-// int main(int argc, char* argv[])
-// {
-//     try
-//     {
-//         CMyApplication myapp;
-//
-//         // 由于仅基于zookeeper的ZOO_EPHEMERAL结点实现互斥，没有组合使用ZOO_SEQUENCE，
-//         // 本实现要求主备结点的data不为能空也不能相同，最简单的做法是取各自的IP作为data参数。
-//
-//         // 请注意，在调用connect_zookeeper()或reconnect_zookeeper()后，
-//         // 都应当重新调用change_to_master()去竞争成为master，即使此时get_zk_data()仍然取得data。
-//         myapp.connect_zookeeper(zk_nodes, zk_path, data, session_timeout_seconds);
-//         myapp.work();
-//     }
-//     catch (mooon::utils::CException& ex)
-//     {
-//         MYLOG_ERROR("%s\n", ex.str().c_str());
-//     }
-//     return 0;
-// }
-//
-// class CMyApplication: public CZookeeperHelper
-// {
-// public:
-//     CMyApplication()
-//         : _stop(false)
-//     {
-//     }
-//
-// private:
-//     volatile bool _stop;
-//
-// public:
-//     void work()
-//     {
-//         become_master();
-//
-//         while (!_stop)
-//         {
-//             try
-//             {
-//                 const NodeState node_state = get_node_state();
-//
-//                 if (NODE_SLAVE == node_state)
-//                 {
-//                     break;
-//                 }
-//                 else if (node_state != NODE_MASTER)
-//                 {
-//                     // 可能是因为连接不上zookeeper集群的任意节点
-//                     mooon::sys::CUtils::millisleep(2000);
-//                 }
-//                 else
-//                 {
-//                     // 多sleep一下，以让原来的master足够时间退出，
-//                     // 原因是原master不一定及时察觉到与zookeeper网络连接断开等，
-//                     // 这样做的目的是为了防止同时存在两个master！！！
-//                     mooon::sys::CUtils::millisleep(10000);
-//                     do_work();
-//                 }
-//             }
-//             catch (mooon::utils::CException& ex)
-//             {
-//                 MYLOG_ERROR("%s\n", ex.str().c_str());
-//                 if (node_not_exists_exception(ex.errcode()))
-//                     break;
-//             }
-//          }
-//     }
-//
-// private:
-//     virtual void on_zookeeper_session_connected(const char* path)
-//     {
-//         MYLOG_INFO("connect zookeeper[%s] ok: %s\n", get_connected_host().c_str(), path);
-//     }
-//
-//     virtual void on_zookeeper_session_expired(const char *path)
-//     {
-//         // 当session过期后（expired），要想继续使用则应当重连接，而且不能使用原来的ClientId重连接
-//         const NodeState raw_node_state = get_raw_node_state();
-//
-//         if (raw_node_state != NODE_SLAVE)
-//         {
-//             _stop = true;
-//             MYLOG_ERROR("will exit, zookeeper[%s] expired: %s\n", get_connected_host().c_str(), path);
-//
-//             // 除了退出进程外，也可以采取调用reconnect_zookeeper()重连接，
-//             // 然后再调用change_to_master()竞争成为master，但显然退出重启方式更为简单，不过时效性稍差。
-//         }
-//         else
-//         {
-//             try
-//             {
-//                 reconnect_zookeeper();
-//             }
-//             catch (mooon::utils::CException& ex)
-//             {
-//                 MYLOG_ERROR("will exit: %s\n", ex.str().c_str());
-//                 _stop = true;
-//             }
-//         }
-//     }
-//
-//     virtual void on_zookeeper_session_event(int state, const char *path)
-//     {
-//         MYLOG_INFO("[%s][%s] state: %d\n", get_connected_host().c_str(), path, state);
-//     }
-//
-//     virtual void on_zookeeper_event(int type, int state, const char *path)
-//     {
-//         MYLOG_INFO("[%s][%s] type: %d, state: %d\n", get_connected_host().c_str(), path, type, state);
-//     }
-//
-// private:
-//     void do_work()
-//     {
-//     }
-//
-//     void become_master()
-//     {
-//         while (!_stop)
-//         {
-//             if (is_connected())
-//             {
-//                 try
-//                 {
-//                     change_to_master();
-//                     break;
-//                 }
-//                 catch (mooon::utils::CException& ex)
-//                 {
-//                     MYLOG_ERROR("change to master failed: %s\n", ex.str().c_str());
-//                 }
-//             }
-//
-//             mooon::sys::CUtils::millisleep(2000);
-//         }
-//     }
-// };
 class CZookeeperHelper
 {
-public:
-    // 节点状态
-    enum NodeState
-    {
-        NODE_MASTER    = 1, // 明确为master
-        NODE_SLAVE     = 2, // 明确为slave
-        NODE_UNCERTAIN = 3  // 可能为master，但也可能为slave，此状态时应当去查看data是否为自己，如果是则为master否则不是master了
-    };
-
-    static const char* node_state2string(NodeState node_state)
-    {
-        static const char* node_state_str[] = { "", "master", "slave", "uncertain" };
-
-        if ((node_state < 0) || (node_state > 3))
-            return "";
-        else
-            return node_state_str[node_state];
-    }
-
 public:
     static bool node_exists_exception(int errcode) { return ZNODEEXISTS == errcode; }
     static bool node_not_exists_exception(int errcode) { return ZNONODE == errcode; }
@@ -212,81 +54,86 @@ public:
     static bool invalid_ACL_exception(int errcode) { return ZINVALIDACL == errcode; }
 
 public:
-    CZookeeperHelper();
+    CZookeeperHelper() throw ();
     virtual ~CZookeeperHelper();
 
-    // 取函数connect_zookeeper的参数指定的data，
-    // 注意不是从zookeper从取，而是函数connect_zookeeper的参数指定的data
-    //
-    // data用来区分主备，只有主的data存储在zookeeper，
-    // get_data()返回进程自己的data，
-    // get_zk_data()返回保存在zookeeper的data，
-    // 通过对比get_data()和get_zk_data()即可知道自己是不是主！
-    const std::string& get_data() const { return _data; }
-
-    // 取函数connect_zookeeper指定的path的数据
-    std::string get_zk_data(int data_size=SIZE_4K, bool keep_watch=true) const throw (utils::CException);
-
-    // 取path的数据
+    // 取zk_path的数据
     //
     // zk_data 存放存储在path的数据
     // data_size 最多获取的数据大小，注意数据的实际大小可能比data_size指定的值大
     // keep_watch 是否保持watch该path
     //
     // 如果成功返回数据实际大小，如果出错则抛异常
-    int get_zk_data(const char* path, std::string* zk_data, int data_size=SIZE_4K, bool keep_watch=true) const throw (utils::CException);
-
-    // 取函数connect_zookeeper的参数指定的path
-    const std::string& get_zk_path() const { return _zk_path; }
+    int get_zk_data(const char* zk_path, std::string* zk_data, int data_size=SIZE_4K, bool keep_watch=true) const throw (utils::CException);
+    std::string get_zk_data(const char* zk_path, int data_size=SIZE_4K, bool keep_watch=true) const throw (utils::CException);
 
     // 取函数connect_zookeeper的参数指定的zk_nodes
-    const std::string& get_zk_nodes() const { return _zk_nodes; }
+    const std::string& get_zk_nodes() const throw () { return _zk_nodes; }
 
     // 建立与zookeepr的连接
     // 但请注意本函数返回并不表示和zookeeper连接成功，
     // 只有成员函数on_zookeeper_connected()被回调了才表示连接成功
     //
     // zk_nodes 以逗号分隔的zookeeper节点，如：192.168.31.239:2181,192.168.31.240:2181
-    // zk_path zookeeper路径，使用时要求其父路径已创建好
-    // data 存在zk_path节点上的数据，主备节点设置的data不同相同，比如可以使用IP作为data
-    // session_timeout_seconds zookeeper session超时时长，单位为秒，但实际值和zookeeper配置项minSessionTimeout和maxSessionTimeout相关
-    //
-    // 由于仅基于zookeeper的ZOO_EPHEMERAL结点实现互斥，没有组合使用ZOO_SEQUENCE，
-    // 本实现要求做主备切换用途时，主备结点的data不为能空也不能相同，最简单的做法是取各自的IP作为data参数。
-    // 而如果不调用change_to_master，则zk_path和data两个参数值可以不设置。
-    //
-    // 请注意，在调用connect_zookeeper()或reconnect_zookeeper()后，
-    // 都应当重新调用change_to_master()去竞争成为master，即使此时get_zk_data()仍然取得data。
-    void connect_zookeeper(const std::string& zk_nodes, const std::string& zk_path=std::string(""), const std::string& data=std::string(""), int session_timeout_seconds=6) throw (utils::CException);
+    void connect_zookeeper(const std::string& zk_nodes, int session_timeout_seconds=6) throw (utils::CException);
 
     // 关闭与zookeeper的连接
     void close_zookeeper() throw (utils::CException);
 
     // 重新建立与zookeeper的连接，重连接之前会先关闭和释放已建立连接的资源
     //
-    // 请注意，在调用connect_zookeeper()或reconnect_zookeeper()后，
-    // 都应当重新调用change_to_master()去竞争成为master，即使此时get_zk_data()仍然取得data。
+    // 请注意，
+    // 在调用connect_zookeeper()或reconnect_zookeeper()后，
+    // 都应当重新调用race_master()去竞争成为master。
     void reconnect_zookeeper() throw (utils::CException);
 
     // 得到当前连接的zookeeper host
-    std::string get_connected_host() const;
-    bool get_connected_host(std::string* ip, uint16_t* port) const;
+    std::string get_connected_host() const throw ();
+    bool get_connected_host(std::string* ip, uint16_t* port) const throw ();
 
     // 返回当前是否处于连接状态
-    bool is_connected() const;
-
-    // 取得节点状态
-    // get_node_state()和get_raw_node_state()的区分：
-    // 前者实时取真实的状态，后者直接返回最近一次保存的状态。
-    NodeState get_node_state();
-    NodeState get_raw_node_state() const { return _node_state; }
+    bool is_connected() const throw ();
 
     // 取得实际的zookeeper session超时时长，单位为秒
     int get_session_timeout_seconds() const;
 
-    // 切换到master状态
-    // 总是只在is_master()返回false的前提下调用change_to_master()
-    void change_to_master() throw (utils::CException);
+    // 竞争成为master
+    // 函数is_connected()返回true，方可调用race_master()
+    //
+    // zk_path 用于竞争的path，不能为空，且父path必须已经存在
+    // path_data 存储到zk_path的数据，用于区分主备，因此主备的path_data不能相同。
+    // zk_errcode 出错代码，如果zk_errcode的值为-110（）表示已有master，即node_exists_exception(zk_errcode)返回true
+    // zk_errmsg 出错信息
+    //
+    // 由于仅基于zookeeper的ZOO_EPHEMERAL结点实现互斥，没有组合使用ZOO_SEQUENCE
+    //
+    // 如果竞争成功返回true，否则返回false
+    bool race_master(const std::string& zk_path, const std::string& path_data, int* zk_errcode=NULL, std::string* zk_errmsg=NULL) throw ();
+
+    // 创建一个节点
+    //
+    // zk_parent_path 父节点的路径，值不能以“/”结尾，如果父节点为“/”则值需为空
+    //
+    // flags可取值：
+    // 1) 0 普通节点
+    // 2) ZOO_EPHEMERAL 临时节点
+    // 3) ZOO_SEQUENCE 顺序节点
+    // 4) ZOO_EPHEMERAL|ZOO_SEQUENCE 临时顺序节点
+    //
+    // acl可取值（如果值为NULL，则相当于取值ZOO_OPEN_ACL_UNSAFE）：
+    // 1) ZOO_OPEN_ACL_UNSAFE 全开放，不做权限控制
+    // 2) ZOO_READ_ACL_UNSAFE 只读的
+    // 3) ZOO_CREATOR_ALL_ACL 创建者拥有所有权限
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags, const struct ACL_vector *acl) throw (utils::CException);
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name) throw (utils::CException);
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data) throw (utils::CException);
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags) throw (utils::CException);
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, const struct ACL_vector *acl) throw (utils::CException);
+
+    // 删除一个节点
+    //
+    // version 如果值为-1，则不做版本检查直接删除，否则因版本不致删除失败
+    void delete_node(const std::string& zk_path, int version=-1) throw (utils::CException);
 
 public: // 仅局限于被zk_watcher()调用，其它情况均不应当调用
     void zookeeper_session_connected(const char* path);
@@ -299,11 +146,11 @@ private:
     virtual void on_zookeeper_session_connected(const char* path) {}
 
     // zookeeper session过期事件
+    //
     // 可以调用reconnect_zookeeper()重连接zookeeper
     // 过期后可以选择调用reconnect_zookeeper()重连接zookeeper。
-    // 但请注意，重连接成功后需要重新调用change_to_master()去竞争成为master，
-    // 简单点的做法是session过期后退出当前进程，通过重新启动的方式来竞争成为master，
-    // 这样只需要在进程启动时，但还未进入工作之前调用change_to_master()去竞争成为master。
+    // 但请注意，重连接成功后需要重新调用race_master()竞争master，
+    // 简单点的做法是session过期后退出当前进程，通过重新启动的方式来竞争master
     //
     // 当session过期后（expired），要想继续使用则应当重连接，而且不能使用原来的ClientId重连接
     virtual void on_zookeeper_session_expired(const char *path) {}
@@ -319,13 +166,11 @@ private:
     virtual void on_zookeeper_event(int type, int state, const char *path) {}
 
 private:
-    int _session_timeout_seconds;
-    std::string _data;
-    std::string _zk_path;
-    std::string _zk_nodes;
-    zhandle_t* _zk_handle;
+    bool _is_connected; // 是否已连接成功
+    int _session_timeout_seconds; // zookeeper会话超时时长，单位为秒
+    std::string _zk_nodes; // 连接zookeeper的节点字符串
+    zhandle_t* _zk_handle; // zookeeper句柄
     const clientid_t* _zk_clientid;
-    NodeState _node_state;
 };
 
 inline static void zk_watcher(zhandle_t *zh, int type, int state, const char *path, void *context)
@@ -363,8 +208,10 @@ inline static void zk_watcher(zhandle_t *zh, int type, int state, const char *pa
     //(void)zoo_set_watcher(zh, zk_watcher);
 }
 
-inline CZookeeperHelper::CZookeeperHelper()
-    : _session_timeout_seconds(10), _zk_handle(NULL), _zk_clientid(NULL), _node_state(NODE_SLAVE)
+inline CZookeeperHelper::CZookeeperHelper() throw ()
+    : _is_connected(false),
+      _session_timeout_seconds(10),
+      _zk_handle(NULL), _zk_clientid(NULL)
 {
 }
 
@@ -373,14 +220,7 @@ inline CZookeeperHelper::~CZookeeperHelper()
     (void)close_zookeeper();
 }
 
-inline std::string CZookeeperHelper::get_zk_data(int data_size, bool keep_watch) const throw (utils::CException)
-{
-    std::string zk_data;
-    get_zk_data(_zk_path.c_str(), &zk_data, data_size, keep_watch);
-    return zk_data;
-}
-
-inline int CZookeeperHelper::get_zk_data(const char* path, std::string* zk_data, int data_size, bool keep_watch) const throw (utils::CException)
+inline int CZookeeperHelper::get_zk_data(const char* zk_path, std::string* zk_data, int data_size, bool keep_watch) const throw (utils::CException)
 {
     const int watch = keep_watch? 1: 0;
     const int data_size_ = (data_size < 1)? 1: data_size;
@@ -388,7 +228,7 @@ inline int CZookeeperHelper::get_zk_data(const char* path, std::string* zk_data,
     int datalen = data_size_;
 
     zk_data->resize(datalen);
-    const int errcode = zoo_get(_zk_handle, path, watch, const_cast<char*>(zk_data->data()), &datalen, &stat);
+    const int errcode = zoo_get(_zk_handle, zk_path, watch, const_cast<char*>(zk_data->data()), &datalen, &stat);
     if (ZOK == errcode)
     {
         zk_data->resize(datalen);
@@ -396,29 +236,26 @@ inline int CZookeeperHelper::get_zk_data(const char* path, std::string* zk_data,
     }
     else
     {
-        THROW_EXCEPTION(utils::CStringUtils::format_string("%s (path://%s)", zerror(errcode), path), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("%s (path://%s)", zerror(errcode), zk_path), errcode);
     }
 }
 
-inline void CZookeeperHelper::connect_zookeeper(const std::string& zk_nodes, const std::string& zk_path, const std::string& data, int session_timeout_seconds) throw (utils::CException)
+inline std::string CZookeeperHelper::get_zk_data(const char* zk_path, int data_size, bool keep_watch) const throw (utils::CException)
+{
+    std::string zk_data;
+    (void)get_zk_data(zk_path, &zk_data, data_size, keep_watch);
+    return zk_data;
+}
+
+inline void CZookeeperHelper::connect_zookeeper(const std::string& zk_nodes, int session_timeout_seconds) throw (utils::CException)
 {
     if (zk_nodes.empty())
     {
         THROW_EXCEPTION("parameter[zk_nodes] is empty", EINVAL);
     }
-    else if (zk_path.empty())
-    {
-        THROW_EXCEPTION("parameter[zk_path] is empty", EINVAL);
-    }
-    else if (data.empty())
-    {
-        THROW_EXCEPTION("parameter[data] is empty", EINVAL);
-    }
     else
     {
         _session_timeout_seconds = session_timeout_seconds*1000;
-        _data = data;
-        _zk_path = zk_path;
         _zk_nodes = zk_nodes;
 
         // 当连接不上时，会报如下错误（默认输出到stderr，可通过zoo_set_log_stream(FILE*)输出到文件）：
@@ -433,21 +270,20 @@ inline void CZookeeperHelper::connect_zookeeper(const std::string& zk_nodes, con
 
 inline void CZookeeperHelper::close_zookeeper() throw (utils::CException)
 {
-    _node_state = NODE_SLAVE;
-
     if (_zk_handle != NULL)
     {
         int errcode = zookeeper_close(_zk_handle);
 
         if (errcode != ZOK)
         {
+            // 出错可能是因为内存不足或网络超时等
             THROW_EXCEPTION(zerror(errcode), errcode);
         }
         else
         {
+            _is_connected = false;
             _zk_handle = NULL;
             _zk_clientid = NULL;
-            _node_state = NODE_SLAVE;
         }
     }
 }
@@ -463,7 +299,7 @@ inline void CZookeeperHelper::reconnect_zookeeper() throw (utils::CException)
     }
 }
 
-inline std::string CZookeeperHelper::get_connected_host() const
+inline std::string CZookeeperHelper::get_connected_host() const throw ()
 {
     std::string ip;
     uint16_t port = 0;
@@ -471,7 +307,7 @@ inline std::string CZookeeperHelper::get_connected_host() const
     return utils::CStringUtils::format_string("%s:%u", ip.c_str(), port);
 }
 
-inline bool CZookeeperHelper::get_connected_host(std::string* ip, uint16_t* port) const
+inline bool CZookeeperHelper::get_connected_host(std::string* ip, uint16_t* port) const throw ()
 {
     struct sockaddr_in6 addr_in6;
     socklen_t addr_len = sizeof(addr_in6);
@@ -500,35 +336,18 @@ inline bool CZookeeperHelper::get_connected_host(std::string* ip, uint16_t* port
     return true;
 }
 
-inline bool CZookeeperHelper::is_connected() const
+inline bool CZookeeperHelper::is_connected() const throw ()
 {
-    // 3: ZOO_CONNECTED_STATE
-    const int state = zoo_state(_zk_handle);
-    return (ZOO_CONNECTED_STATE == state);
-}
-
-// 一旦连接断开，状态就不确定，
-// 有可能还是master，也有可能其它节点成了master，
-// 当不能连接zookeeper时，没有回调来感知，但可以判断连接状态。
-inline CZookeeperHelper::NodeState CZookeeperHelper::get_node_state()
-{
-    if (!is_connected())
+    if (!_is_connected)
     {
-        if (NODE_MASTER == _node_state)
-            _node_state = NODE_UNCERTAIN;
+        return false;
     }
     else
     {
-        if (NODE_UNCERTAIN == _node_state)
-        {
-            if (get_data() == get_zk_data())
-                _node_state = NODE_MASTER;
-            else
-                _node_state = NODE_SLAVE;
-        }
+        // 3: ZOO_CONNECTED_STATE
+        const int state = zoo_state(_zk_handle);
+        return (ZOO_CONNECTED_STATE == state);
     }
-
-    return _node_state;
 }
 
 inline int CZookeeperHelper::get_session_timeout_seconds() const
@@ -536,36 +355,92 @@ inline int CZookeeperHelper::get_session_timeout_seconds() const
     return zoo_recv_timeout(_zk_handle);
 }
 
-inline void CZookeeperHelper::change_to_master() throw (utils::CException)
+inline bool CZookeeperHelper::race_master(const std::string& zk_path, const std::string& path_data, int* zk_errcode, std::string* zk_errmsg) throw ()
 {
     // ZOO_EPHEMERAL|ZOO_SEQUENCE
     // 调用之前，需要确保_zk_path的父路径已存在
     // (-4)connection loss，比如为zookeeper_init指定了无效的hosts（一个有效的host也没有）
-    const int errcode = zoo_create(_zk_handle, _zk_path.c_str(), _data.c_str(), static_cast<int>(_data.size()+1), &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0);
-    if (ZOK == errcode)
+    const int errcode_ = zoo_create(_zk_handle, zk_path.c_str(), path_data.c_str(), static_cast<int>(path_data.size()), &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0);
+
+    if (ZOK == errcode_)
     {
-        _node_state = NODE_MASTER;
+        if (zk_errcode != NULL)
+            *zk_errcode = errcode_;
+        if (zk_errmsg != NULL)
+            *zk_errmsg = "SUCCESS";
+        return true;
     }
     else
     {
-        _node_state = NODE_SLAVE;
-        THROW_EXCEPTION(zerror(errcode), errcode);
+        if (zk_errcode != NULL)
+            *zk_errcode = errcode_;
+        if (zk_errmsg != NULL)
+            *zk_errmsg = zerror(errcode_);
         // ZOK operation completed successfully
         // ZNONODE the parent node does not exist
         // ZNODEEXISTS the node already exists
+        return false;
+    }
+}
+
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags, const struct ACL_vector *acl) throw (utils::CException)
+{
+    const struct ACL_vector *acl_ = (NULL == acl)? &ZOO_OPEN_ACL_UNSAFE: acl;
+    const std::string& zk_path = zk_parent_path + std::string("/") + zk_node_name;
+    const int errcode = zoo_create(_zk_handle, zk_path.c_str(), zk_node_data.c_str(), static_cast<int>(zk_node_data.size()), acl_, flags, NULL, 0);
+    if (errcode != ZOK)
+    {
+        THROW_EXCEPTION(zerror(errcode), errcode);
+    }
+}
+
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name) throw (utils::CException)
+{
+    const std::string zk_node_data;
+    const int flags = -1;
+    const struct ACL_vector *acl = NULL;
+    create_node(zk_parent_path, zk_node_name, zk_node_data, flags, acl);
+}
+
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data) throw (utils::CException)
+{
+    const int flags = -1;
+    const struct ACL_vector *acl = NULL;
+    create_node(zk_parent_path, zk_node_name, zk_node_data, flags, acl);
+}
+
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags) throw (utils::CException)
+{
+    const struct ACL_vector *acl = NULL;
+    create_node(zk_parent_path, zk_node_name, zk_node_data, flags, acl);
+}
+
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, const struct ACL_vector *acl) throw (utils::CException)
+{
+    const int flags = -1;
+    create_node(zk_parent_path, zk_node_name, zk_node_data, flags, acl);
+}
+
+inline void CZookeeperHelper::delete_node(const std::string& zk_path, int version) throw (utils::CException)
+{
+    const int errcode = zoo_delete(_zk_handle, zk_path.c_str(), version);
+    if (errcode != ZOK)
+    {
+        THROW_EXCEPTION(zerror(errcode), errcode);
     }
 }
 
 inline void CZookeeperHelper::zookeeper_session_connected(const char* path)
 {
+    _is_connected = true;
     _zk_clientid = zoo_client_id(_zk_handle);
     this->on_zookeeper_session_connected(path);
 }
 
 inline void CZookeeperHelper::zookeeper_session_expired(const char* path)
 {
+    _is_connected = false;
     this->on_zookeeper_session_expired(path);
-    _node_state = NODE_SLAVE;
 }
 
 inline void CZookeeperHelper::zookeeper_session_event(int state, const char *path)
