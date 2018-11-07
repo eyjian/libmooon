@@ -215,14 +215,31 @@ public:
     CZookeeperHelper();
     virtual ~CZookeeperHelper();
 
+    // 取函数connect_zookeeper的参数指定的data，
+    // 注意不是从zookeper从取，而是函数connect_zookeeper的参数指定的data
+    //
     // data用来区分主备，只有主的data存储在zookeeper，
     // get_data()返回进程自己的data，
     // get_zk_data()返回保存在zookeeper的data，
     // 通过对比get_data()和get_zk_data()即可知道自己是不是主！
     const std::string& get_data() const { return _data; }
-    const std::string get_zk_data() const throw (utils::CException);
 
+    // 取函数connect_zookeeper指定的path的数据
+    std::string get_zk_data(int data_size=SIZE_4K, bool keep_watch=true) const throw (utils::CException);
+
+    // 取path的数据
+    //
+    // zk_data 存放存储在path的数据
+    // data_size 最多获取的数据大小，注意数据的实际大小可能比data_size指定的值大
+    // keep_watch 是否保持watch该path
+    //
+    // 如果成功返回数据实际大小，如果出错则抛异常
+    int get_zk_data(const char* path, std::string* zk_data, int data_size=SIZE_4K, bool keep_watch=true) const throw (utils::CException);
+
+    // 取函数connect_zookeeper的参数指定的path
     const std::string& get_zk_path() const { return _zk_path; }
+
+    // 取函数connect_zookeeper的参数指定的zk_nodes
     const std::string& get_zk_nodes() const { return _zk_nodes; }
 
     // 建立与zookeepr的连接
@@ -230,16 +247,17 @@ public:
     // 只有成员函数on_zookeeper_connected()被回调了才表示连接成功
     //
     // zk_nodes 以逗号分隔的zookeeper节点，如：192.168.31.239:2181,192.168.31.240:2181
-    // zk_path zookeeper路径，使用时要求其父路径已存在
+    // zk_path zookeeper路径，使用时要求其父路径已创建好
     // data 存在zk_path节点上的数据，主备节点设置的data不同相同，比如可以使用IP作为data
     // session_timeout_seconds zookeeper session超时时长，单位为秒，但实际值和zookeeper配置项minSessionTimeout和maxSessionTimeout相关
     //
     // 由于仅基于zookeeper的ZOO_EPHEMERAL结点实现互斥，没有组合使用ZOO_SEQUENCE，
-    // 本实现要求主备结点的data不为能空也不能相同，最简单的做法是取各自的IP作为data参数。
+    // 本实现要求做主备切换用途时，主备结点的data不为能空也不能相同，最简单的做法是取各自的IP作为data参数。
+    // 而如果不调用change_to_master，则zk_path和data两个参数值可以不设置。
     //
     // 请注意，在调用connect_zookeeper()或reconnect_zookeeper()后，
     // 都应当重新调用change_to_master()去竞争成为master，即使此时get_zk_data()仍然取得data。
-    void connect_zookeeper(const std::string& zk_nodes, const std::string& zk_path, const std::string& data, int session_timeout_seconds=6) throw (utils::CException);
+    void connect_zookeeper(const std::string& zk_nodes, const std::string& zk_path=std::string(""), const std::string& data=std::string(""), int session_timeout_seconds=6) throw (utils::CException);
 
     // 关闭与zookeeper的连接
     void close_zookeeper() throw (utils::CException);
@@ -293,7 +311,11 @@ private:
     // session类zookeeper事件
     virtual void on_zookeeper_session_event(int state, const char *path) {}
 
-    // 非session类zookeeper事件
+    // 非session类zookeeper事件，包括但不限于：
+    // 1) 节点被删除（state值为3，type值为2，即type值为ZOO_DELETED_EVENT）
+    // 2) 节点的数据被修改（state值为3，type值为3，即type值为ZOO_CHANGED_EVENT）
+    //
+    // path 触发事件的path，如：/tmp/a
     virtual void on_zookeeper_event(int type, int state, const char *path) {}
 
 private:
@@ -351,20 +373,30 @@ inline CZookeeperHelper::~CZookeeperHelper()
     (void)close_zookeeper();
 }
 
-inline const std::string CZookeeperHelper::get_zk_data() const throw (utils::CException)
+inline std::string CZookeeperHelper::get_zk_data(int data_size, bool keep_watch) const throw (utils::CException)
 {
-    struct Stat stat;
-    int datalen = _data.size();
-    char data[datalen+1];
-    const int errcode = zoo_get(_zk_handle, _zk_path.c_str(), 1, data, &datalen, &stat);
+    std::string zk_data;
+    get_zk_data(_zk_path.c_str(), &zk_data, data_size, keep_watch);
+    return zk_data;
+}
 
+inline int CZookeeperHelper::get_zk_data(const char* path, std::string* zk_data, int data_size, bool keep_watch) const throw (utils::CException)
+{
+    const int watch = keep_watch? 1: 0;
+    const int data_size_ = (data_size < 1)? 1: data_size;
+    struct Stat stat;
+    int datalen = data_size_;
+
+    zk_data->resize(datalen);
+    const int errcode = zoo_get(_zk_handle, path, watch, const_cast<char*>(zk_data->data()), &datalen, &stat);
     if (ZOK == errcode)
     {
-        return std::string(data, datalen);
+        zk_data->resize(datalen);
+        return stat.dataLength;
     }
     else
     {
-        THROW_EXCEPTION(zerror(errcode), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("%s (path://%s)", zerror(errcode), path), errcode);
     }
 }
 
