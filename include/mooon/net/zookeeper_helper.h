@@ -43,7 +43,7 @@ NET_NAMESPACE_BEGIN
 // class CMyApplication: public mooon::net::CZookeeperHelper
 // {
 // public:
-//     CMyApplication();
+//     CMyApplication(const char* data);
 //     void stop() { _stop = true; }
 //     void run();
 //     void wait();
@@ -96,7 +96,7 @@ NET_NAMESPACE_BEGIN
 // {
 //     _master_path = "/tmp/a";
 //     if (data != NULL)
-//         _master_data = "data";
+//         _master_data = data;
 // }
 //
 // void CMyApplication::run()
