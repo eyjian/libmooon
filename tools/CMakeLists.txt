@@ -88,6 +88,22 @@ if (MOOON_HAVE_MYSQL)
            ) 
 endif ()
 
+if (MOOON_HAVE_ZOOKEEPER)
+    # zk_upload
+    add_executable(zk_upload zk_upload.cpp)
+    target_link_libraries(zk_upload libmooon_sys.a libmooon_utils.a libzookeeper_mt.a)
+    
+    # zk_download
+    add_executable(zk_download zk_download.cpp)
+    target_link_libraries(zk_download libmooon_sys.a libmooon_utils.a libzookeeper_mt.a)
+    
+    # CMAKE_INSTALL_PREFIX
+    install(
+            TARGETS zk_upload zk_download
+            DESTINATION bin
+           ) 
+endif ()
+
 # CMAKE_INSTALL_PREFIX
 install(
         TARGETS md5 disk_benchmark
