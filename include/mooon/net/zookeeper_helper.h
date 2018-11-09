@@ -352,6 +352,11 @@ public:
     // 取得指定路径下的所有子节点，返回子节点个数
     int get_all_children(std::vector<std::string>* children, const std::string& zk_path, bool keep_watch=true) throw (utils::CException);
 
+    // 将指定节点的数据存储到文件
+    // data_filepath 存储数据的文件
+    // zk_path 数据所在zookeeper节点完整路径
+    void store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch=true) throw (sys::CSyscallException, utils::CException);
+
 public: // 仅局限于被zk_watcher()调用，其它情况均不应当调用
     void zookeeper_session_connected(const char* path);
     void zookeeper_session_connecting(const char* path);
@@ -766,6 +771,41 @@ inline int CZookeeperHelper::get_all_children(std::vector<std::string>* children
     }
     deallocate_String_vector(&strings);
     return static_cast<int>(children->size());
+}
+
+inline void CZookeeperHelper::store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch) throw (sys::CSyscallException, utils::CException)
+{
+    int errcode = 0;
+    std::string zk_data;
+    int n = get_zk_data(zk_path.c_str(), &zk_data, mooon::SIZE_8K);
+    if (n > mooon::SIZE_8K)
+        n = get_zk_data(zk_path.c_str(), &zk_data, n);
+
+    const int fd = open(data_filepath.c_str(), O_WRONLY|O_CREAT|O_TRUNC, FILE_DEFAULT_PERM);
+    if (-1 == fd)
+    {
+        errcode = errno;
+        THROW_SYSCALL_EXCEPTION(utils::CStringUtils::format_string("open file://%s with write|create|truncate failed: %s", data_filepath.c_str(), strerror(errcode)), errcode, "open");
+    }
+    else
+    {
+        const int n = write(fd, zk_data.data(), zk_data.size());
+
+        if (n != static_cast<int>(zk_data.size()))
+        {
+            errcode = errno;
+            close(fd);
+            THROW_SYSCALL_EXCEPTION(utils::CStringUtils::format_string("write file://%s failed: %s", data_filepath.c_str(), strerror(errcode)), errcode, "write");
+        }
+        else
+        {
+            if (close(fd) != 0)
+            {
+                errcode = errno;
+                THROW_SYSCALL_EXCEPTION(utils::CStringUtils::format_string("close file://%s failed: %s", data_filepath.c_str(), strerror(errcode)), errcode, "close");
+            }
+        }
+    }
 }
 
 inline void CZookeeperHelper::zookeeper_session_connected(const char* path)
