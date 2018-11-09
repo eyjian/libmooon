@@ -355,7 +355,9 @@ public:
     // 将指定节点的数据存储到文件
     // data_filepath 存储数据的文件
     // zk_path 数据所在zookeeper节点完整路径
-    void store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch=true) throw (sys::CSyscallException, utils::CException);
+    //
+    // 返回数据的字节数
+    int store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch=true) throw (sys::CSyscallException, utils::CException);
 
 public: // 仅局限于被zk_watcher()调用，其它情况均不应当调用
     void zookeeper_session_connected(const char* path);
@@ -773,7 +775,7 @@ inline int CZookeeperHelper::get_all_children(std::vector<std::string>* children
     return static_cast<int>(children->size());
 }
 
-inline void CZookeeperHelper::store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch) throw (sys::CSyscallException, utils::CException)
+inline int CZookeeperHelper::store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch) throw (sys::CSyscallException, utils::CException)
 {
     int errcode = 0;
     std::string zk_data;
@@ -804,6 +806,8 @@ inline void CZookeeperHelper::store_data(const std::string& data_filepath, const
                 errcode = errno;
                 THROW_SYSCALL_EXCEPTION(utils::CStringUtils::format_string("close file://%s failed: %s", data_filepath.c_str(), strerror(errcode)), errcode, "close");
             }
+
+            return n;
         }
     }
 }
