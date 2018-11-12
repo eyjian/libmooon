@@ -222,16 +222,44 @@ if (CMAKE_SIZEOF_VOID_P EQUAL 4)
     add_definitions("-march=pentium4")    
 endif ()
 
-# 如果编译环境支持C++11，则打开C++11开关
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-if (COMPILER_SUPPORTS_CXX11)
-    message("${Yellow}enable C++11${ColourReset}")
-    add_definitions("-std=c++11")
+# 如果编译环境支持C++20，则打开C++20开关
+CHECK_CXX_COMPILER_FLAG("-std=c++20" COMPILER_SUPPORTS_CXX20)
+if (COMPILER_SUPPORTS_CXX20)
+    message("${Yellow}enable C++20${ColourReset}")
+    add_definitions("-std=c++20")
 else ()
-    message("${Yellow}not support C++11${ColourReset}")
+    message("${Yellow}not support C++20${ColourReset}")
+
+    # 如果编译环境支持C++17，则打开C++17开关
+    CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
+    if (COMPILER_SUPPORTS_CXX17)
+        message("${Yellow}enable C++17${ColourReset}")
+        add_definitions("-std=c++17")
+    else ()
+        message("${Yellow}not support C++17${ColourReset}")
+
+        # 如果编译环境支持C++14，则打开C++14开关
+        CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+        if (COMPILER_SUPPORTS_CXX14)
+            message("${Yellow}enable C++14${ColourReset}")
+            add_definitions("-std=c++14")
+        else ()
+            message("${Yellow}not support C++14${ColourReset}")
+            
+            # 如果编译环境支持C++11，则打开C++11开关
+            CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+            if (COMPILER_SUPPORTS_CXX11)
+                message("${Yellow}enable C++11${ColourReset}")
+                add_definitions("-std=c++11")
+            else ()
+                message("${Yellow}not support C++11${ColourReset}")
+            endif()
+        endif()
+    endif()
 endif()
 
+# 公共的库
 link_libraries(dl pthread rt z)
 
 # 为指定的源文件添加编译属性，示例：
