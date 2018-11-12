@@ -1,5 +1,8 @@
 libmooon是一个C++静态工具类库，编译和安装libmooon需CMake，
 且CMake版本不低于2.8.11，CMake的下载地址：https://cmake.org/download/。
+如果是C++11或以上开发环境，libmooon中的一些设施可直接使用C++标准库提供的，
+比如std::thread替代mooon::sys::CThreadEngine，std::mutex替代mooon::sys::CLock等，
+建议尽量使用标准库提供的设施，libmooon诞生于C++11之前，可用于C++11之前的开发环境。
 
 使用CMake编译和安装libmooon分三个步骤：
 1）执行cmake命令生成Makefile文件，命令格式：cmake -DCMAKE_INSTALL_PREFIX=<installation directory> .
