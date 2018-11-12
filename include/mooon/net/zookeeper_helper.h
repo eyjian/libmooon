@@ -379,8 +379,8 @@ private:
     // 注意重连接后得重新调用race_master()竞争master，
     // 简单点的做法是session过期后退出当前进程，通过重新启动的方式来竞争master
     //
-    // 特别注意：
-    // 如果连接被挂起，不会除法on_zookeeper_session_expired()事件，
+    // 特别注意（session过期的前提是连接已经建立）：
+    // 如果连接被挂起，不会触发on_zookeeper_session_expired()事件，
     // 当用于选master时，调用者需要自己维护这种情况下的超时，
     // 以避免临时节点被删除后仍然保持为master状态。
     virtual void on_zookeeper_session_expired(const char *path) {}
