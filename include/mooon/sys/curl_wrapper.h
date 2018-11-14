@@ -88,8 +88,8 @@ public:
     void proxy_http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
 
     // POST方式下载文件
-    void http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
-    void proxy_http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
+    void http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
+    void proxy_http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
 
     std::string escape(const std::string& source);
     std::string unescape(const std::string& source_encoded);

@@ -379,7 +379,7 @@ void CCurlWrapper::proxy_http_get_download(std::string& response_header, const s
     http_get_download(response_header, local_filepath, url, enable_insecure, cookie);
 }
 
-void CCurlWrapper::http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+void CCurlWrapper::http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -434,7 +434,7 @@ void CCurlWrapper::http_post_download(const std::string& data, std::string& resp
     }
 }
 
-void CCurlWrapper::proxy_http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+void CCurlWrapper::proxy_http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
