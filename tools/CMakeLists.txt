@@ -104,6 +104,12 @@ if (MOOON_HAVE_ZOOKEEPER)
            ) 
 endif ()
 
+if (MOOON_HAVE_CURL)
+    # curl_download
+    add_executable(curl_download curl_download.cpp)
+    target_link_libraries(curl_download libmooon_sys.a libmooon_utils.a libcurl.a libcares.a libidn.a libssl.a libcrypto.a)
+endif ()
+
 # CMAKE_INSTALL_PREFIX
 install(
         TARGETS md5 disk_benchmark

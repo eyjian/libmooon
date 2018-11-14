@@ -1,6 +1,5 @@
 // Writed by yijian (eyjian@qq.com or eyjian@gmail.com)
-#include <mooon/sys/config.h>
-#include <mooon/utils/exception.h>
+#include <mooon/sys/syscall_exception.h>
 #include <string>
 #include <vector>
 #ifndef MOOON_SYS_CURL_WRAPPER_H
@@ -60,7 +59,8 @@ public:
     CCurlWrapper(int data_timeout_seconds=2, int connect_timeout_seconds=2, bool nosignal=false, bool keepalive=false, int keepidle=120, int keepseconds=60) throw (utils::CException);
     ~CCurlWrapper() throw ();
 
-    // 重置操作
+    // 一个CCurlWrapper对象多次做不同的get或post调用时，
+    // 应当在每次调用前先调用reset()清理掉上一次执行的状态。
     void reset() throw (utils::CException);
 
     // 添加http请求头名字对
@@ -69,15 +69,23 @@ public:
     // HTTP GET请求
     // response_header 输出参数，存放响应的HTTP头
     // response_body 输出参数，存放响应的HTTP包体
+    //
+    // 重复调用之前，须先调用reset()清除上一次调用的状态
     void http_get(std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
     void proxy_http_get(std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
 
     // HTTP POST请求
+    // 重复调用之前，须先调用reset()清除上一次调用的状态
     void http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
     void http_post(const CHttpPostData* http_post, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
 
     void proxy_http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
     void proxy_http_post(const CHttpPostData* http_post, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
+
+    // 下载文件
+    // 注意需要处理CSyscallException异常，如果没有创建和写local_filepath权限，会抛出这个异常。
+    void http_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
+    void proxy_http_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
 
     std::string escape(const std::string& source);
     std::string unescape(const std::string& source_encoded);
@@ -85,6 +93,10 @@ public:
 public:
     // 取得响应的状态码，如：200、403、500等
     int get_response_code() const throw (utils::CException);
+
+private:
+    // 重置操作
+    void reset(const std::string& url, const char* cookie, bool enable_insecure, size_t (*on_write_response_body_into_FILE_proc)(void*, size_t, size_t, void*)) throw (utils::CException);
 
 private:
     void* _curl_version_info; // curl_version_info_data

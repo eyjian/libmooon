@@ -85,6 +85,13 @@ void CCurlWrapper::global_cleanup()
     curl_global_cleanup();
 }
 
+static size_t on_write_response_header(void* buffer, size_t size, size_t nmemb, void* stream)
+{
+    std::string* result = reinterpret_cast<std::string*>(stream);
+    result->append(reinterpret_cast<char*>(buffer), size*nmemb);
+    return size * nmemb;
+}
+
 static size_t on_write_response_body(void* buffer, size_t size, size_t nmemb, void* stream)
 {
     std::string* result = reinterpret_cast<std::string*>(stream);
@@ -92,10 +99,11 @@ static size_t on_write_response_body(void* buffer, size_t size, size_t nmemb, vo
     return size * nmemb;
 }
 
-static size_t on_write_response_header(void* buffer, size_t size, size_t nmemb, void* stream)
+static size_t on_write_response_body_into_FILE(void* buffer, size_t size, size_t nmemb, void* file)
 {
-    std::string* result = reinterpret_cast<std::string*>(stream);
-    result->append(reinterpret_cast<char*>(buffer), size*nmemb);
+    FILE* fp = static_cast<FILE*>(file);
+    if (fwrite(buffer, size, nmemb, fp) != nmemb)
+        THROW_SYSCALL_EXCEPTION(mooon::utils::CStringUtils::format_string("fwrite response_body error: %s", strerror(errno)), errno, "fopen");
     return size * nmemb;
 }
 
@@ -116,7 +124,6 @@ CCurlWrapper::CCurlWrapper(
     try
     {
         _curl = (void*)curl; // 须放在reset()之前，因为reset()有使用_curl
-        reset(); 
     }
     catch (...)
     {
@@ -142,13 +149,286 @@ CCurlWrapper::~CCurlWrapper() throw ()
 
 void CCurlWrapper::reset() throw (utils::CException)
 {
+    CURL* curl = (CURL*)_curl;
+    curl_easy_reset(curl); // Re-initializes a CURL handle to the default values.
+}
+
+bool CCurlWrapper::add_request_header(const std::string& name_value_pair)
+{
+    curl_slist* head_list = static_cast<curl_slist*>(_head_list);
+
+    _head_list = curl_slist_append(head_list, name_value_pair.c_str());
+    if (NULL == _head_list)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+void CCurlWrapper::http_get(std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+
+    // 复位初始化
+    reset(url, cookie, enable_insecure, on_write_response_body);
+
+    // CURLOPT_HEADERFUNCTION
+    errcode = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_WRITEDATA
+    errcode = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_HTTPGET
+    // 之前如何调用了非GET如POST，这个是必须的
+    errcode = curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    errcode = curl_easy_perform(curl);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+}
+
+void CCurlWrapper::proxy_http_get(std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+
+    // CURLOPT_PROXY
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXY, proxy_host.c_str());
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_PROXYPORT
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxy_port);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    http_get(response_header, response_body, url, enable_insecure, cookie);
+}
+
+void CCurlWrapper::http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+
+    // 复位初始化
+    reset(url, cookie, enable_insecure, on_write_response_body);
+
+    // CURLOPT_HEADERFUNCTION
+    errcode = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_WRITEDATA
+    errcode = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_POSTFIELDS
+    errcode = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_POST
+    errcode = curl_easy_setopt(curl, CURLOPT_POST, 1L);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    errcode = curl_easy_perform(curl);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+}
+
+void CCurlWrapper::http_post(const CHttpPostData* http_post_data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+
+    // 复位初始化
+    reset(url, cookie, enable_insecure, on_write_response_body);
+
+    // CURLOPT_HEADERFUNCTION
+    errcode = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_WRITEDATA
+    errcode = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    errcode = curl_easy_setopt(curl, CURLOPT_HTTPPOST, http_post_data->get_post());
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    errcode = curl_easy_perform(curl);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+}
+
+void CCurlWrapper::proxy_http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+
+    // CURLOPT_PROXY
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXY, proxy_host.c_str());
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_PROXYPORT
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxy_port);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    http_post(data, response_header, response_body, url, enable_insecure, cookie);
+}
+
+void CCurlWrapper::proxy_http_post(const CHttpPostData* http_post_data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+
+    // CURLOPT_PROXY
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXY, proxy_host.c_str());
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_PROXYPORT
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxy_port);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    http_post(http_post_data, response_header, response_body, url, enable_insecure, cookie);
+}
+
+void CCurlWrapper::http_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+    FILE* fp = fopen(local_filepath.c_str(), "w+");
+    if (NULL == fp)
+        THROW_SYSCALL_EXCEPTION(mooon::utils::CStringUtils::format_string("fopen %s error: %s", local_filepath.c_str(), strerror(errno)), errno, "fopen");
+
+    try
+    {
+        // 复位初始化
+        reset(url, cookie, enable_insecure, on_write_response_body_into_FILE);
+
+        // CURLOPT_HEADERFUNCTION
+        errcode = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // CURLOPT_WRITEDATA
+        errcode = curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // CURLOPT_HTTPGET
+        // 之前如何调用了非GET如POST，这个是必须的
+        errcode = curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        errcode = curl_easy_perform(curl);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // 关闭文件
+        FILE* fp_ = fp;
+        fp = NULL;
+        // fclose失败会产生内存泄漏，
+        // fclose只是将数据从用户空间刷到内核空间，
+        // 如果要确保数据刷到磁盘，应调用fsync(fd)，
+        // close(fd)也存在同样的问题，即使返回成功，如果没有用fsync(fd)。
+        if (EOF == fclose(fp_))
+            THROW_SYSCALL_EXCEPTION(mooon::utils::CStringUtils::format_string("fclose %s error: %s", local_filepath.c_str(), strerror(errno)), errno, "fopen");
+    }
+    catch (...)
+    {
+        if (fp != NULL)
+            fclose(fp);
+    }
+}
+
+void CCurlWrapper::proxy_http_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+
+    // CURLOPT_PROXY
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXY, proxy_host.c_str());
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_PROXYPORT
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxy_port);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    http_download(response_header, local_filepath, url, enable_insecure, cookie);
+}
+
+std::string CCurlWrapper::escape(const std::string& source)
+{
+    std::string result;
+    CURL* curl = (CURL*)_curl;
+
+    char *output = curl_easy_escape(curl, source.c_str(), static_cast<int>(source.length()));
+    if (output != NULL)
+    {
+        result = output;
+        curl_free(output);
+    }
+
+    return result;
+}
+
+std::string CCurlWrapper::unescape(const std::string& source_encoded)
+{
+    std::string result;
+    CURL* curl = (CURL*)_curl;
+    int outlength;
+
+    char *output = curl_easy_unescape(curl, source_encoded.c_str(), static_cast<int>(source_encoded.length()), &outlength);
+    if (output != NULL)
+    {
+        result = output;
+        curl_free(output);
+    }
+
+    return result;
+}
+
+int CCurlWrapper::get_response_code() const throw (utils::CException)
+{
+    long response_code = 0;
+    CURLcode errcode = curl_easy_getinfo(_curl, CURLINFO_RESPONSE_CODE, &response_code);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    return static_cast<int>(response_code);
+}
+
+void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable_insecure, size_t (*on_write_response_body_into_FILE_proc)(void*, size_t, size_t, void*)) throw (utils::CException)
+{
     const curl_version_info_data* curl_version_info = (curl_version_info_data*)_curl_version_info;
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
     curl_slist* head_list = static_cast<curl_slist*>(_head_list);
-    
+
     // 重置
-    curl_easy_reset(curl);
+    //curl_easy_reset(curl);
     if (_head_list != NULL)
     {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL);
@@ -198,6 +478,44 @@ void CCurlWrapper::reset() throw (utils::CException)
             THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
     }
 
+    // CURLOPT_SSL_VERIFYPEER
+    // 相当于curl命令的“-k”或“--insecure”参数
+    const int ssl_verifypeer = enable_insecure? 0: 1;
+    errcode = curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYPEER, ssl_verifypeer);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_SSL_VERIFYHOST
+    // When the verify value is 1,
+    // curl_easy_setopt will return an error and the option value will not be changed.
+    // It was previously (in 7.28.0 and earlier) a debug option of some sorts,
+    // but it is no longer supported due to frequently leading to programmer mistakes.
+    // Future versions will stop returning an error for 1 and just treat 1 and 2 the same.
+    //
+    // When the verify value is 0, the connection succeeds regardless of the names in the certificate.
+    // Use that ability with caution!
+    //
+    // 7.28.1开始默认值为2
+    int ssl_verifyhost = 0;
+    if (enable_insecure)
+    {
+        ssl_verifyhost = 0;
+    }
+    else
+    {
+        if (curl_version_info->version_num > 0x071C00) // 7.28.0
+        {
+            ssl_verifyhost = 2;
+        }
+        else
+        {
+            ssl_verifyhost = 1;
+        }
+    }
+    errcode = curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYHOST, ssl_verifyhost);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
     // CURLOPT_CONNECTTIMEOUT
     // In unix-like systems, this might cause signals to be used unless CURLOPT_NOSIGNAL is set.
     errcode = curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, _connect_timeout_seconds);
@@ -215,34 +533,10 @@ void CCurlWrapper::reset() throw (utils::CException)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
     // CURLOPT_WRITEFUNCTION
-    errcode = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, on_write_response_body);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-}
-
-bool CCurlWrapper::add_request_header(const std::string& name_value_pair)
-{
-    curl_slist* head_list = static_cast<curl_slist*>(_head_list);
-
-    _head_list = curl_slist_append(head_list, name_value_pair.c_str());
-    if (NULL == _head_list)
-    {
-        return false;
-    }
+    if (NULL == on_write_response_body_into_FILE_proc)
+        errcode = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, on_write_response_body);
     else
-    {
-        return true;
-    }
-}
-
-void CCurlWrapper::http_get(std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
-{
-    const curl_version_info_data* curl_version_info = (curl_version_info_data*)_curl_version_info;
-    CURLcode errcode;
-    CURL* curl = (CURL*)_curl;
-
-    // CURLOPT_URL
-    errcode = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        errcode = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, on_write_response_body_into_FILE_proc);
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
@@ -255,54 +549,6 @@ void CCurlWrapper::http_get(std::string& response_header, std::string& response_
             THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
     }
 
-    // CURLOPT_HEADERFUNCTION
-    errcode = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_WRITEDATA
-    errcode = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_SSL_VERIFYPEER
-    // 相当于curl命令的“-k”或“--insecure”参数
-    const int ssl_verifypeer = enable_insecure? 0: 1;
-    errcode = curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYPEER, ssl_verifypeer);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_SSL_VERIFYHOST
-    // When the verify value is 1,
-    // curl_easy_setopt will return an error and the option value will not be changed.
-    // It was previously (in 7.28.0 and earlier) a debug option of some sorts,
-    // but it is no longer supported due to frequently leading to programmer mistakes.
-    // Future versions will stop returning an error for 1 and just treat 1 and 2 the same.
-    //
-    // When the verify value is 0, the connection succeeds regardless of the names in the certificate.
-    // Use that ability with caution!
-    //
-    // 7.28.1开始默认值为2
-    int ssl_verifyhost = 0;
-    if (enable_insecure)
-    {
-        ssl_verifyhost = 0;
-    }
-    else
-    {
-        if (curl_version_info->version_num > 0x071C00) // 7.28.0
-        {
-            ssl_verifyhost = 2;
-        }
-        else
-        {
-            ssl_verifyhost = 1;
-        }
-    }
-    errcode = curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYHOST, ssl_verifyhost);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
     // CURLOPT_COOKIE
     // 设置cookie
     if (cookie != NULL)
@@ -311,289 +557,11 @@ void CCurlWrapper::http_get(std::string& response_header, std::string& response_
         if (errcode != CURLE_OK)
             THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
     }
-
-    // CURLOPT_HTTPGET
-    // 之前如何调用了非GET如POST，这个是必须的
-    errcode = curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    errcode = curl_easy_perform(curl);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-}
-
-void CCurlWrapper::proxy_http_get(std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
-{
-    CURLcode errcode;
-    CURL* curl = (CURL*)_curl;
-
-    // CURLOPT_PROXY
-    errcode = curl_easy_setopt(curl, CURLOPT_PROXY, proxy_host.c_str());
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_PROXYPORT
-    errcode = curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxy_port);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    http_get(response_header, response_body, url, enable_insecure, cookie);
-}
-
-void CCurlWrapper::http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
-{
-    const curl_version_info_data* curl_version_info = (curl_version_info_data*)_curl_version_info;
-    CURLcode errcode;
-    CURL* curl = (CURL*)_curl;
 
     // CURLOPT_URL
     errcode = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_HTTPHEADER
-    if (_head_list != NULL)
-    {
-        curl_slist* head_list = static_cast<curl_slist*>(_head_list);
-        errcode = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, head_list);
-        if (errcode != CURLE_OK)
-            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-    }
-
-    // CURLOPT_POSTFIELDS
-    errcode = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_POST
-    errcode = curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_HEADERFUNCTION
-    errcode = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_WRITEDATA
-    errcode = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_SSL_VERIFYPEER
-    // 相当于curl命令的“-k”或“--insecure”参数
-    const int ssl_verifypeer = enable_insecure? 0: 1;
-    errcode = curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYPEER, ssl_verifypeer);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_SSL_VERIFYHOST
-    // When the verify value is 1,
-    // curl_easy_setopt will return an error and the option value will not be changed.
-    // It was previously (in 7.28.0 and earlier) a debug option of some sorts,
-    // but it is no longer supported due to frequently leading to programmer mistakes.
-    // Future versions will stop returning an error for 1 and just treat 1 and 2 the same.
-    //
-    // When the verify value is 0, the connection succeeds regardless of the names in the certificate.
-    // Use that ability with caution!
-    //
-    // 7.28.1开始默认值为2
-    int ssl_verifyhost = 0;
-    if (enable_insecure)
-    {
-        ssl_verifyhost = 0;
-    }
-    else
-    {
-        if (curl_version_info->version_num > 0x071C00) // 7.28.0
-        {
-            ssl_verifyhost = 2;
-        }
-        else
-        {
-            ssl_verifyhost = 1;
-        }
-    }
-    errcode = curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYHOST, ssl_verifyhost);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_COOKIE
-    // 设置cookie
-    if (cookie != NULL)
-    {
-        errcode = curl_easy_setopt(curl, CURLOPT_COOKIE, cookie);
-        if (errcode != CURLE_OK)
-            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-    }
-
-    errcode = curl_easy_perform(curl);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-}
-
-void CCurlWrapper::http_post(const CHttpPostData* http_post_data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
-{
-    const curl_version_info_data* curl_version_info = (curl_version_info_data*)_curl_version_info;
-    CURLcode errcode;
-    CURL* curl = (CURL*)_curl;
-
-    // CURLOPT_URL
-    errcode = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_HTTPHEADER
-    if (_head_list != NULL)
-    {
-        curl_slist* head_list = static_cast<curl_slist*>(_head_list);
-        errcode = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, head_list);
-        if (errcode != CURLE_OK)
-            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-    }
-
-    // CURLOPT_HEADERFUNCTION
-    errcode = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_WRITEDATA
-    errcode = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_SSL_VERIFYPEER
-    // 相当于curl命令的“-k”或“--insecure”参数
-    const int ssl_verifypeer = enable_insecure? 0: 1;
-    errcode = curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYPEER, ssl_verifypeer);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_SSL_VERIFYHOST
-    // When the verify value is 1,
-    // curl_easy_setopt will return an error and the option value will not be changed.
-    // It was previously (in 7.28.0 and earlier) a debug option of some sorts,
-    // but it is no longer supported due to frequently leading to programmer mistakes.
-    // Future versions will stop returning an error for 1 and just treat 1 and 2 the same.
-    //
-    // When the verify value is 0, the connection succeeds regardless of the names in the certificate.
-    // Use that ability with caution!
-    //
-    // 7.28.1开始默认值为2
-    int ssl_verifyhost = 0;
-    if (enable_insecure)
-    {
-        ssl_verifyhost = 0;
-    }
-    else
-    {
-        if (curl_version_info->version_num > 0x071C00) // 7.28.0
-        {
-            ssl_verifyhost = 2;
-        }
-        else
-        {
-            ssl_verifyhost = 1;
-        }
-    }
-    errcode = curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYHOST, ssl_verifyhost);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_COOKIE
-    // 设置cookie
-    if (cookie != NULL)
-    {
-        errcode = curl_easy_setopt(curl, CURLOPT_COOKIE, cookie);
-        if (errcode != CURLE_OK)
-            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-    }
-
-    errcode = curl_easy_setopt(curl, CURLOPT_HTTPPOST, http_post_data->get_post());
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    errcode = curl_easy_perform(curl);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-}
-
-void CCurlWrapper::proxy_http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
-{
-    CURLcode errcode;
-    CURL* curl = (CURL*)_curl;
-
-    // CURLOPT_PROXY
-    errcode = curl_easy_setopt(curl, CURLOPT_PROXY, proxy_host.c_str());
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_PROXYPORT
-    errcode = curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxy_port);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    http_post(data, response_header, response_body, url, enable_insecure, cookie);
-}
-
-void CCurlWrapper::proxy_http_post(const CHttpPostData* http_post_data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
-{
-    CURLcode errcode;
-    CURL* curl = (CURL*)_curl;
-
-    // CURLOPT_PROXY
-    errcode = curl_easy_setopt(curl, CURLOPT_PROXY, proxy_host.c_str());
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_PROXYPORT
-    errcode = curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxy_port);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    http_post(http_post_data, response_header, response_body, url, enable_insecure, cookie);
-}
-
-std::string CCurlWrapper::escape(const std::string& source)
-{
-    std::string result;
-    CURL* curl = (CURL*)_curl;
-
-    char *output = curl_easy_escape(curl, source.c_str(), static_cast<int>(source.length()));
-    if (output != NULL)
-    {
-        result = output;
-        curl_free(output);
-    }
-
-    return result;
-}
-
-std::string CCurlWrapper::unescape(const std::string& source_encoded)
-{
-    std::string result;
-    CURL* curl = (CURL*)_curl;
-    int outlength;
-
-    char *output = curl_easy_unescape(curl, source_encoded.c_str(), static_cast<int>(source_encoded.length()), &outlength);
-    if (output != NULL)
-    {
-        result = output;
-        curl_free(output);
-    }
-
-    return result;
-}
-
-int CCurlWrapper::get_response_code() const throw (utils::CException)
-{
-    long response_code = 0;
-    CURLcode errcode = curl_easy_getinfo(_curl, CURLINFO_RESPONSE_CODE, &response_code);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    return static_cast<int>(response_code);
 }
 
 #if 0
