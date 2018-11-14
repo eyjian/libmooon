@@ -233,13 +233,14 @@ void CCurlWrapper::http_post(const std::string& data, std::string& response_head
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
-    // CURLOPT_POSTFIELDS
+    // CURLOPT_POSTFIELDS，需与CURLOPT_HTTPPOST区分
     errcode = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
-    // CURLOPT_POST
-    errcode = curl_easy_setopt(curl, CURLOPT_POST, 1L);
+    // CURLOPT_POSTFIELDSIZE
+    // if we don't provide POSTFIELDSIZE, libcurl will strlen() by itself
+    errcode = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(data.size()));
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
@@ -266,6 +267,7 @@ void CCurlWrapper::http_post(const CHttpPostData* http_post_data, std::string& r
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
+    // CURLOPT_HTTPPOST需与CURLOPT_POSTFIELDS区分
     errcode = curl_easy_setopt(curl, CURLOPT_HTTPPOST, http_post_data->get_post());
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
@@ -407,9 +409,9 @@ void CCurlWrapper::http_post_download(const std::string& data, std::string& resp
         if (errcode != CURLE_OK)
             THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
-        // CURLOPT_HTTPGET
-        // 之前如何调用了非GET如POST，这个是必须的
-        errcode = curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1L);
+        // CURLOPT_POSTFIELDSIZE
+        // if we don't provide POSTFIELDSIZE, libcurl will strlen() by itself
+        errcode = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(data.size()));
         if (errcode != CURLE_OK)
             THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
