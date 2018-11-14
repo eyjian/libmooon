@@ -21,6 +21,12 @@
 #include "sys/close_helper.h"
 #include "sys/dir_utils.h"
 #include "utils/string_utils.h"
+
+#if __cplusplus >= 201103L
+#include <chrono>
+#include <thread>
+#endif
+
 #include <dirent.h>
 #include <execinfo.h> // backtrace和backtrace_symbols函数
 #include <features.h> // feature_test_macros
@@ -55,12 +61,22 @@ void CUtils::millisleep(uint32_t milliseconds)
 {
     struct timespec ts = { milliseconds / 1000, (milliseconds % 1000) * 1000000 };
     while ((-1 == nanosleep(&ts, &ts)) && (EINTR == errno));
+
+    return;
+#if __cplusplus >= 201103L
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+#endif
 }
 
 void CUtils::microsleep(uint32_t microseconds)
 {
     struct timespec ts = { microseconds / 1000000, (microseconds % 1000000) * 1000 };
     while ((-1 == nanosleep(&ts, &ts)) && (EINTR == errno));
+
+    return;
+#if __cplusplus >= 201103L
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
+#endif
 }
 
 std::string CUtils::get_error_message(int errcode)

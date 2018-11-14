@@ -23,6 +23,9 @@
 #include <sys/time.h>
 #include <utils/string_utils.h>
 #include <utils/tokener.h>
+#if __cplusplus >= 201103L
+#include <chrono>
+#endif
 SYS_NAMESPACE_BEGIN
 
 bool CDatetimeUtils::is_same_day(time_t t1, time_t t2)
@@ -768,11 +771,15 @@ std::string CDatetimeUtils::to_time(time_t datetime, const char* format)
     return time_buffer;
 }
 
-int64_t CDatetimeUtils::get_current_microseconds()
+uint64_t CDatetimeUtils::get_current_microseconds()
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    return static_cast<int64_t>(tv.tv_sec) * 1000000 + static_cast<int64_t>(tv.tv_usec);
+    return static_cast<uint64_t>(tv.tv_sec) * 1000000 + static_cast<uint64_t>(tv.tv_usec);
+#if __cplusplus >= 201103L
+    const std::chrono::time_point<std::chrono::system_clock> ts = std::chrono::system_clock::now();
+    return std::chrono::duration_cast<std::chrono::microseconds>(ts.time_since_epoch()).count();
+#endif
 }
 
 void CDatetimeUtils::get_datetime_number(const struct tm* tm, int* year, int* month, int* day, int* hour, int* minute, int* second, int* week)

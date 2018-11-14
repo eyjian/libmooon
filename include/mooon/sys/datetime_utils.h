@@ -220,7 +220,7 @@ public:
     static std::string to_time(time_t datetime, const char* format="%02d:%02d:%02d");
 
     // 得到当前的微秒值
-    static int64_t get_current_microseconds();
+    static uint64_t get_current_microseconds();
 
     // 取年、月、日、时、分、秒，周几，如果tm或t值为NULL，则表示为当前时间
     //
