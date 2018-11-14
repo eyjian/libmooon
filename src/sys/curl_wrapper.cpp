@@ -311,7 +311,7 @@ void CCurlWrapper::proxy_http_post(const CHttpPostData* http_post_data, std::str
     http_post(http_post_data, response_header, response_body, url, enable_insecure, cookie);
 }
 
-void CCurlWrapper::http_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
+void CCurlWrapper::http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -361,7 +361,7 @@ void CCurlWrapper::http_download(std::string& response_header, const std::string
     }
 }
 
-void CCurlWrapper::proxy_http_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
+void CCurlWrapper::proxy_http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -376,7 +376,80 @@ void CCurlWrapper::proxy_http_download(std::string& response_header, const std::
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
-    http_download(response_header, local_filepath, url, enable_insecure, cookie);
+    http_get_download(response_header, local_filepath, url, enable_insecure, cookie);
+}
+
+void CCurlWrapper::http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+    FILE* fp = fopen(local_filepath.c_str(), "w+");
+    if (NULL == fp)
+        THROW_SYSCALL_EXCEPTION(mooon::utils::CStringUtils::format_string("fopen %s error: %s", local_filepath.c_str(), strerror(errno)), errno, "fopen");
+
+    try
+    {
+        // 复位初始化
+        reset(url, cookie, enable_insecure, on_write_response_body_into_FILE);
+
+        // CURLOPT_HEADERFUNCTION
+        errcode = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // CURLOPT_WRITEDATA
+        errcode = curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // CURLOPT_POSTFIELDS
+        errcode = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // CURLOPT_HTTPGET
+        // 之前如何调用了非GET如POST，这个是必须的
+        errcode = curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1L);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        errcode = curl_easy_perform(curl);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // 关闭文件
+        FILE* fp_ = fp;
+        fp = NULL;
+        // fclose失败会产生内存泄漏，
+        // fclose只是将数据从用户空间刷到内核空间，
+        // 如果要确保数据刷到磁盘，应调用fsync(fd)，
+        // close(fd)也存在同样的问题，即使返回成功，如果没有用fsync(fd)。
+        if (EOF == fclose(fp_))
+            THROW_SYSCALL_EXCEPTION(mooon::utils::CStringUtils::format_string("fclose %s error: %s", local_filepath.c_str(), strerror(errno)), errno, "fopen");
+    }
+    catch (...)
+    {
+        if (fp != NULL)
+            fclose(fp);
+    }
+}
+
+void CCurlWrapper::proxy_http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+{
+    CURLcode errcode;
+    CURL* curl = (CURL*)_curl;
+
+    // CURLOPT_PROXY
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXY, proxy_host.c_str());
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_PROXYPORT
+    errcode = curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxy_port);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    http_post_download(data, response_header, local_filepath, url, enable_insecure, cookie);
 }
 
 std::string CCurlWrapper::escape(const std::string& source)

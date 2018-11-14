@@ -82,10 +82,14 @@ public:
     void proxy_http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
     void proxy_http_post(const CHttpPostData* http_post, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
 
-    // 下载文件
+    // GET方式下载文件
     // 注意需要处理CSyscallException异常，如果没有创建和写local_filepath权限，会抛出这个异常。
-    void http_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
-    void proxy_http_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
+    void http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
+    void proxy_http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
+
+    // POST方式下载文件
+    void http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
+    void proxy_http_post_download(const std::string& data, std::string& response_header, std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
 
     std::string escape(const std::string& source);
     std::string unescape(const std::string& source_encoded);

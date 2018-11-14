@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
         const std::string& url = enable_insecure? argv[3]: argv[2];
         mooon::sys::CCurlWrapper curl;
         std::string response_header;
-        curl.http_download(response_header, local_filepath, url, enable_insecure);
+        curl.http_get_download(response_header, local_filepath, url, enable_insecure);
 
         return 0;
     }
