@@ -493,6 +493,19 @@ int CCurlWrapper::get_response_code() const throw (utils::CException)
     return static_cast<int>(response_code);
 }
 
+std::string CCurlWrapper::get_response_content_type() const throw (utils::CException)
+{
+    char* content_type = NULL;
+    CURLcode errcode = curl_easy_getinfo(_curl, CURLINFO_CONTENT_TYPE, &content_type);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+    // If you get NULL, it means that the server didn't send a valid Content-Type header
+    // or that the protocol used doesn't support this.
+    // The content_type pointer will be NULL or pointing to private memory you MUST NOT free it,
+    //  it gets freed when you call curl_easy_cleanup on the corresponding CURL handle.
+    return (content_type!=NULL)? std::string(content_type): std::string("");
+}
+
 void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable_insecure, size_t (*on_write_response_body_into_FILE_proc)(void*, size_t, size_t, void*)) throw (utils::CException)
 {
     const curl_version_info_data* curl_version_info = (curl_version_info_data*)_curl_version_info;

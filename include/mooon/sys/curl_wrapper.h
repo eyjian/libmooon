@@ -97,6 +97,7 @@ public:
 public:
     // 取得响应的状态码，如：200、403、500等
     int get_response_code() const throw (utils::CException);
+    std::string get_response_content_type() const throw (utils::CException);
 
 private:
     // 重置操作
