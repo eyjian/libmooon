@@ -75,13 +75,29 @@ void CHttpPostData::add_file(const std::string& name, const std::string& filepat
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void CCurlWrapper::global_init()
+void CCurlWrapper::global_init(long flags)
 {
-    curl_global_init(CURL_GLOBAL_ALL);
+    long flags_ = (-1 == flags)? CURL_GLOBAL_ALL: flags;
+
+    // This function sets up the program environment that libcurl needs.
+    // This function must be called at least once within a program
+    // before the program calls any other function in libcurl.
+    //
+    // CURL_GLOBAL_ALL Initialize everything possible.
+    // CURL_GLOBAL_SSL Initialize SSL.
+    // CURL_GLOBAL_WIN32 Initialize the Win32 socket libraries.
+    // CURL_GLOBAL_NOTHING Initialise nothing extra. This sets no bit.
+    // CURL_GLOBAL_DEFAULT A sensible default. It will init both SSL and Win32. Right now, this equals the functionality of the CURL_GLOBAL_ALL mask.
+    // CURL_GLOBAL_ACK_EINTR When this flag is set, curl will acknowledge EINTR condition when connecting or when waiting for data.
+    curl_global_init(flags_);
 }
 
 void CCurlWrapper::global_cleanup()
 {
+    // This function is not thread safe.
+    // This function releases resources acquired by curl_global_init.
+    // You should call curl_global_cleanup once for each call you make to curl_global_init,
+    // after you are done using libcurl.
     curl_global_cleanup();
 }
 
@@ -111,46 +127,77 @@ CCurlWrapper::CCurlWrapper(
         int data_timeout_seconds, int connect_timeout_seconds, bool nosignal,
         bool keepalive, int keepidle, int keepseconds)
     throw (utils::CException)
-    : _data_timeout_seconds(data_timeout_seconds), _connect_timeout_seconds(connect_timeout_seconds), _nosignal(nosignal),
+    : _curl(NULL), _curl_version_info(NULL),
+      _data_timeout_seconds(data_timeout_seconds), _connect_timeout_seconds(connect_timeout_seconds), _nosignal(nosignal),
       _keepalive(keepalive), _keepidle(keepidle), _keepseconds(keepseconds)
 {
     _curl_version_info = curl_version_info(CURLVERSION_NOW);
 
+    // Start a libcurl easy session
+    // This function must be the first function to call,
+    // and it returns a CURL easy handle that you must use as input to other functions in the easy interface.
+    // This call MUST have a corresponding call to curl_easy_cleanup when the operation is complete.
+    //
+    // If you did not already call curl_global_init, curl_easy_init does it automatically.
+    // This may be lethal in multi-threaded cases, since curl_global_init is not thread-safe,
+    // and it may result in resource problems because there is no corresponding cleanup.
+    //
+    // You are strongly advised to not allow this automatic behaviour, by calling curl_global_init yourself properly.
     CURL* curl = curl_easy_init();
     if (NULL == curl)
         THROW_EXCEPTION("curl_easy_init failed", -1);
     _head_list = NULL;
-
-    try
-    {
-        _curl = (void*)curl; // 须放在reset()之前，因为reset()有使用_curl
-    }
-    catch (...)
-    {
-        curl_easy_cleanup(curl);
-        _curl = NULL;
-        throw;
-    }
+    _curl = (void*)curl; // 须放在reset()之前，因为reset()有使用_curl
 }
 
 CCurlWrapper::~CCurlWrapper() throw ()
 {
-    CURL* curl = (CURL*)_curl;
-    curl_easy_cleanup(curl);
-    _curl = NULL;
+    // _curl
+    if (_curl != NULL)
+    {
+        CURL* curl = (CURL*)_curl;
+        curl_easy_cleanup(curl);
+        _curl = NULL;
+    }
 
-    curl_slist* head_list = static_cast<curl_slist*>(_head_list);
+    // _head_list
     if (_head_list != NULL)
     {
+        curl_slist* head_list = static_cast<curl_slist*>(_head_list);
         curl_slist_free_all(head_list);
         _head_list = NULL;
     }
 }
 
-void CCurlWrapper::reset() throw (utils::CException)
+void CCurlWrapper::reset(bool clear_head_list, bool clear_cookie) throw (utils::CException)
 {
+    CURLcode errcode;
     CURL* curl = (CURL*)_curl;
-    curl_easy_reset(curl); // Re-initializes a CURL handle to the default values.
+
+    // Re-initializes a CURL handle to the default values.
+    // This puts back the handle to the same state as it was in when it was just created with curl_easy_init.
+    // It does not change the following information kept in the handle:
+    // live connections, the Session ID cache, the DNS cache, the cookies and shares.
+    curl_easy_reset(curl);
+
+    if (clear_cookie)
+    {
+        errcode = curl_easy_setopt(curl, CURLOPT_COOKIE, NULL);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+    }
+    if (clear_head_list && _head_list!=NULL)
+    {
+        curl_slist* head_list = static_cast<curl_slist*>(_head_list);
+        errcode = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // Removes all traces of a previously built curl_slist linked list
+        // Passing in a NULL pointer in list will make this function return immediately with no action.
+        curl_slist_free_all(head_list);
+        _head_list = NULL;
+    }
 }
 
 bool CCurlWrapper::add_request_header(const std::string& name_value_pair)
@@ -515,13 +562,24 @@ void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable
     CURL* curl = (CURL*)_curl;
     curl_slist* head_list = static_cast<curl_slist*>(_head_list);
 
-    // 重置
-    //curl_easy_reset(curl);
+    // CURLOPT_HTTPHEADER
+    // Set custom HTTP headers
+    // Pass a NULL to this option to reset back to no custom headers.
     if (_head_list != NULL)
     {
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL);
-        curl_slist_free_all(head_list);
-        _head_list = NULL;
+        curl_slist* head_list = static_cast<curl_slist*>(_head_list);
+        errcode = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, head_list);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+    }
+
+    // CURLOPT_COOKIE
+    // Set contents of HTTP Cookie header
+    if (cookie != NULL)
+    {
+        errcode = curl_easy_setopt(curl, CURLOPT_COOKIE, cookie);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
     }
 
     // CURLOPT_NOSIGNAL
@@ -627,24 +685,6 @@ void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable
         errcode = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, on_write_response_body_into_FILE_proc);
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-
-    // CURLOPT_HTTPHEADER
-    if (_head_list != NULL)
-    {
-        curl_slist* head_list = static_cast<curl_slist*>(_head_list);
-        errcode = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, head_list);
-        if (errcode != CURLE_OK)
-            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-    }
-
-    // CURLOPT_COOKIE
-    // 设置cookie
-    if (cookie != NULL)
-    {
-        errcode = curl_easy_setopt(curl, CURLOPT_COOKIE, cookie);
-        if (errcode != CURLE_OK)
-            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
-    }
 
     // CURLOPT_URL
     errcode = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());

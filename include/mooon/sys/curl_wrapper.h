@@ -45,9 +45,10 @@ private:
 class CCurlWrapper
 {
 public:
-    // 非线程安全
+    // 两个非线程安全函数
     // 多线程程序，应当在创建线程之前调用global_init一次
-    static void global_init();
+    // global_init和global_cleanup必须一对一调用
+    static void global_init(long flags=-1);
     static void global_cleanup();
 
 public:
@@ -61,7 +62,7 @@ public:
 
     // 一个CCurlWrapper对象多次做不同的get或post调用时，
     // 应当在每次调用前先调用reset()清理掉上一次执行的状态。
-    void reset() throw (utils::CException);
+    void reset(bool clear_head_list=true, bool clear_cookie=true) throw (utils::CException);
 
     // 添加http请求头名字对
     bool add_request_header(const std::string& name_value_pair);
