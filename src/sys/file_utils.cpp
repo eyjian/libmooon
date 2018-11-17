@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include "sys/file_utils.h"
 #include "sys/close_helper.h"
+#include "utils/string_utils.h"
 SYS_NAMESPACE_BEGIN
 
 bool CFileUtils::exists(const char* filepath) throw (CSyscallException)
@@ -34,7 +35,10 @@ bool CFileUtils::exists(const char* filepath) throw (CSyscallException)
     {
         if (ENOENT == errno)
             return false;
-        THROW_SYSCALL_EXCEPTION(NULL, errno, "access");
+        THROW_SYSCALL_EXCEPTION(
+                utils::CStringUtils::format_string("access file://%s failed: %s",
+                        filepath, strerror(errno)),
+                errno, "access");
     }
 }
 
@@ -79,7 +83,10 @@ size_t CFileUtils::file_copy(int src_fd, const char* dst_filename) throw (CSysca
 {    
     int dst_fd = open(dst_filename, O_WRONLY|O_CREAT|O_EXCL);
     if (-1 == src_fd)
-        THROW_SYSCALL_EXCEPTION(NULL, errno, "open");
+        THROW_SYSCALL_EXCEPTION(
+                utils::CStringUtils::format_string("open file://%s failed: %s",
+                        dst_filename, strerror(errno)),
+                errno, "open");
 
     sys::CloseHelper<int> ch(dst_fd);
     return file_copy(src_fd, dst_fd);
@@ -89,7 +96,10 @@ size_t CFileUtils::file_copy(const char* src_filename, int dst_fd) throw (CSysca
 {
     int src_fd = open(src_filename, O_RDONLY);
     if (-1 == src_fd)
-        THROW_SYSCALL_EXCEPTION(NULL, errno, "open");
+        THROW_SYSCALL_EXCEPTION(
+                utils::CStringUtils::format_string("open file://%s failed: %s",
+                        src_filename, strerror(errno)),
+                errno, "open");
 
     sys::CloseHelper<int> ch(src_fd);
     return file_copy(src_fd, dst_fd);
@@ -99,12 +109,18 @@ size_t CFileUtils::file_copy(const char* src_filename, const char* dst_filename)
 { 
     int src_fd = open(src_filename, O_RDONLY);
     if (-1 == src_fd)
-        THROW_SYSCALL_EXCEPTION(NULL, errno, "open");
+        THROW_SYSCALL_EXCEPTION(
+                utils::CStringUtils::format_string("open file://%s failed: %s",
+                        src_filename, strerror(errno)),
+                errno, "open");
 
     sys::CloseHelper<int> src_ch(src_fd);
     int dst_fd = open(dst_filename, O_WRONLY|O_CREAT|O_EXCL);
     if (-1 == dst_fd)
-        THROW_SYSCALL_EXCEPTION(NULL, errno, "open");
+        THROW_SYSCALL_EXCEPTION(
+                utils::CStringUtils::format_string("open file://%s failed: %s",
+                        dst_filename, strerror(errno)),
+                errno, "open");
 
     sys::CloseHelper<int> dst_ch(dst_fd);
     return file_copy(src_fd, dst_fd);
@@ -126,7 +142,10 @@ off_t CFileUtils::get_file_size(const char* filepath) throw (CSyscallException)
 {
     int fd = open(filepath, O_RDONLY);
     if (-1 == fd)
-        THROW_SYSCALL_EXCEPTION(NULL, errno, "fstat");
+        THROW_SYSCALL_EXCEPTION(
+                utils::CStringUtils::format_string("open file://%s failed: %s",
+                        filepath, strerror(errno)),
+                errno, "open");
 
     sys::CloseHelper<int> ch(fd);
     return get_file_size(fd);
@@ -173,7 +192,10 @@ uint32_t CFileUtils::crc32_file(const char* filepath) throw (CSyscallException)
 {
     int fd = open(filepath, O_RDONLY);
     if (-1 == fd)
-        THROW_SYSCALL_EXCEPTION(NULL, errno, "open");
+        THROW_SYSCALL_EXCEPTION(
+                utils::CStringUtils::format_string("open file://%s failed: %s",
+                        filepath, strerror(errno)),
+                errno, "open");
 
     sys::CloseHelper<int> ch(fd);
     return crc32_file(fd);
@@ -193,14 +215,20 @@ void CFileUtils::remove(const char* filepath) throw (CSyscallException)
     if (-1 == unlink(filepath))
     {
         if (errno != ENOENT)
-            THROW_SYSCALL_EXCEPTION(NULL, errno, "unlink");
+            THROW_SYSCALL_EXCEPTION(
+                    utils::CStringUtils::format_string("unlink file://%s failed: %s",
+                            filepath, strerror(errno)),
+                    errno, "unlink");
     }
 }
 
 void CFileUtils::rename(const char* from_filepath, const char* to_filepath) throw (CSyscallException)
 {
     if (-1 == ::rename(from_filepath, to_filepath))
-        THROW_SYSCALL_EXCEPTION(NULL, errno, "rename");
+        THROW_SYSCALL_EXCEPTION(
+                utils::CStringUtils::format_string("rename file://%s to file://%s failed: %s",
+                        from_filepath, to_filepath, strerror(errno)),
+                errno, "rename");
 }
 
 SYS_NAMESPACE_END
