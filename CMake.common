@@ -211,6 +211,10 @@ discover_library(R3C r3c)
 discover_library(LEVELDB leveldb)
 #link_libraries(libleveldb.a libmemenv.a)
 
+# librdkafka
+discover_library(LIBRDKAFKA librdkafka)
+#link_libraries(librdkafka++.a librdkafka.a)
+
 # 编译参数
 # 启用__STDC_FORMAT_MACROS是为了可以使用inttypes.h中的PRId64等
 # 启用__STDC_LIMIT_MACROS是为了可以使用stdint.h中的__UINT64_C和INT32_MIN等

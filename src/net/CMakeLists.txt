@@ -18,6 +18,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/tcp_waiter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_socket.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/kafka_producer.cpp
     CACHE INTERNAL
     MOOON_NET_SRC
 )

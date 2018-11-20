@@ -127,7 +127,7 @@ CCurlWrapper::CCurlWrapper(
         int data_timeout_seconds, int connect_timeout_seconds, bool nosignal,
         bool keepalive, int keepidle, int keepseconds)
     throw (utils::CException)
-    : _curl(NULL), _curl_version_info(NULL),
+    : _curl_version_info(NULL), _curl(NULL),
       _data_timeout_seconds(data_timeout_seconds), _connect_timeout_seconds(connect_timeout_seconds), _nosignal(nosignal),
       _keepalive(keepalive), _keepidle(keepidle), _keepseconds(keepseconds)
 {
