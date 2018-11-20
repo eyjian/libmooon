@@ -22,8 +22,84 @@
 #include <fcntl.h>
 #include "sys/file_utils.h"
 #include "sys/close_helper.h"
+#include "utils/md5_helper.h"
 #include "utils/string_utils.h"
 SYS_NAMESPACE_BEGIN
+
+bool CFileUtils::md5sum(std::string* md5_str, int fd, const char* filepath) throw (CSyscallException)
+{
+    utils::CMd5Helper md5;
+    char line[mooon::SIZE_4K];
+    ssize_t file_size = 0;
+
+    while (true)
+    {
+        const ssize_t n = read(fd, line, sizeof(line));
+
+        if (0 == n)
+        {
+            break;
+        }
+        else if (-1 == n)
+        {
+            if (NULL == filepath)
+                THROW_SYSCALL_EXCEPTION(NULL, errno, "read");
+            else
+                THROW_SYSCALL_EXCEPTION(
+                        utils::CStringUtils::format_string("read file://%s failed: %s",
+                                filepath, strerror(errno)),
+                        errno, "read");
+        }
+        else
+        {
+            file_size += n;
+            md5.update(line, n);
+            if (n < sizeof(line))
+                break;
+        }
+    }
+
+    *md5_str = md5.to_string();
+    return file_size > 0;
+}
+
+bool CFileUtils::md5sum(std::string* md5_str, const char* filepath) throw (CSyscallException)
+{
+    const int fd = open(filepath, O_RDONLY);
+    if (-1 == fd)
+        THROW_SYSCALL_EXCEPTION(
+                utils::CStringUtils::format_string("open file://%s failed: %s",
+                        filepath, strerror(errno)),
+                errno, "open");
+
+    try
+    {
+        bool ret = md5sum(md5_str, fd, filepath);
+        close(fd);
+        return ret;
+    }
+    catch (...)
+    {
+        close(fd);
+        throw;
+    }
+}
+
+bool CFileUtils::compare(int fdA, int fdB) throw (CSyscallException)
+{
+    std::string fileA_md5, fileB_md5;
+    const bool r1 = md5sum(&fileA_md5, fdA);
+    const bool r2 = md5sum(&fileB_md5, fdB);
+    return (!r1 && !r2) || (fileA_md5==fileB_md5);
+}
+
+bool CFileUtils::compare(const char* fileA, const char* fileB) throw (CSyscallException)
+{
+    std::string fileA_md5, fileB_md5;
+    const bool r1 = md5sum(&fileA_md5, fileA);
+    const bool r2 = md5sum(&fileB_md5, fileB);
+    return (!r1 && !r2) || (fileA_md5==fileB_md5);
+}
 
 bool CFileUtils::exists(const char* filepath) throw (CSyscallException)
 {

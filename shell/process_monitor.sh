@@ -28,6 +28,12 @@
 # /usr/local/bin/process_monitor.sh "/usr/local/bin/test wangwu" "/usr/local/bin/test --name=wangwu"
 # /usr/local/bin/process_monitor.sh "/usr/local/bin/test zhangsan" "/usr/local/bin/test --name=zhangsan"
 
+# crontab技巧：
+# 1）公共的定义为变量
+# 2）如果包含了特殊字符，比如分号则使用单引用号，而不能用双引号，比如：
+# RECEIVERS="tom;mike;jay"
+# * * * * * * * * * * /usr/local/bin/process_monitor.sh "/tmp/test" "/tmp/test '$RECEIVERS'"
+
 # 注意事项：
 # 不管是监控脚本还是可执行程序，
 # 均要求使用绝对路径，即必须以“/”打头的路径。

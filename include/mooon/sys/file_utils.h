@@ -27,6 +27,32 @@ SYS_NAMESPACE_BEGIN
 class CFileUtils
 {
 public:
+    // 对一个文件求MD5
+    //
+    // fd 为待求md5的文件描述符
+    // filepath 为fd对应的文件，可为空，非功能性参数
+    //
+    // 返回值：
+    // true 正常得到md5值
+    // false 文件为空文件
+    static bool md5sum(std::string* md5_str, int fd, const char* filepath=NULL) throw (CSyscallException);
+
+    // 对一个文件求MD5
+    // filepath 为待求md5的文件
+    //
+    // 返回值：
+    // true 正常得到md5值
+    // false 文件为空文件
+    static bool md5sum(std::string* md5_str, const char* filepath) throw (CSyscallException);
+
+    // 比较两个文件是否相同
+    //
+    // 返回值：
+    // true 两个文件相同或均为空文件
+    // false 两个文件不同，或至少有一个文件不存在无法比较
+    static bool compare(int fdA, int fdB) throw (CSyscallException);
+    static bool compare(const char* fileA, const char* fileB) throw (CSyscallException);
+
     // 是否存在指定的文件
     static bool exists(const char* filepath) throw (CSyscallException);
 
