@@ -20,15 +20,15 @@
 # 下面两个是可选的，绑定指定的IP才需要：
 # 2）“listeners=PLAINTEXT://:9092”一行写成：listeners=PLAINTEXT://KAFKAIP:9092
 # 3）“advertised.listeners=PLAINTEXT://your.host.name:9092”一行写成：advertised.listeners=PLAINTEXT://KAFKAIP:9092
+# 4）“host.name=local”一行写成：host.name=KAFKAIP
 # 运行本工具时，会自动替换KAFKAID和KAFKAIP，如果没有指定“advertised.listeners”的值，则使用“listeners”的值。
 #
-# IP和机器名映射关系配置文件格式：
-# IP+分隔符+机器名
+# IP和ID映射关系配置文件格式：
+# IP+分隔符+ID
 # 示例：
-# 192.168.31.32 zhangsan-32
+# 192.168.31.32 32
+# 192.168.31.33 33
 # 分隔符可为空格、TAB、逗号、分号和竖线这几种
-#
-# 注意：hadoop要求hostname不能带下划线
 #
 # 使用方法：
 # 1）利用mooon_upload，批量将本脚本文件发布到所有目标机器（需要修改hostname的机器）上
@@ -39,16 +39,17 @@
 # export H=192.168.0.21,192.168.0.22,192.168.0.23,192.168.0.24,192.168.0.25
 # export U=kafka
 # export P='kafka^12345'
-# mooon_ssh -c='cat /etc/hostname'
+# mooon_upload -s=hosts.id,server.properties,set_kafka_id_and_ip.sh -d=/tmp
+# mooon_ssh -c='/tmp/set_kafka_id_and_ip.sh /tmp/hosts.id /tmp/server.properties'
 #
-# cat host.names
-# 192.168.0.21 kafka01
-# 192.168.0.22 kafka02
-# 192.168.0.23 kafka03
-# 192.168.0.24 kafka04
-# 192.168.0.25 kafka05
+# cat hosts.id
+# 192.168.0.21 21
+# 192.168.0.22 22
+# 192.168.0.23 23
+# 192.168.0.24 24
+# 192.168.0.25 25
 #
-# mooon_upload -s=host.names,set_kafka_id_and_ip.sh -d=/tmp
+# mooon_upload -s=hosts.id,set_kafka_id_and_ip.sh -d=/tmp
 # mooon_ssh -c='/tmp/set_kafka_id_and_ip.sh /tmp/host.names
 # mooon_ssh -c='cat /etc/hostname'
 
@@ -116,7 +117,10 @@ do
     #echo "[IP] => $ip  [ID] => $id"    
     if test "$ip" = "$local_ip"; then
         echo "$ip => $id"
-        sed -i "s|KAFKAID|$id|g;KAFKAIP|$ip|g" $kafkaconf        
+        # 如下错误：
+        # sed: -e expression #1, char 17: unknown command: `K'
+        # 表示分号后可能遗漏了“s|”
+        sed -i "s|KAFKAID|$id|g;s|KAFKAIP|$ip|g" $kafkaconf        
         exit 0
     fi
 done < $conffile
