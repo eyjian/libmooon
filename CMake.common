@@ -2,6 +2,15 @@
 # 定义公共的、可直接复用的
 # 注意使用静态库时有顺序要求，假设静态库libx.a依赖于libz.a，则指定顺序须为-lx -lz（或libx.a libz.a），不能反过来为-lz -lx（或libz.a libx.a）。
 # 2015/9/23 使用函数discover_library()优化库查找
+#
+# 约定：
+# 安装第三方库时，明确指定prefix，即指定安装目录方式，不管是automake还是CMake等方式
+#
+# 搜索路径按优先顺序分为三种：
+# 1）由xxx_HOME环境变量指定的路径，比如：export MYSQL_HOME=/usr/local/mysql
+# 2）标准路径/usr/local/xxx，比如：/usr/local/mysql或/usr/local/hiredis等
+# 3）准标准路径/usr/local/thirdparty，比如：/usr/local/thirdparty/mysql
+# 其它路径将不能被自动识别和发现。
 
 # 让make时显示编译命令
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -58,14 +67,14 @@ function(discover_library uppername dirname)
        	else ()
        		set(MOOON_HAVE_${uppername} 0 CACHE INTERNAL MOOON_HAVE_${uppername})
        	endif ()
+    elseif (EXISTS /usr/local/${dirname})
+        set(MOOON_HAVE_${uppername} 1 CACHE INTERNAL MOOON_HAVE_${uppername})
+        set(${uppername}_HOME /usr/local/${dirname} CACHE INTERNAL ${uppername}_HOME)
     elseif (EXISTS /usr/local/thirdparty/${dirname})
         # 如果使用PARENT_SCOPE，则函数内不能识别，但函数外可以
         #set(MOOON_HAVE_${uppername} 1 PARENT_SCOPE)
         set(MOOON_HAVE_${uppername} 1 CACHE INTERNAL MOOON_HAVE_${uppername})
         set(${uppername}_HOME /usr/local/thirdparty/${dirname} CACHE INTERNAL ${uppername}_HOME)
-    elseif (EXISTS /usr/local/${dirname})
-        set(MOOON_HAVE_${uppername} 1 CACHE INTERNAL MOOON_HAVE_${uppername})
-        set(${uppername}_HOME /usr/local/${dirname} CACHE INTERNAL ${uppername}_HOME)
     elseif (EXISTS $ENV{HOME}/${dirname})
         #set(MOOON_HAVE_${uppername} 1 PARENT_SCOPE CACHE INTERNAL MOOON_HAVE_${uppername})
         set(MOOON_HAVE_${uppername} 1 CACHE INTERNAL MOOON_HAVE_${uppername})
