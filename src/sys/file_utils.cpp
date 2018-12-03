@@ -87,18 +87,36 @@ bool CFileUtils::md5sum(std::string* md5_str, const char* filepath) throw (CSysc
 
 bool CFileUtils::compare(int fdA, int fdB) throw (CSyscallException)
 {
-    std::string fileA_md5, fileB_md5;
-    const bool r1 = md5sum(&fileA_md5, fdA);
-    const bool r2 = md5sum(&fileB_md5, fdB);
-    return (!r1 && !r2) || (fileA_md5==fileB_md5);
+    try
+    {
+        std::string fileA_md5, fileB_md5;
+        const bool r1 = md5sum(&fileA_md5, fdA);
+        const bool r2 = md5sum(&fileB_md5, fdB);
+        return (!r1 && !r2) || (fileA_md5==fileB_md5);
+    }
+    catch (CSyscallException& ex)
+    {
+        if (ENOENT == ex.errcode())
+            return false;
+        throw;
+    }
 }
 
 bool CFileUtils::compare(const char* fileA, const char* fileB) throw (CSyscallException)
 {
-    std::string fileA_md5, fileB_md5;
-    const bool r1 = md5sum(&fileA_md5, fileA);
-    const bool r2 = md5sum(&fileB_md5, fileB);
-    return (!r1 && !r2) || (fileA_md5==fileB_md5);
+    try
+    {
+        std::string fileA_md5, fileB_md5;
+        const bool r1 = md5sum(&fileA_md5, fileA);
+        const bool r2 = md5sum(&fileB_md5, fileB);
+        return (!r1 && !r2) || (fileA_md5==fileB_md5);
+    }
+    catch (CSyscallException& ex)
+    {
+        if (ENOENT == ex.errcode())
+            return false;
+        throw;
+    }
 }
 
 bool CFileUtils::exists(const char* filepath) throw (CSyscallException)
