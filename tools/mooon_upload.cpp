@@ -29,9 +29,35 @@
 // 可环境变量USER替代参数“-u”
 // 可环境变量PASSWORD替代参数“-p”
 //
-// 如果不想依赖glibc++库，编译时静态链接：
-// -Wl,-Bstatic -static-libgcc -static-libstdc++ -lrt -lz
-// 但并不所有机器上都可以如此编译，比如有些机器可能没有libstdc++的静态库。
+// 如果不想依赖：
+// libc.so, libgcc_s.so, librt.so, libpthread.so, libdl.so, libz.so, librt.so, libstdc++.so等，
+// 链接时可指定如下选项（加到命令行最后即可，有些环境还可加上“-static-libstdc++”）：
+// -Wl,-Bstatic -static-libgcc -lrt -lz -pthread -ldl
+// 遇到如下警告，可以忽略：
+// warning: Using 'dlopen' in statically linked applications
+// warning: Using 'getpwuid_r' in statically linked applications
+// warning: Using 'getaddrinfo' in statically linked applications
+//
+// 检查静态链接效果：
+// > ldd -r mooon_ssh
+//        not a dynamic executable
+//
+// 但如果是下列错误，则不能采用静态链接（需安装c++标准库的静态库）：
+// cannot find -lstdc++
+//
+// 下列错误，可能是因为“/usr/bin/ld: cannot find -lstdc++”：
+// the use of `mktemp' is dangerous, better use `mkstemp'
+//
+// libstdc++.a可能所在位置（编译器版本要和库版本保持相同，否则可能不兼容）：
+// /usr/lib/gcc/i586-suse-linux/4.1.2/libstdc++.a
+// /usr/lib/gcc/x86_64-redhat-linux/4.8.2/32/libstdc++.a
+// /usr/lib/gcc/x86_64-redhat-linux/4.4.7/libstdc++.a
+// /usr/lib/gcc/x86_64-redhat-linux/4.4.7/32/libstdc++.a
+//
+// libc.a可能所在位置：
+// /usr/lib/libc.a
+// /usr/lib64/libc.a
+// /usr/lib/x86_64-redhat-linux6E/lib64/libc.a
 #include "mooon/net/libssh2.h"
 #include "mooon/sys/stop_watch.h"
 #include "mooon/sys/thread_engine.h"
