@@ -88,6 +88,9 @@ inline std::ostream& operator <<(std::ostream& out, const struct ResultInfo& res
     return out;
 }
 
+// 命令行参数脱敏处理
+static void escape_args(int argc, char* argv[]);
+
 // 取得线程数
 static int get_num_of_threads(int num_hosts);
 
@@ -130,6 +133,8 @@ int main(int argc, char* argv[])
     std::string errmsg;
     if (!mooon::utils::parse_arguments(argc, argv, &errmsg))
     {
+        escape_args(argc, argv);
+
         if (errmsg.empty())
         {
             fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
@@ -142,6 +147,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
+    escape_args(argc, argv);
     uint16_t port = mooon::argument::P->value();
     std::string sources = mooon::argument::s->value();
     std::string directory = mooon::argument::d->value();
@@ -349,6 +355,21 @@ int main(int argc, char* argv[])
 #endif // MOOON_HAVE_LIBSSH2 == 1
 
     return (0 == num_failure)? 0: 1;
+}
+
+void escape_args(int argc, char* argv[])
+{
+    // 清除ps看到的结果
+    for (int i=1; i<argc; ++i)
+    {
+        char* s = argv[i];
+        while (*s != '\0')
+        {
+            *s = '*'; ++s;
+        }
+    }
+
+    // 清了作history命令看到的结果
 }
 
 int get_num_of_threads(int num_hosts)
