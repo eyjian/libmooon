@@ -3,6 +3,7 @@
 include_directories(../../include)
 link_directories(../../src/utils)
 link_libraries(libmooon_utils.a)
+link_libraries(dl pthread rt z)
 
 add_executable(ut_string_utils ut_string_utils.cpp)
 add_executable(ut_tokener ut_tokener.cpp)

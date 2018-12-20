@@ -7,6 +7,7 @@ link_directories(../../src/utils)
 link_libraries(libmooon_net.a)
 link_libraries(libmooon_sys.a)
 link_libraries(libmooon_utils.a)
+link_libraries(dl pthread rt z)
 
 add_executable(udp_client_test udp_client_test.cpp)
 add_executable(udp_server_test udp_server_test.cpp)

@@ -273,7 +273,9 @@ else ()
 endif()
 
 # 公共的库
-link_libraries(dl pthread rt z)
+# 如果链接libdl.a或libpthread.a或librt.a或libz.a，就不适合作为公共操作，
+# 如：-Wl,-Bstatic -static-libgcc -lrt -lz -pthread -ldl
+#link_libraries(pthread dl rt z)
 
 # 为指定的源文件添加编译属性，示例：
 # set_source_files_properties(example1.cpp example2.cpp COMPILE_FLAGS -DXXXX=1234)

@@ -6,6 +6,7 @@ include_directories(../include/mooon)
 link_directories(../src/net)
 link_directories(../src/sys)
 link_directories(../src/utils)
+link_libraries(dl pthread rt z)
 
 # 计算md5工具
 add_executable(md5 md5.cpp)
