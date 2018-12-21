@@ -148,7 +148,7 @@ close_all_fd()
     # 0, 1, 2, 255
     # compgen -G "/proc/$BASHPID/fd/*
     for fd in $(ls /proc/$$/fd); do
-        if test $fd -gt 2; then
+        if test $fd -ge 0; then
             # 关闭文件描述符fd
             eval "exec $fd>&-"
         fi
