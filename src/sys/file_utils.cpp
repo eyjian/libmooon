@@ -54,7 +54,7 @@ bool CFileUtils::md5sum(std::string* md5_str, int fd, const char* filepath) thro
         {
             file_size += n;
             md5.update(line, n);
-            if (n < sizeof(line))
+            if (n < static_cast<ssize_t>(sizeof(line)))
                 break;
         }
     }

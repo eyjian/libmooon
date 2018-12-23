@@ -8,9 +8,17 @@ link_directories(../src/sys)
 link_directories(../src/utils)
 link_libraries(dl pthread rt z)
 
-# 计算md5工具
-add_executable(md5 md5.cpp)
-target_link_libraries(md5 libmooon_utils.a)
+if (MOOON_HAVE_OPENSSL)
+    # 计算md5工具
+    add_executable(md5 md5.cpp)
+    target_link_libraries(md5 libmooon_utils.a libcrypto.a)
+    
+    add_executable(base64 base64.cpp)
+    target_link_libraries(base64 libmooon_utils.a libcrypto.a)
+    
+    add_executable(sha sha.cpp)
+    target_link_libraries(sha libmooon_utils.a libcrypto.a)
+endif ()
 
 # 硬盘性能测试工具
 add_executable(disk_benchmark disk_benchmark.cpp)
@@ -113,6 +121,6 @@ endif ()
 
 # CMAKE_INSTALL_PREFIX
 install(
-        TARGETS md5 disk_benchmark
+        TARGETS disk_benchmark
         DESTINATION bin
        )

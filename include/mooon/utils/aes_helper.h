@@ -17,6 +17,8 @@
  * Writed on 2015/7/16
  * Author: JianYi, eyjian@qq.com or eyjian@gmail.com
  */
+#ifndef MOOON_UTILS_AES_HELPER_H
+#define MOOON_UTILS_AES_HELPER_H
 #include "mooon/utils/config.h"
 UTILS_NAMESPACE_BEGIN
 
@@ -43,3 +45,4 @@ private:
 };
 
 UTILS_NAMESPACE_END
+#endif // MOOON_UTILS_AES_HELPER_H
