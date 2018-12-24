@@ -22,22 +22,31 @@
 #include "mooon/utils/exception.h"
 UTILS_NAMESPACE_BEGIN
 
+// 高级加密标准（Advanced Encryption Standard），
+// 在密码学中又称Rijndael加密法，是美国联邦政府采用的一种区块加密标准，用来替代DES
 class CAESHelper
 {
 public:
+    // 加密数据块分组长度，必须为128比特（密钥长度可以是128比特、192比特、256比特中的任意一个）
     static int aes_block_size;
 
 public:
-    // key的长度需为128、192或256，否则encrypt和decrypt抛出异常
+    // key 密钥
+    //
+    // 因为AES要求key长度只能为128或192或256比特中的一种，即16字节或24字节或32字节中的一种，
+    // 当key的长度不足16字节时，CAESHelper自动补0足16字节，
+    // 当key的长度间于16字节和24字节时，CAESHelper自动补0足24字节，
+    // 当key的长度间于24字节和32字节时，CAESHelper自动补0足32字节，
+    // 当key的长度超出32字节时，CAESHelper自动截取前32字节作为密钥
     CAESHelper(const std::string& key);
     ~CAESHelper();
 
-    void encrypt(const std::string& in, std::string* out) throw (utils::CException);
-    void decrypt(const std::string& in, std::string* out) throw (utils::CException);
+    void encrypt(const std::string& in, std::string* out);
+    void decrypt(const std::string& in, std::string* out);
 
 private:
     // flag 为true表示加密，为false表示解密
-    void aes(bool flag, const std::string& in, std::string* out, void* aes_key) throw (utils::CException);
+    void aes(bool flag, const std::string& in, std::string* out, void* aes_key);
 
 private:
     void* _encrypt_key;

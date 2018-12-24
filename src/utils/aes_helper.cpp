@@ -49,6 +49,24 @@ CAESHelper::CAESHelper(const std::string& key)
     _encrypt_key = NULL;
     _decrypt_key = NULL;
     _key = key;
+
+    const std::string::size_type LEN16 = 16;
+    const std::string::size_type LEN24 = 24;
+    const std::string::size_type LEN32 = 32;
+    const std::string::size_type len = key.size();
+    if ((len != LEN16) &&
+        (len != LEN24) &&
+        (len != LEN32))
+    {
+        if (len < LEN16)
+            _key.resize(LEN16);
+        else if (len < LEN24)
+            _key.resize(LEN24);
+        else if (len < LEN32)
+            _key.resize(LEN32);
+        else
+            _key.resize(LEN32);
+    }
 }
 
 CAESHelper::~CAESHelper()
@@ -59,7 +77,7 @@ CAESHelper::~CAESHelper()
 #endif // MOOON_HAVE_OPENSSL
 }
 
-void CAESHelper::encrypt(const std::string& in, std::string* out) throw (utils::CException)
+void CAESHelper::encrypt(const std::string& in, std::string* out)
 {
 #if MOOON_HAVE_OPENSSL == 1
     if (NULL == _encrypt_key)
@@ -67,7 +85,7 @@ void CAESHelper::encrypt(const std::string& in, std::string* out) throw (utils::
         _encrypt_key = new AES_KEY;
 
         const int errcode = AES_set_encrypt_key((const unsigned char*)(_key.data()), (int)(_key.size()*8), (AES_KEY*)_encrypt_key);
-        if (errcode != 0)
+        if (errcode != 0) // 理论上不会返回非0，因为构造函数已经处理好了key的长度
         {
             delete (AES_KEY*)_encrypt_key;
             _encrypt_key = NULL;
@@ -79,7 +97,7 @@ void CAESHelper::encrypt(const std::string& in, std::string* out) throw (utils::
 #endif // MOOON_HAVE_OPENSSL
 }
 
-void CAESHelper::decrypt(const std::string& in, std::string* out) throw (utils::CException)
+void CAESHelper::decrypt(const std::string& in, std::string* out)
 {
 #if MOOON_HAVE_OPENSSL == 1
     if (NULL == _decrypt_key)
@@ -87,7 +105,7 @@ void CAESHelper::decrypt(const std::string& in, std::string* out) throw (utils::
         _decrypt_key = new AES_KEY;
 
         const int errcode = AES_set_decrypt_key((const unsigned char*)(_key.data()), (int)(_key.size()*8), (AES_KEY*)_decrypt_key);
-        if (errcode != 0)
+        if (errcode != 0) // 理论上不会返回非0，因为构造函数已经处理好了key的长度
         {
             delete (AES_KEY*)_decrypt_key;
             _decrypt_key = NULL;
@@ -99,7 +117,7 @@ void CAESHelper::decrypt(const std::string& in, std::string* out) throw (utils::
 #endif // MOOON_HAVE_OPENSSL
 }
 
-void CAESHelper::aes(bool flag, const std::string& in, std::string* out, void* aes_key) throw (utils::CException)
+void CAESHelper::aes(bool flag, const std::string& in, std::string* out, void* aes_key)
 {
 #if MOOON_HAVE_OPENSSL == 1
     AES_KEY* aes_key_ = (AES_KEY*)aes_key;
