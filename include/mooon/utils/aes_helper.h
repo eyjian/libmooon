@@ -19,7 +19,7 @@
  */
 #ifndef MOOON_UTILS_AES_HELPER_H
 #define MOOON_UTILS_AES_HELPER_H
-#include "mooon/utils/config.h"
+#include "mooon/utils/exception.h"
 UTILS_NAMESPACE_BEGIN
 
 class CAESHelper
@@ -28,15 +28,16 @@ public:
     static int aes_block_size;
 
 public:
+    // key的长度需为128、192或256，否则encrypt和decrypt抛出异常
     CAESHelper(const std::string& key);
     ~CAESHelper();
 
-    void encrypt(const std::string& in, std::string* out);
-    void decrypt(const std::string& in, std::string* out);
+    void encrypt(const std::string& in, std::string* out) throw (utils::CException);
+    void decrypt(const std::string& in, std::string* out) throw (utils::CException);
 
 private:
     // flag 为true表示加密，为false表示解密
-    void aes(bool flag, const std::string& in, std::string* out, void* aes_key);
+    void aes(bool flag, const std::string& in, std::string* out, void* aes_key) throw (utils::CException);
 
 private:
     void* _encrypt_key;

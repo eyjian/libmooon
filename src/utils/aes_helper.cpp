@@ -29,6 +29,21 @@ int CAESHelper::aes_block_size = AES_BLOCK_SIZE; // 16
 int CAESHelper::aes_block_size = 0;
 #endif // MOOON_HAVE_OPENSSL
 
+static std::string errcode2errmsg(int errcode)
+{
+    std::string errmsg;
+
+    if (0 == errcode)
+        errmsg = "success";
+    else if (-1 == errcode)
+        errmsg = "userkey is empty";
+    else if (-2 == errcode)
+        errmsg = "length of userkey is invalid";
+    else
+        errmsg = "unknown error";
+    return errmsg;
+}
+
 CAESHelper::CAESHelper(const std::string& key)
 {
     _encrypt_key = NULL;
@@ -44,33 +59,47 @@ CAESHelper::~CAESHelper()
 #endif // MOOON_HAVE_OPENSSL
 }
 
-void CAESHelper::encrypt(const std::string& in, std::string* out)
+void CAESHelper::encrypt(const std::string& in, std::string* out) throw (utils::CException)
 {
 #if MOOON_HAVE_OPENSSL == 1
     if (NULL == _encrypt_key)
     {
         _encrypt_key = new AES_KEY;
-        AES_set_encrypt_key((const unsigned char*)(_key.data()), (int)(_key.size()*8), (AES_KEY*)_encrypt_key);
+
+        const int errcode = AES_set_encrypt_key((const unsigned char*)(_key.data()), (int)(_key.size()*8), (AES_KEY*)_encrypt_key);
+        if (errcode != 0)
+        {
+            delete (AES_KEY*)_encrypt_key;
+            _encrypt_key = NULL;
+            THROW_EXCEPTION(errcode2errmsg(errcode), errcode);
+        }
     }
 
     aes(true, in, out, _encrypt_key);
 #endif // MOOON_HAVE_OPENSSL
 }
 
-void CAESHelper::decrypt(const std::string& in, std::string* out)
+void CAESHelper::decrypt(const std::string& in, std::string* out) throw (utils::CException)
 {
 #if MOOON_HAVE_OPENSSL == 1
     if (NULL == _decrypt_key)
     {
         _decrypt_key = new AES_KEY;
-        AES_set_decrypt_key((const unsigned char*)(_key.data()), (int)(_key.size()*8), (AES_KEY*)_decrypt_key);
+
+        const int errcode = AES_set_decrypt_key((const unsigned char*)(_key.data()), (int)(_key.size()*8), (AES_KEY*)_decrypt_key);
+        if (errcode != 0)
+        {
+            delete (AES_KEY*)_decrypt_key;
+            _decrypt_key = NULL;
+            THROW_EXCEPTION(errcode2errmsg(errcode), errcode);
+        }
     }
 
     aes(false, in, out, _decrypt_key);
 #endif // MOOON_HAVE_OPENSSL
 }
 
-void CAESHelper::aes(bool flag, const std::string& in, std::string* out, void* aes_key)
+void CAESHelper::aes(bool flag, const std::string& in, std::string* out, void* aes_key) throw (utils::CException)
 {
 #if MOOON_HAVE_OPENSSL == 1
     AES_KEY* aes_key_ = (AES_KEY*)aes_key;
