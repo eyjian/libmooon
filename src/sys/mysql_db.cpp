@@ -97,9 +97,11 @@ void CMySQLConnection::escape_string(const std::string& str, std::string* escape
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-CMySQLConnection::CMySQLConnection(size_t sql_max)
-    : CDBConnectionBase(sql_max), _mysql_handle(NULL)
+CMySQLConnection::CMySQLConnection(size_t sql_max, bool multistatements)
+    : CDBConnectionBase(sql_max), _mysql_handle(NULL), _client_flag(0)
 {
+    if (multistatements)
+        _client_flag = CLIENT_MULTI_STATEMENTS; // Tell the server that the client may send multiple statements in a single string (separated by ; characters).
 }
 
 CMySQLConnection::~CMySQLConnection()
@@ -468,7 +470,7 @@ void CMySQLConnection::do_open() throw (CDBException)
         // See the note following this table for more information about this flag.
         if (NULL == mysql_real_connect(mysql_handle,
                                        _db_ip.c_str(), _db_user.c_str(), _db_password.c_str(),
-                                       _db_name.c_str(), _db_port, NULL, 0))
+                                       _db_name.c_str(), _db_port, NULL, _client_flag))
         {
             throw CDBException(NULL,
                                mysql_error(mysql_handle), mysql_errno(mysql_handle),

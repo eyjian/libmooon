@@ -28,10 +28,10 @@ public:
 
     // 返回微秒级的耗时
     // restart 调用之后是否重新开始计时
-    unsigned int get_elapsed_microseconds(bool restart=true)
+    uint64_t get_elapsed_microseconds(bool restart=true)
     {
         (void)gettimeofday(&_stop_time, NULL);
-        unsigned int elapsed_microseconds = static_cast<unsigned int>((_stop_time.tv_sec - _start_time.tv_sec) * 1000000 + (_stop_time.tv_usec - _start_time.tv_usec));
+        const uint64_t elapsed_microseconds = static_cast<uint64_t>((_stop_time.tv_sec - _start_time.tv_sec) * (__UINT64_C(1000000)) + (_stop_time.tv_usec - _start_time.tv_usec));
 
         // 重计时
         if (restart)
@@ -43,10 +43,10 @@ public:
         return elapsed_microseconds;
     }
 
-    unsigned int get_total_elapsed_microseconds()
+    uint64_t get_total_elapsed_microseconds()
     {
         (void)gettimeofday(&_stop_time, NULL);
-        unsigned int total_elapsed_microseconds = static_cast<unsigned int>((_stop_time.tv_sec - _total_time.tv_sec) * 1000000 + (_stop_time.tv_usec - _total_time.tv_usec));
+        const uint64_t total_elapsed_microseconds = static_cast<uint64_t>((_stop_time.tv_sec - _total_time.tv_sec) * (__UINT64_C(1000000)) + (_stop_time.tv_usec - _total_time.tv_usec));
         return total_elapsed_microseconds;
     }
 

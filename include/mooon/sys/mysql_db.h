@@ -71,7 +71,7 @@ public:
     static void escape_string(const std::string& str, std::string* escaped_str);
 
 public:
-    CMySQLConnection(size_t sql_max=8192);
+    CMySQLConnection(size_t sql_max=8192, bool multistatements=false);
     ~CMySQLConnection();
     void* get_mysql_handle() const { return _mysql_handle; }
 
@@ -120,6 +120,7 @@ private:
 
 private:
     void* _mysql_handle; // MySQL句柄
+    int _client_flag;
 };
 
 SYS_NAMESPACE_END
