@@ -73,6 +73,7 @@ public:
      * 返回命令行参数个数
      */
     static int get_program_parameters(std::vector<std::string>* parameters, uint32_t pid=0);
+    static std::string get_program_parameter0(uint32_t pid=0); // 第0个参数即为进程名
 
     /**
      * 取得指定进程的整个命令行

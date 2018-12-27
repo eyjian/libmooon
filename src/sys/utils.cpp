@@ -226,6 +226,16 @@ int CUtils::get_program_parameters(std::vector<std::string>* parameters, uint32_
     return static_cast<int>(parameters->size());
 }
 
+std::string CUtils::get_program_parameter0(uint32_t pid)
+{
+    std::string parameter0;
+    std::vector<std::string> parameters;
+    get_program_parameters(&parameters, pid);
+    if (!parameters.empty())
+        parameter0 = parameters[0];
+    return parameter0;
+}
+
 std::string CUtils::get_program_full_cmdline(char separator, uint32_t pid)
 {
     std::string full_cmdline;
@@ -457,7 +467,10 @@ std::string CUtils::get_program_short_name()
 {
     //#define _GNU_SOURCE
     //#include <errno.h>
-    return program_invocation_short_name;
+    if ('/' == program_invocation_short_name[0])
+        return program_invocation_short_name+1;
+    else
+        return program_invocation_short_name;
 }
 
 std::string CUtils::get_filename(const std::string& filepath)
@@ -684,6 +697,7 @@ bool CUtils::process_exists(int64_t pid)
 // int asprintf(char **strp, const char *fmt, ...);
 std::string CUtils::get_process_name(int64_t pid)
 {
+    // 一些Linux并没有comm，因此取不到值
     const std::string& filepath = utils::CStringUtils::format_string("/proc/%" PRId64"/comm", pid);
     const int fd = open(filepath.c_str(), O_RDONLY);
     char process_name[PATH_MAX];
