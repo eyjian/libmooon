@@ -10,6 +10,7 @@
 # 1）由xxx_HOME环境变量指定的路径，比如：export MYSQL_HOME=/usr/local/mysql
 # 2）标准路径/usr/local/xxx，比如：/usr/local/mysql或/usr/local/hiredis等
 # 3）准标准路径/usr/local/thirdparty，比如：/usr/local/thirdparty/mysql
+# 4）默认路径/usr/local，如：/usr/local/include/mysql
 # 其它路径将不能被自动识别和发现。
 
 # 让make时显示编译命令
