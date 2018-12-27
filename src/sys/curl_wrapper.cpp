@@ -560,7 +560,6 @@ void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable
     const curl_version_info_data* curl_version_info = (curl_version_info_data*)_curl_version_info;
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
-    curl_slist* head_list = static_cast<curl_slist*>(_head_list);
 
     // CURLOPT_HTTPHEADER
     // Set custom HTTP headers
