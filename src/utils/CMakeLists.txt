@@ -24,11 +24,11 @@ set(
 )
 
 # libmooon_utils.a
-add_library(
-    mooon_utils
-    STATIC
-    ${MOOON_UTILS_SRC}
-)
+#add_library(
+#    mooon_utils
+#    STATIC
+#    ${MOOON_UTILS_SRC}
+#)
 
 # CMAKE_INSTALL_PREFIX
 install(

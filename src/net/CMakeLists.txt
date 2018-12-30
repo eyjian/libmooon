@@ -24,11 +24,11 @@ set(
 )
 
 # libmooon_net.a
-add_library(
-    mooon_net
-    STATIC
-    ${MOOON_NET_SRC}
-)
+#add_library(
+#    mooon_net
+#    STATIC
+#    ${MOOON_NET_SRC}
+#)
 
 # CMAKE_INSTALL_PREFIX
 install(

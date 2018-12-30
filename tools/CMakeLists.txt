@@ -3,47 +3,45 @@
 include_directories(.)
 include_directories(../include)
 include_directories(../include/mooon)
-link_directories(../src/net)
-link_directories(../src/sys)
-link_directories(../src/utils)
+link_directories(../src)
 link_libraries(dl pthread rt z)
 
 if (MOOON_HAVE_OPENSSL)
     # 计算md5工具
     add_executable(md5 md5.cpp)
-    target_link_libraries(md5 libmooon_utils.a libcrypto.a)
+    target_link_libraries(md5 libmooon.a libcrypto.a)
     
     add_executable(base64 base64.cpp)
-    target_link_libraries(base64 libmooon_utils.a libcrypto.a)
+    target_link_libraries(base64 libmooon.a libcrypto.a)
     
     add_executable(sha sha.cpp)
-    target_link_libraries(sha libmooon_utils.a libcrypto.a)
+    target_link_libraries(sha libmooon.a libcrypto.a)
 endif ()
 
 # 硬盘性能测试工具
 add_executable(disk_benchmark disk_benchmark.cpp)
-target_link_libraries(disk_benchmark libmooon_sys.a libmooon_utils.a)
+target_link_libraries(disk_benchmark libmooon.a)
 
 # pidof
 add_executable(pidof pidof.cpp)
-target_link_libraries(pidof libmooon_sys.a libmooon_utils.a)
+target_link_libraries(pidof libmooon.a)
 
 # killall
 add_executable(killall killall.cpp)
-target_link_libraries(killall libmooon_sys.a libmooon_utils.a)
+target_link_libraries(killall libmooon.a)
 
 if (MOOON_HAVE_LIBSSH2)
 	# 远程命令工具
 	add_executable(mooon_ssh mooon_ssh.cpp)
-	target_link_libraries(mooon_ssh libmooon_net.a libmooon_sys.a libmooon_utils.a libssh2.a libcrypto.a)
+	target_link_libraries(mooon_ssh libmooon.a libssh2.a libcrypto.a)
 	
 	# 批量上传工具
 	add_executable(mooon_upload mooon_upload.cpp)
-	target_link_libraries(mooon_upload libmooon_net.a libmooon_sys.a libmooon_utils.a libssh2.a libcrypto.a)
+	target_link_libraries(mooon_upload libmooon.a libssh2.a libcrypto.a)
 
     # 下载工具
     add_executable(mooon_download mooon_download.cpp)
-    target_link_libraries(mooon_download libmooon_net.a libmooon_sys.a libmooon_utils.a libssh2.a libcrypto.a)
+    target_link_libraries(mooon_download libmooon.a libssh2.a libcrypto.a)
     
 	# CMAKE_INSTALL_PREFIX
 	install(
@@ -55,10 +53,10 @@ endif ()
 # r3c_stress
 if (MOOON_HAVE_R3C)
     add_executable(r3c_stress r3c_stress.cpp)
-    target_link_libraries(r3c_stress libmooon_sys.a libmooon_utils.a libr3c.a libhiredis.a)
+    target_link_libraries(r3c_stress libmooon.a libr3c.a libhiredis.a)
     
     add_executable(redis_queue_mover redis_queue_mover.cpp)
-    target_link_libraries(redis_queue_mover libmooon_sys.a libmooon_utils.a libr3c.a libhiredis.a)
+    target_link_libraries(redis_queue_mover libmooon.a libr3c.a libhiredis.a)
     
     # CMAKE_INSTALL_PREFIX
     install(
@@ -73,10 +71,10 @@ if (MOOON_HAVE_THRIFT)
     exec_program(rm ARGS ${CMAKE_CURRENT_SOURCE_DIR}/THBaseService_server.skeleton.cpp)
 
     add_executable(hbase_stress hbase_stress.cpp THBaseService.cpp hbase_constants.cpp hbase_types.cpp)
-    target_link_libraries(hbase_stress libmooon_sys.a libmooon_utils.a libthrift.a)
+    target_link_libraries(hbase_stress libmooon.a libthrift.a)
     
     add_executable(hbase_scan hbase_scan.cpp THBaseService.cpp hbase_constants.cpp hbase_types.cpp)
-    target_link_libraries(hbase_scan libmooon_sys.a libmooon_utils.a libthrift.a)
+    target_link_libraries(hbase_scan libmooon.a libthrift.a)
     
     # CMAKE_INSTALL_PREFIX
     install(
@@ -88,7 +86,7 @@ endif ()
 # mysql_escape_test
 if (MOOON_HAVE_MYSQL)    
     add_executable(mysql_escape_test mysql_escape_test.cpp)
-    target_link_libraries(mysql_escape_test libmooon_sys.a libmooon_utils.a libmysqlclient.a)
+    target_link_libraries(mysql_escape_test libmooon.a libmysqlclient.a)
     
     # CMAKE_INSTALL_PREFIX
     install(
@@ -100,11 +98,11 @@ endif ()
 if (MOOON_HAVE_ZOOKEEPER)
     # zkupload
     add_executable(zkupload zk_upload.cpp)
-    target_link_libraries(zkupload libmooon_sys.a libmooon_utils.a libzookeeper_mt.a)
+    target_link_libraries(zkupload libmooon.a libzookeeper_mt.a)
     
     # zkdownload
     add_executable(zkdownload zk_download.cpp)
-    target_link_libraries(zkdownload libmooon_sys.a libmooon_utils.a libzookeeper_mt.a)
+    target_link_libraries(zkdownload libmooon.a libzookeeper_mt.a)
     
     # CMAKE_INSTALL_PREFIX
     install(
@@ -116,7 +114,7 @@ endif ()
 if (MOOON_HAVE_CURL)
     # curl_download
     add_executable(curl_download curl_download.cpp)
-    target_link_libraries(curl_download libmooon_sys.a libmooon_utils.a libcurl.a libcares.a libidn.a libssl.a libcrypto.a)
+    target_link_libraries(curl_download libmooon.a libcurl.a libcares.a libidn.a libssl.a libcrypto.a)
 endif ()
 
 # CMAKE_INSTALL_PREFIX

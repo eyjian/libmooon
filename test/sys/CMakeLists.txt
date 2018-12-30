@@ -1,10 +1,8 @@
 # Writed by yijian (eyjian@qq.com, eyjian@gmail.com)
 
 include_directories(../../include)
-link_directories(../../src/sys)
-link_directories(../../src/utils)
-link_libraries(libmooon_sys.a)
-link_libraries(libmooon_utils.a)
+link_directories(../../src)
+link_libraries(libmooon.a)
 link_libraries(dl pthread rt z)
 
 add_executable(test_safe_logger test_safe_logger.cpp)
