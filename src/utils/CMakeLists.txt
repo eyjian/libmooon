@@ -1,7 +1,7 @@
 # Writed by yijian (eyjian@qq.com, eyjian@gmail.com)
 
-include_directories(../../include)
-include_directories(../../include/mooon)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include/mooon)
 
 # 源代码
 set(
@@ -32,7 +32,7 @@ set(
 
 # CMAKE_INSTALL_PREFIX
 install(
-        DIRECTORY ../../include/mooon/utils        
+        DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../include/mooon/utils        
         DESTINATION include/mooon
         PATTERN "*.h"
        )

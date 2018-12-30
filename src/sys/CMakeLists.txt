@@ -1,7 +1,7 @@
 # Writed by yijian (eyjian@qq.com, eyjian@gmail.com)
 
-include_directories(../../include)
-include_directories(../../include/mooon)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include/mooon)
 
 if (MOOON_HAVE_THRIFT)
         # 编译thrift文件
@@ -69,7 +69,7 @@ set(
 
 # CMAKE_INSTALL_PREFIX
 install(
-        DIRECTORY ../../include/mooon/sys        
+        DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../include/mooon/sys        
         DESTINATION include/mooon
         PATTERN "*.h"
        )

@@ -4,8 +4,8 @@ add_subdirectory(utils)
 add_subdirectory(sys)
 add_subdirectory(net)
 
-include_directories(../include)
-include_directories(../include/mooon)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include/mooon)
 
 # libmooon.a
 add_library(
