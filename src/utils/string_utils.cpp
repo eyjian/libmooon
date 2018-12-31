@@ -788,7 +788,8 @@ const char* CStringUtils::extract_filename(const char* filepath)
 }
 
 // snprintf()第2个参数的大小，要求包含结尾符'\0'
-// snprintf()的返回值，返回的是期望大小，但不包含结尾符'\0'，下面假设snprintf()的第二个参数值为10，则：
+// snprintf()的返回值是期望大小，也包含了结尾符'\0'，
+// 下面假设snprintf()的第二个参数值为10，则：
 // 1) 当str为"abc"时，它的返回值的大小是3，"abc"的字符个数刚好是3；
 // 2) 当str为"1234567890"时，它的返回值大小是10，"1234567890"的字符个数刚好是10；
 // 3) 当str为"1234567890X"时，它的返回值大小是11，"1234567890X"的字符个数刚好是11。
@@ -808,12 +809,26 @@ std::string CStringUtils::format_string(const char* format, ...)
         expected = vsnprintf(buffer_p, size, format, ap);
 
         va_end(ap);
-        if (expected>-1 && expected<static_cast<int>(size))
+        if (expected>-1 && expected<=static_cast<int>(size))
         {
             break;
         }
         else
         {
+            /* The functions snprintf() and vsnprintf() do not write more than size bytes
+             * (including the terminating null byte ('\0')).
+             *
+             * If the output was truncated due to this limit then the return value is the number of characters
+             * (excluding the terminating null byte) which would have been written to the final
+             * string if enough space had been available.
+             *
+             * Thus, a return value of size or more means that the output was truncated.
+             *
+             * The glibc implementation of the functions snprintf() and vsnprintf() conforms to the C99 standard,
+             * that is, behaves as described above, since glibc version 2.1.
+             * Until glibc 2.0.6 they would return -1 when the output was truncated.
+             */
+
             /* Else try again with more space. */
             if (expected > -1)    /* glibc 2.1 */
                 size = static_cast<size_t>(expected + 1); /* precisely what is needed */
