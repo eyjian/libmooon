@@ -796,31 +796,37 @@ const char* CStringUtils::extract_filename(const char* filepath)
 // int asprintf(char **strp, const char *fmt, ...);
 std::string CStringUtils::format_string(const char* format, ...)
 {
+    size_t size = SIZE_4K;
+    std::string buffer(size, '\0');
+    char* buffer_p = const_cast<char*>(buffer.data());
+    int expected = 0;
     va_list ap;
-    size_t size = 8192;
-    ScopedArray<char> buffer(new char[size]);
 
     while (true)
     {
         va_start(ap, format);
-
-        // vsnprintf中的第二参数大小是要求包含结尾符的
-        int expected = vsnprintf(buffer.get(), size, format, ap);
+        expected = vsnprintf(buffer_p, size, format, ap);
 
         va_end(ap);
-        if (expected > -1 && expected < (int)size)
+        if (expected>-1 && expected<static_cast<int>(size))
+        {
             break;
+        }
+        else
+        {
+            /* Else try again with more space. */
+            if (expected > -1)    /* glibc 2.1 */
+                size = static_cast<size_t>(expected + 1); /* precisely what is needed */
+            else           /* glibc 2.0 */
+                size *= 2;  /* twice the old size */
 
-        /* Else try again with more space. */
-        if (expected > -1)    /* glibc 2.1 */
-            size = (size_t)expected + 1; /* precisely what is needed */
-        else           /* glibc 2.0 */
-            size *= 2;  /* twice the old size */
-
-        buffer.reset(new char[size]);
+            buffer.resize(size);
+            buffer_p = const_cast<char*>(buffer.data());
+        }
     }
 
-    return buffer.get();
+    // expected包含了字符串结尾符号，其值等于：strlen(buffer_p)+1
+    return std::string(buffer_p, expected>0?expected-1:0);
 }
 
 bool CStringUtils::is_numeric_string(const char* str, bool enable_float)
