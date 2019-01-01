@@ -788,7 +788,7 @@ const char* CStringUtils::extract_filename(const char* filepath)
 }
 
 // snprintf()第2个参数的大小，要求包含结尾符'\0'
-// snprintf()的返回值是期望大小，也包含了结尾符'\0'，
+// snprintf()的返回值是期望大小，不包含结尾符'\0'，
 // 下面假设snprintf()的第二个参数值为10，则：
 // 1) 当str为"abc"时，它的返回值的大小是3，"abc"的字符个数刚好是3；
 // 2) 当str为"1234567890"时，它的返回值大小是10，"1234567890"的字符个数刚好是10；
@@ -797,7 +797,7 @@ const char* CStringUtils::extract_filename(const char* filepath)
 // int asprintf(char **strp, const char *fmt, ...);
 std::string CStringUtils::format_string(const char* format, ...)
 {
-    size_t size = SIZE_4K;
+    size_t size = 4096;
     std::string buffer(size, '\0');
     char* buffer_p = const_cast<char*>(buffer.data());
     int expected = 0;
@@ -840,8 +840,8 @@ std::string CStringUtils::format_string(const char* format, ...)
         }
     }
 
-    // expected包含了字符串结尾符号，其值等于：strlen(buffer_p)+1
-    return std::string(buffer_p, expected>0?expected-1:0);
+    // expected不包含字符串结尾符号，其值等于：strlen(buffer_p)
+    return std::string(buffer_p, expected>0?expected:0);
 }
 
 bool CStringUtils::is_numeric_string(const char* str, bool enable_float)
