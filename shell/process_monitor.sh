@@ -145,12 +145,14 @@ log_filesize=10485760
 # 子进程不能继承，否则会导致本脚本自身的日志文件滚动时，被删除的备份不能被释放
 close_all_fd()
 {
+    return
     # 0, 1, 2, 255
     # compgen -G "/proc/$BASHPID/fd/*
     for fd in $(ls /proc/$$/fd); do
         if test $fd -ge 0; then
             # 关闭文件描述符fd
             eval "exec $fd>&-"
+            #eval "exec $fd<&-"
         fi
     done
 }
