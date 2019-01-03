@@ -302,7 +302,13 @@ while true; do
         if test $process_count -lt 1; then
             # 执行重启脚本，要求这个脚本能够将指定的进程拉起来
             log "restart \"$process_cmdline\"\n"
-            sh -c "close_all_fd;$restart_script" >> $log_filepath 2>&1 # 注意一定要以“sh -c”方式执行
+            # 如果使用“>>”重定向到log_filepath，
+            # 则会导致该文件的fd由被拉起进程继承，
+            # 当log_filepath滚动后无法从磁盘上释放。
+            #sh -c "$restart_script" >> $log_filepath 2>&1
+            # “2>&1”的作用是“restart_script”有语法错误时，
+            # sh的错误信息输出到log_filepath，并不是restart_script的错误信息
+            sh -c "$restart_script" 2>&1 | tee -a $log_filepath
 
             # sleep时间得长一点，原因是启动可能没那么快，以防止启动多个进程
             # 在某些环境遇到sleep无效，正常sleep后“$?”值为0，则异常时变成“141”，
