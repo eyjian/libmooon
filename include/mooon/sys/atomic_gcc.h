@@ -1,5 +1,8 @@
 #ifndef __ARCH_I386_ATOMIC__
 #define __ARCH_I386_ATOMIC__
+// The definition given in the Intel documentation allows only for the use of the types int,
+// long, long long as well as their unsigned counterparts.
+// GCC will allow any integral scalar or pointer type that is 1, 2, 4 or 8 bytes in length.
 
 #include <sys/cdefs.h>
 __BEGIN_DECLS
@@ -37,9 +40,9 @@ typedef volatile int atomic_t;
  *
  * Atomically adds @i to @v.
  */
-static __inline__ void atomic_add(int i, atomic_t *v)
+static __inline__ int atomic_add(int i, atomic_t *v)
 {
-	(void)__sync_fetch_and_add(v, i);
+	return __sync_fetch_and_add(v, i);
 }
 
 /**
@@ -49,9 +52,9 @@ static __inline__ void atomic_add(int i, atomic_t *v)
  *
  * Atomically subtracts @i from @v.
  */
-static __inline__ void atomic_sub(int i, atomic_t *v)
+static __inline__ int atomic_sub(int i, atomic_t *v)
 {
-	(void)__sync_fetch_and_sub(v, i);
+    return __sync_fetch_and_sub(v, i);
 }
 
 /**
@@ -74,9 +77,9 @@ static __inline__ int atomic_sub_and_test(int i, atomic_t *v)
  *
  * Atomically increments @v by 1.
  */
-static __inline__ void atomic_inc(atomic_t *v)
+static __inline__ int atomic_inc(atomic_t *v)
 {
-	(void)__sync_fetch_and_add(v, 1);
+    return __sync_fetch_and_add(v, 1);
 }
 
 /**
@@ -85,9 +88,9 @@ static __inline__ void atomic_inc(atomic_t *v)
  *
  * Atomically decrements @v by 1.
  */
-static __inline__ void atomic_dec(atomic_t *v)
+static __inline__ int atomic_dec(atomic_t *v)
 {
-	(void)__sync_fetch_and_sub(v, 1);
+    return __sync_fetch_and_sub(v, 1);
 }
 
 /**

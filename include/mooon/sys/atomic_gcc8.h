@@ -1,5 +1,8 @@
 #ifndef __ARCH_I386_ATOMIC8__
 #define __ARCH_I386_ATOMIC8__
+// The definition given in the Intel documentation allows only for the use of the types int,
+// long, long long as well as their unsigned counterparts.
+// GCC will allow any integral scalar or pointer type that is 1, 2, 4 or 8 bytes in length.
 
 #define HAS_ATOMIC8 1
 
@@ -39,9 +42,9 @@ typedef volatile long atomic8_t;
  * 
  * Atomically adds @i to @v.
  */
-static __inline__ void atomic8_add(long i, atomic8_t *v)
+static __inline__ long atomic8_add(long i, atomic8_t *v)
 {
-	(void)__sync_fetch_and_add(v, i);
+	return __sync_fetch_and_add(v, i);
 }
 
 /**
@@ -51,9 +54,9 @@ static __inline__ void atomic8_add(long i, atomic8_t *v)
  * 
  * Atomically subtracts @i from @v.
  */
-static __inline__ void atomic8_sub(long i, atomic8_t *v)
+static __inline__ long atomic8_sub(long i, atomic8_t *v)
 {
-	(void)__sync_fetch_and_sub(v, i);
+	return __sync_fetch_and_sub(v, i);
 }
 
 /**
@@ -76,9 +79,9 @@ static __inline__ int atomic8_sub_and_test(long i, atomic8_t *v)
  * 
  * Atomically increments @v by 1.
  */ 
-static __inline__ void atomic8_inc(atomic8_t *v)
+static __inline__ long atomic8_inc(atomic8_t *v)
 {
-	(void)__sync_fetch_and_add(v, 1);
+	return __sync_fetch_and_add(v, 1);
 }
 
 /**
@@ -87,9 +90,9 @@ static __inline__ void atomic8_inc(atomic8_t *v)
  * 
  * Atomically decrements @v by 1.
  */ 
-static __inline__ void atomic8_dec(atomic8_t *v)
+static __inline__ long atomic8_dec(atomic8_t *v)
 {
-	(void)__sync_fetch_and_sub(v, 1);
+	return __sync_fetch_and_sub(v, 1);
 }
 
 /**

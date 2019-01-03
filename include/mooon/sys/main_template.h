@@ -24,6 +24,7 @@
  */
 #ifndef MOOON_SYS_MAIN_TEMPLATE_H
 #define MOOON_SYS_MAIN_TEMPLATE_H
+#include <mooon/sys/atomic.h>
 #include <mooon/sys/log.h>
 #include <mooon/sys/thread_engine.h>
 #include <mooon/utils/args_parser.h>
@@ -237,7 +238,7 @@ protected:
     bool to_stop() const { return _stop; }
 
 private:
-    volatile bool _stop;
+    CAtomic<bool> _stop;
     int _log_level_signo;
     mooon::sys::CThreadEngine* _signal_thread;
 };

@@ -11,6 +11,8 @@ __BEGIN_DECLS
  * on us. We need to use _exactly_ the address the user gave us,
  * not some alias that contains the same information.
  */
+// volatile意思是不要对其进行优化，
+// 这里如果不优化的话，就会被汇编成直接访问内存地址，而不是操作寄存器
 typedef struct { volatile int counter; } atomic_t;
 
 #define ATOMIC_INIT(i)	{ (i) }
@@ -21,6 +23,7 @@ typedef struct { volatile int counter; } atomic_t;
  * 
  * Atomically reads the value of @v.
  */ 
+// 单独的读操作或者写操作，在x86下都是原子性的
 #define atomic_read(v)		((v)->counter)
 
 /**
@@ -30,6 +33,7 @@ typedef struct { volatile int counter; } atomic_t;
  * 
  * Atomically sets the value of @v to @i.
  */ 
+// 单独的读操作或者写操作，在x86下都是原子性的
 #define atomic_set(v,i)		(((v)->counter) = (i))
 
 /**
@@ -41,6 +45,11 @@ typedef struct { volatile int counter; } atomic_t;
  */
 static __inline__ void atomic_add(int i, atomic_t *v)
 {
+    // __asm__表示此处潜入汇编
+    // output 和 input中的"m" "ir"是这种扩展潜入汇编的constraint
+    // m代表这需要访问内存地址来取出数值，i代表这是个立即数，r代表可以放到任何的寄存器中
+    // %1, %0：汇编指令操作数
+    // LOCK 总线加锁
 	__asm__ __volatile__(
 		LOCK "addl %1,%0"
 		:"=m" (v->counter)
