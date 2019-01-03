@@ -18,6 +18,7 @@
  */
 #ifndef MOOON_SYS_THREAD_H
 #define MOOON_SYS_THREAD_H
+#include "mooon/sys/atomic.h"
 #include "mooon/sys/event.h"
 #include "mooon/sys/utils.h"
 #include "mooon/sys/ref_countable.h"
@@ -123,7 +124,7 @@ protected:
 
 private:        
     CEvent _event;
-    volatile bool _stop; /** 是否停止线程标识 */
+    CAtomic<bool> _stop; /** 是否停止线程标识 */
     /** 线程当前状态: 等待、唤醒和正在运行 */
     volatile enum { state_sleeping, state_wakeuped, state_running } _current_state;
 
