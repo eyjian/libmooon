@@ -305,6 +305,9 @@ while true; do
             # 如果使用“>>”重定向到log_filepath，
             # 则会导致该文件的fd由被拉起进程继承，
             # 当log_filepath滚动后无法从磁盘上释放。
+            # 如果采用close_all_fd，并仍然使用“>>”，
+            # 则会出现关闭被拉起进程fd问题，
+            # 比如导致MySQL在执行SELECT时报错“mysql server has gone away”。
             #sh -c "$restart_script" >> $log_filepath 2>&1
             # “2>&1”的作用是“restart_script”有语法错误时，
             # sh的错误信息输出到log_filepath，并不是restart_script的错误信息
