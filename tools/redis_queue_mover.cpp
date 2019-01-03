@@ -76,7 +76,7 @@ INTEGER_ARG_DEFINE(uint32_t, retry_interval, 100, 1, 1000000, "the interval in m
 // 批量数，即一次批量移动多少
 INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "batch to move");
 
-static volatile bool g_stop = false;
+static mooon::sys::CAtomic<bool> g_stop(false);
 #if __WORDSIZE==64
 static atomic8_t g_num_moved;
 #else
