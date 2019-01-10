@@ -36,6 +36,14 @@ function usage()
     echo "Usage2 (only test): YEAR MySQL-ip MySQL-port MySQL-username MySQL-password MySQL-dbname MySQL-tablename partition-field test"
 }
 
+# 依赖mysql
+MYSQL=mysql
+which "$MYSQL" > /dev/null 2>&1
+if test $? -ne 0; then
+    echo "\`mysql\` not exists or not executable"
+    exit 1
+fi
+
 # 需提供9个参数
 if test $# -ne 9; then
     usage
@@ -105,14 +113,6 @@ function get_num_days()
     echo $days
 }
 
-# 依赖mysql
-MYSQL=mysql
-which "$MYSQL" > /dev/null 2>&1
-if test $? -ne 0; then
-    echo "\`mysql\` not exists or not executable"
-    exit 1
-fi
-
 set -e
 months=12
 k=0
@@ -156,3 +156,6 @@ if test $only_test -eq 0; then
     sh -c "$script"
 fi
 set +e
+
+# 正常退出
+exit 0
