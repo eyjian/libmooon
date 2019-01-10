@@ -98,22 +98,22 @@ echo "NUMBER OF DAYS: $num_dayofyear"
 echo "MySQL: $mysql_ip:$mysql_port#$mysql_dbname:$mysql_tablename"
 
 # 得到指定月有多少天
-function get_num_days()
+function get_num_mdays()
 {
-    days=31
-    month=$1
+    mdays=31 # 一月的天数
+    month=$1 # 月份
 
     if test $month -eq 2; then
         if test $is_leap_year -eq 1; then
-            days=29
+            mdays=29
         else
-            days=28
+            mdays=28
         fi
     elif test $month -eq 4 -o $month -eq 6  -o $month -eq 9 -o $month -eq 11; then
-        days=30
+        mdays=30
     fi
 
-    echo $days
+    echo $mdays
 }
 
 set -e
@@ -121,8 +121,8 @@ months=12
 k=0
 for ((i=1; i<=$months; ++i)) # 遍历一年的所有月
 do
-    days=`get_num_days $i`
-    for ((j=1; j<=$days; ++j,++k)) # 遍历一个月的所有天
+    mdays=`get_num_mdays $i`
+    for ((j=1; j<=$mdays; ++j,++k)) # 遍历一个月的所有天
     do
         month=$i
         day=$j
