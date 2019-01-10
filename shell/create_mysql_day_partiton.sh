@@ -26,6 +26,9 @@
 #     KEY (`f_uid`)
 # );
 # 建议“表名”带上年份后缀或前、中缀
+#
+# 如果数据没有对应的分区，则INSERT时报错：
+# ERROR 1526 (HY000): Table has no partition for value 737730
 
 # 显示用法函数
 function usage()
@@ -136,10 +139,10 @@ do
                 continue;
             fi
             script="$MYSQL -h$mysql_ip -P$mysql_port -u$mysql_username -p'$mysql_password' $mysql_dbname \
--e\"ALTER TABLE $mysql_tablename PARTITION BY RANGE (DAYOFYEAR($partition_field)) (PARTITION p$k VALUES LESS THAN (DAYOFYEAR('$datetime')))\""
+-e\"ALTER TABLE $mysql_tablename PARTITION BY RANGE (TO_DAYS($partition_field)) (PARTITION p$k VALUES LESS THAN (TO_DAYS('$datetime')))\""
         else
             script="$MYSQL -h$mysql_ip -P$mysql_port -u$mysql_username -p'$mysql_password' $mysql_dbname \
--e\"ALTER TABLE $mysql_tablename ADD PARTITION(PARTITION p$k VALUES LESS THAN (DAYOFYEAR('$datetime')))\""
+-e\"ALTER TABLE $mysql_tablename ADD PARTITION(PARTITION p$k VALUES LESS THAN (TO_DAYS('$datetime')))\""
         fi
 
         echo "$script"
@@ -150,7 +153,7 @@ do
 done
 
 script="$MYSQL -h$mysql_ip -P$mysql_port -u$mysql_username -p'$mysql_password' $mysql_dbname \
--e\"ALTER TABLE $mysql_tablename ADD PARTITION(PARTITION p$k VALUES LESS THAN (DAYOFYEAR('$next_year-01-01 00:00:00')))\""
+-e\"ALTER TABLE $mysql_tablename ADD PARTITION(PARTITION p$k VALUES LESS THAN (TO_DAYS('$next_year-01-01 00:00:00')))\""
 echo "$script"
 if test $only_test -eq 0; then
     sh -c "$script"
