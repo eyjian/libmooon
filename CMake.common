@@ -54,7 +54,22 @@ endif ()
 #
 
 # find_library/find_path/find_package/find_program
-
+# find_package要求目标目录有.cmake文件
+#
+# find_path使用示例：
+# find_path(
+#     HIREDIS_INCLUDE
+#     NAMES
+#     hiredis.h
+#     PATHS 
+#     /usr/local/hiredis/include/hiredis
+#     /usr/include
+#     NO_DEFAULT_PATH
+# )
+# HIREDIS_INCLUDE的值为HIREDIS_INCLUDE-NOTFOUND（如果未找到）或/usr/local/hiredis/include/hiredis或/usr/include（如果找到）
+# include_directories(${HIREDIS_INCLUDE}/..)
+# if ("${HIREDIS_INCLUDE}" STREQUAL "HIREDIS_INCLUDE-NOTFOUND"
+#
 # 自动寻找库的安装位置函数
 # discover_library 函数名
 # uppername 库的大写名称，如MYSQL
