@@ -23,6 +23,7 @@
 #include <ctype.h> // toupper
 #include <limits>
 #include <stdarg.h>
+#include <zlib.h>
 UTILS_NAMESPACE_BEGIN
 
 /***
@@ -97,6 +98,15 @@ static bool fast_string2int(const char* str, IntType& result, uint8_t max_length
     if (negative)
         result = -result;
     return true;
+}
+
+uint32_t CStringUtils::crc32(const std::string& str, uint32_t crc)
+{
+    // #include <zconf.h>
+    // typedef unsigned int   uInt;  /* 16 bits or more */
+    // typedef unsigned long  uLong; /* 32 bits or more */
+    // uLong ZEXPORT crc32   OF((uLong crc, const Bytef *buf, uInt len));
+    return (uint32_t)::crc32((uLong)crc, (Bytef*)str.data(), (uInt)str.size());
 }
 
 std::string& CStringUtils::reverse_string(std::string* str)

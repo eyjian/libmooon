@@ -24,14 +24,16 @@
 
 #if __cplusplus >= 201103L
 #include <chrono>
+#include <system_error>
 #include <thread>
-#endif
+#endif // __cplusplus >= 201103L
 
 #include <dirent.h>
 #include <execinfo.h> // backtrace和backtrace_symbols函数
 #include <features.h> // feature_test_macros
 #include <ftw.h> // ftw
 #include <libgen.h> // dirname&basename
+#include <poll.h>
 #include <pwd.h> // getpwuid
 #include <regex.h>
 #include <signal.h>
@@ -60,6 +62,40 @@ static char *g_env_start = NULL;
 // #include <chrono>
 // #include <system_error>
 // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+//
+// Compared  to sleep(3) and usleep(3), nanosleep() has the following advantages:
+// it provides a higher resolution for specifying the sleep interval;
+// POSIX.1 explicitly specifies that it does not interact with signals;
+// and it makes the task of resuming a sleep that has been interrupted by a signal handler easier.
+//
+// If the call is interrupted by a signal handler, nanosleep() returns -1, sets errno to EINTR,
+// and writes the remaining time into the structure pointed to by rem unless rem  is NULL.
+// The value of *rem can then be used to call nanosleep() again and complete the specified pause (but see NOTES).
+//
+// nanosleep()  suspends  the execution of the calling thread until either
+// at least the time specified in *req has elapsed,
+// or the delivery of a signal that triggers the invocation of a handler in the calling thread or that terminates the process.
+//
+// // _POSIX_C_SOURCE >= 199309L
+// int nanosleep(const struct timespec *req, struct timespec *rem);
+// struct timespec {
+//     time_t tv_sec;        /* seconds */
+//     long   tv_nsec;       /* nanoseconds, value of the nanoseconds field must be in the range 0 to 999999999 */
+// };
+//
+// int clock_nanosleep(...); // high-resolution sleep with specifiable clock
+// int restart_syscall(void); // restart a system call after interruption by a stop signal
+//
+// POSIX.1-2001声明此函数已废弃，使用nanosleep代替，POSIX.1-2008删除了usleep
+// int usleep(useconds_t usec); // suspends execution of the calling thread for (at least) usec microseconds.
+// On the original BSD implementation, and in glibc before version 2.2.2, the return type of this function is void.
+// The POSIX version returns int, and this is also  the  proto‐type used since glibc 2.2.2.
+//
+// sleep可能基于SIGALRM实现，一定不能和alarm混合使用！！！
+// // makes the calling thread sleep until seconds seconds have elapsed or a signal arrives which is not ignored.
+// // sleep() may be implemented using SIGALRM; mixing calls to alarm(2) and sleep() is a bad idea.
+// // Zero if the requested time has elapsed, or the number of seconds left to sleep, if the call was interrupted by a signal handler.
+// unsigned int sleep(unsigned int seconds);
 void CUtils::millisleep(uint32_t milliseconds)
 {
     struct timespec ts = { milliseconds / 1000, (milliseconds % 1000) * 1000000 };
@@ -83,6 +119,41 @@ void CUtils::microsleep(uint32_t microseconds)
 #if __cplusplus >= 201103L
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
 #endif
+}
+
+void CUtils::pollsleep(int milliseconds)
+{
+    // 可配合libco协程库，但可能被中断提前结束而不足milliseconds
+    // 如果被中断，则sleep时长将不足milliseconds
+    //
+    // Specifying a negative value in timeout means an infinite timeout.
+    // Note that the timeout interval will be rounded up to the system clock granularity,
+    // and kernel scheduling delays mean that the blocking interval may overrun by a small amount.
+    // Specifying a timeout of zero causes poll() to return immediately.
+    // On success, a positive number is returned,
+    // onerror, -1 is returned, and errno is set appropriately.
+    (void)poll(NULL, 0, milliseconds);
+    // int poll(struct pollfd *fds, nfds_t nfds, int timeout);
+}
+
+// struct timeval {
+//     long    tv_sec;         /* seconds */
+//     long    tv_usec;        /* microseconds */
+// };
+// int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+void CUtils::selectsleep(int milliseconds)
+{
+    // may update the timeout argument to indicate how much time was left,
+    // pselect() does not change this argument.
+    struct timeval timeout = { milliseconds / 1000, (milliseconds % 1000) };
+    struct timeval old_timeout = { timeout.tv_sec, timeout.tv_usec };
+    while (true)
+    {
+        (void)select(0, NULL, NULL, NULL, &timeout);
+        // 如果被中断提前结束，则timeout存储了剩余未睡眠的时长
+        if (timeout.tv_sec<=0 && timeout.tv_usec<=0)
+            break;
+    }
 }
 
 std::string CUtils::get_error_message(int errcode)

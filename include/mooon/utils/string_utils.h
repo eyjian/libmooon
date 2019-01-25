@@ -27,6 +27,8 @@ UTILS_NAMESPACE_BEGIN
 class CStringUtils
 {
 public:
+    uint32_t crc32(const std::string& str, uint32_t crc=0);
+
     // 反转字符串
     // 输入空则啥也不做，输入单个字符则啥也不做，
     // 输入12则变成21，输入123则变成321，输入1234则变成4321，依次类推。。。

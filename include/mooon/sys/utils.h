@@ -31,11 +31,18 @@ SYS_NAMESPACE_BEGIN
 class CUtils
 {
 public:
-    /** 线程安全的毫秒级sleep函数
-      * @milliseconds: 需要sleep的毫秒数
-      */
+    // 基于nanosleep实现的sleep，保证至少睡眠milliseconds指定的时长
     static void millisleep(uint32_t milliseconds);
+
+    // 基于nanosleep实现的sleep，保证至少睡眠microseconds指定的时长
     static void microsleep(uint32_t microseconds);
+
+    // 基于poll实现的sleep，睡眠时长可能小于或微大于milliseconds指定的时长
+    // 如果milliseconds为负值，则表示无限超时
+    static void pollsleep(int milliseconds);
+
+    // 基于select实现的sleep，保证至少睡眠milliseconds指定的时长
+    static void selectsleep(int milliseconds);
 
     /** 得到指定系统调用错误码的字符串错误信息
       * @errcode: 系统调用错误码
