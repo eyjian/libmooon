@@ -348,6 +348,10 @@ std::string CStringUtils::trim_right(const std::string& source)
     return str;
 }
 
+// #include <string>
+// std::to_string() throw (std::bad_alloc);
+// std::stoi() throw (std::invalid_argument,std::out_of_range)
+// std::stoul() throw (std::invalid_argument,std::out_of_range)
 bool CStringUtils::string2double(const char* source, double& result)
 {
     char* endptr = NULL;
@@ -563,6 +567,10 @@ std::string CStringUtils::int16_tostring(int16_t source)
     return int_tostring(source);
 }
 
+// #include <string>
+// std::to_string() throw (std::bad_alloc);
+// std::stoi() throw (std::invalid_argument,std::out_of_range)
+// std::stoul() throw (std::invalid_argument,std::out_of_range)
 std::string CStringUtils::int_tostring(int16_t source)
 {
     // # define UINT16_MAX             (65535)
