@@ -247,6 +247,38 @@ void CSHAHelper::update(const std::string& str)
 	update(str.c_str(), str.size());
 }
 
+// Why does OPENSSL_cleanse look so complex and thread-unsafe?
+//
+// unsigned char cleanse_ctr = 0;
+//
+// void OPENSSL_cleanse(void *ptr, size_t len)
+// {
+//     unsigned char *p = ptr;
+//     size_t loop = len, ctr = cleanse_ctr;
+//     while(loop--)
+//     {
+//         *(p++) = (unsigned char)ctr;
+//         ctr += (17 + ((size_t)p & 0xF));
+//     }
+//     p=memchr(ptr, (unsigned char)ctr, len);
+//     if(p)
+//         ctr += (63 + (size_t)p);
+//     cleanse_ctr = (unsigned char)ctr;
+// }
+//
+// openssl-1.1.0f/mem_clr.c:
+//
+// Pointer to memset is volatile so that compiler must de-reference
+// the pointer and can't assume that it points to any function in
+// particular (such as memset, which it then might further "optimize")
+// typedef void *(*memset_t)(void *, int, size_t);
+//
+// static volatile memset_t memset_func = memset;
+//
+// void OPENSSL_cleanse(void *ptr, size_t len)
+// {
+    //     memset_func(ptr, 0, len);
+// }
 void CSHAHelper::to_string(std::string* str, bool uppercase) const
 {
     int DIGEST_LENGTH;
@@ -256,42 +288,60 @@ void CSHAHelper::to_string(std::string* str, bool uppercase) const
     {
         case SHA224:
         {
+            SHA256_CTX sha_context;
+            memcpy(&sha_context, _sha_context, sizeof(SHA256_CTX));
+
             DIGEST_LENGTH = SHA224_DIGEST_LENGTH;
             digest = new unsigned char[DIGEST_LENGTH];
-            SHA224_Final(digest, (SHA256_CTX*)_sha_context);
-            OPENSSL_cleanse(_sha_context, sizeof(SHA256_CTX));
+            SHA224_Final(digest, &sha_context); // SHA224_Final会修改sha_context
+            // OPENSSL_cleanse() fills ptr of size len with a string of 0's
+            // Use OPENSSL_cleanse() with care if the memory is a mapping of a file.
+            // void OPENSSL_cleanse(void *ptr, size_t len);
+            //OPENSSL_cleanse(&sha_context, sizeof(SHA256_CTX));
             break;
         }
         case SHA256:
         {
+            SHA256_CTX sha_context;
+            memcpy(&sha_context, _sha_context, sizeof(SHA256_CTX));
+
             DIGEST_LENGTH = SHA256_DIGEST_LENGTH;
             digest = new unsigned char[DIGEST_LENGTH];
-            SHA256_Final(digest, (SHA256_CTX*)_sha_context);
-            OPENSSL_cleanse(_sha_context, sizeof(SHA256_CTX));
+            SHA256_Final(digest, &sha_context);
+            //OPENSSL_cleanse(&sha_context, sizeof(SHA256_CTX));
             break;
         }
         case SHA384:
         {
+            SHA512_CTX sha_context;
+            memcpy(&sha_context, _sha_context, sizeof(SHA512_CTX));
+
             DIGEST_LENGTH = SHA384_DIGEST_LENGTH;
             digest = new unsigned char[DIGEST_LENGTH];
-            SHA384_Final(digest, (SHA512_CTX*)_sha_context);
-            OPENSSL_cleanse(_sha_context, sizeof(SHA512_CTX));
+            SHA384_Final(digest, &sha_context);
+            //OPENSSL_cleanse(&sha_context, sizeof(SHA512_CTX));
             break;
         }
         case SHA512:
         {
+            SHA512_CTX sha_context;
+            memcpy(&sha_context, _sha_context, sizeof(SHA512_CTX));
+
             DIGEST_LENGTH = SHA512_DIGEST_LENGTH;
             digest = new unsigned char[DIGEST_LENGTH];
-            SHA512_Final(digest, (SHA512_CTX*)_sha_context);
-            OPENSSL_cleanse(_sha_context, sizeof(SHA512_CTX));
+            SHA512_Final(digest, &sha_context);
+            //OPENSSL_cleanse(&sha_context, sizeof(SHA512_CTX));
             break;
         }
         default:
         {
+            SHA_CTX sha_context;
+            memcpy(&sha_context, _sha_context, sizeof(SHA_CTX));
+
             DIGEST_LENGTH = SHA_DIGEST_LENGTH;
             digest = new unsigned char[DIGEST_LENGTH];
-            SHA1_Final(digest, (SHA_CTX*)_sha_context);
-            OPENSSL_cleanse(_sha_context, sizeof(SHA_CTX));
+            SHA1_Final(digest, &sha_context);
+            //OPENSSL_cleanse(&sha_context, sizeof(SHA_CTX));
             break;
         }
     }
