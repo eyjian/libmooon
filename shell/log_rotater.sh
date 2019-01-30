@@ -48,8 +48,8 @@ dirs_list=$BASEDIR/dirs.list # 存储目录列表的文件，要求一行一个�
 # 处理单个目录下的日志滚动
 scan_single_dir()
 {
-	dir=$1
-	cd $dir
+	dir="$1"
+	cd "$dir" 2>/dev/null
 	if test $? -ne 0; then
 		return
 	fi
@@ -57,9 +57,11 @@ scan_single_dir()
 	# 用到了awk给外部变量赋值的特性
 	eval $(ls -l --time-style=long-iso *.log 2>/dev/null|awk '{ printf("filesize=%s\nfiledate=%s\nfilename=%s\n", $5,$6,$8); }')
 	if test $? -ne 0; then
+        cd -
 		return
 	fi
 	if test -z $filename; then
+        cd -
 		return
 	fi
 
