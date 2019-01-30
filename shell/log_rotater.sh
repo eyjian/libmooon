@@ -42,8 +42,8 @@ backup_interval=60 # 检测的间隔时间，单位为秒
 # 如果dirs_list指定的文件存在，则从dirs_list中读取目录，
 # 否则仅处理backup_dir指定的单个目录
 # 往dirs_list指定文件增减目录时，不需要重启log_rotater.sh
-backup_dir=. # 日志文件所在目录
-dirs_list=$BASEDIR/dirs.list # 存储目录列表的文件，要求一行一个目录
+backup_dir="." # 日志文件所在目录
+dirs_list="$BASEDIR/dirs.list" # 存储目录列表的文件，要求一行一个目录
 
 handle_single_file()
 {
@@ -54,7 +54,7 @@ handle_single_file()
 	if test $? -ne 0; then
 		return
 	fi
-	if test -z $filename; then
+	if test -z "$filename"; then
 		return
 	fi
 
@@ -93,11 +93,11 @@ scan_single_dir()
 # 循环检测
 while true; do
 	if test ! -f $dirs_list; then
-		scan_single_dir $backup_dir
+		scan_single_dir "$backup_dir"
 	else
 		while read dirpath
 		do
-			scan_single_dir $dirpath
+			scan_single_dir "$dirpath"
 		done < $dirs_list
 	fi
 
