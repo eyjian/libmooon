@@ -31,6 +31,9 @@
 # 可采取如下办法检测是何种shell：
 # ls -l `which sh`
 
+# BASEDIR为脚本所在目录
+BASEDIR=$(dirname $(readlink -f $0))
+
 # 可根据需要修改以下参数
 backup_count=10 # 日志滚动的个数
 backup_size=$((1024 * 1024 * 200)) # 单个日志文件大小
@@ -40,7 +43,7 @@ backup_interval=60 # 检测的间隔时间，单位为秒
 # 否则仅处理backup_dir指定的单个目录
 # 往dirs_list指定文件增减目录时，不需要重启log_rotater.sh
 backup_dir=. # 日志文件所在目录
-dirs_list=./dirs.list # 存储目录列表的文件，要求一行一个目录
+dirs_list=$BASEDIR/dirs.list # 存储目录列表的文件，要求一行一个目录
 
 # 处理单个目录下的日志滚动
 scan_single_dir()
@@ -68,16 +71,16 @@ scan_single_dir()
 			if test -f "$old_filename"; then
 				mv "$old_filename" "$new_filename"
 			fi
-	
+
 			file_index=$(($file_index - 1))
 		done
-	
+
     	# 这里需要使用truncate，而不能使用mv，
         # 因为需要保持文件的inode不变
 		cp "$filename" "${filename}.1"
 		truncate -s 1024 "$filename"
 	fi
-	
+
 	cd -
 	sleep 1
 }
