@@ -132,9 +132,11 @@ void CMd5Helper::update(const std::string& str)
 void CMd5Helper::to_string(char str[33], bool uppercase) const
 {
     unsigned char digest[16];
-    MD5Final(digest, (struct MD5Context*)_md5_context);
+    struct MD5Context md5_context;
 
-    // ע��snprintf()�Ĳ���������
+    memcpy(&md5_context, _md5_context, sizeof(struct MD5Context));
+    MD5Final(digest, &md5_context); // MD5Final会修改md5_context
+
     for (int i=0; i<16; ++i)
     {
     	if (uppercase)
@@ -150,7 +152,11 @@ std::string CMd5Helper::to_string(bool uppercase) const
 {
 	char str[33];
 	to_string(str, uppercase);
+#if __cplusplus < 201103L
     return str;
+#else
+    return std::move(str);
+#endif // __cplusplus < 201103L
 }
 
 void CMd5Helper::to_bytes(unsigned char str[16]) const
