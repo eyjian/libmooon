@@ -45,23 +45,16 @@ backup_interval=60 # 检测的间隔时间，单位为秒
 backup_dir=. # 日志文件所在目录
 dirs_list=$BASEDIR/dirs.list # 存储目录列表的文件，要求一行一个目录
 
-# 处理单个目录下的日志滚动
-scan_single_dir()
+handle_single_file()
 {
-	dir="$1"
-	cd "$dir" 2>/dev/null
+    filename="$1"
+    
+    # 用到了awk给外部变量赋值的特性
+	eval $(ls -l --time-style=long-iso "$filename" 2>/dev/null|awk '{ printf("filesize=%s\nfiledate=%s\n", $5,$6); }')
 	if test $? -ne 0; then
-		return
-	fi
-
-	# 用到了awk给外部变量赋值的特性
-	eval $(ls -l --time-style=long-iso *.log 2>/dev/null|awk '{ printf("filesize=%s\nfiledate=%s\nfilename=%s\n", $5,$6,$8); }')
-	if test $? -ne 0; then
-        cd -
 		return
 	fi
 	if test -z $filename; then
-        cd -
 		return
 	fi
 
@@ -82,8 +75,18 @@ scan_single_dir()
 		cp "$filename" "${filename}.1"
 		truncate -s 1024 "$filename"
 	fi
+}
 
-	cd -
+# 处理单个目录下的日志滚动
+scan_single_dir()
+{
+	dir="$1"
+
+    files=`ls *.log 2>/dev/null`
+	for file in $files; do
+        handle_single_file "$file"
+    done
+
 	sleep 1
 }
 
