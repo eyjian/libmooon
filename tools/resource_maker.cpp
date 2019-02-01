@@ -1,5 +1,16 @@
 // Author: yijian
 // Date: 2015/01/23
+//
+// 如果是Linux环境，可用系统自带的工具objcopy，直接将资源文件编译成.o文件
+// objcopy是binutils工具集中的一成员，命令行格式：
+// objcopy [选项]... 输入文件 [输出文件]
+// 示例：
+// objcopy -I binary x.jpg x.o
+//
+// 另外Linux还自带了一个名为xxd的工具，功能和resource_maker类似
+// 示例：
+// xxd -i x.jpg x.c
+//
 // C++资源编译工具，用于将任何格式的文件编译成C++代码
 // 优点：单个.cpp文件，无其它依赖，一句编译后即可使用
 // 编译：g++ -Wall -g -o resource_maker resource_maker.cpp
