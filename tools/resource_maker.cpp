@@ -1,29 +1,29 @@
 // Author: yijian
 // Date: 2015/01/23
-// C++×ÊÔ´±àÒë¹¤¾ß£¬ÓÃÓÚ½«ÈÎºÎ¸ñÊ½µÄÎÄ¼ş±àÒë³ÉC++´úÂë
-// ÓÅµã£ºµ¥¸ö.cppÎÄ¼ş£¬ÎŞÆäËüÒÀÀµ£¬Ò»¾ä±àÒëºó¼´¿ÉÊ¹ÓÃ
-// ±àÒë£ºg++ -Wall -g -o resource_maker resource_maker.cpp
+// C++èµ„æºç¼–è¯‘å·¥å…·ï¼Œç”¨äºå°†ä»»ä½•æ ¼å¼çš„æ–‡ä»¶ç¼–è¯‘æˆC++ä»£ç 
+// ä¼˜ç‚¹ï¼šå•ä¸ª.cppæ–‡ä»¶ï¼Œæ— å…¶å®ƒä¾èµ–ï¼Œä¸€å¥ç¼–è¯‘åå³å¯ä½¿ç”¨
+// ç¼–è¯‘ï¼šg++ -Wall -g -o resource_maker resource_maker.cpp
 //
-// ±àÒëºó£¬»áÉú³ÉÓë×ÊÔ´ÎÄ¼ş¶ÔÓ¦µÄ.cppÎÄ¼ş£¬·Ã.cppÎÄ¼ş°üº¬Á½¸öÈ«¾Ö±äÁ¿£º
-// 1) size±äÁ¿£º´æ´¢×ÊÔ´ÎÄ¼şµÄ×Ö½ÚÊı´óĞ¡£¬±äÁ¿ÃûÍ¬ÎÄ¼şÃû£¬µ«²»°üº¬À©Õ¹Ãû²¿·Ö
-// 2) ×ÊÔ´ÎÄ¼şµÄÄÚÈİ±äÁ¿£ºÒÔÊ®Áù½øÖÆ·½Ê½±í´ï
-// ×¢Òâ£¬ËùÓĞ±äÁ¿×ÜÊÇÎ»ÓÚresourceÃû×Ö¿Õ¼äÄÚ¡£
+// ç¼–è¯‘åï¼Œä¼šç”Ÿæˆä¸èµ„æºæ–‡ä»¶å¯¹åº”çš„.cppæ–‡ä»¶ï¼Œè®¿.cppæ–‡ä»¶åŒ…å«ä¸¤ä¸ªå…¨å±€å˜é‡ï¼š
+// 1) sizeå˜é‡ï¼šå­˜å‚¨èµ„æºæ–‡ä»¶çš„å­—èŠ‚æ•°å¤§å°ï¼Œå˜é‡ååŒæ–‡ä»¶åï¼Œä½†ä¸åŒ…å«æ‰©å±•åéƒ¨åˆ†
+// 2) èµ„æºæ–‡ä»¶çš„å†…å®¹å˜é‡ï¼šä»¥åå…­è¿›åˆ¶æ–¹å¼è¡¨è¾¾
+// æ³¨æ„ï¼Œæ‰€æœ‰å˜é‡æ€»æ˜¯ä½äºresourceåå­—ç©ºé—´å†…ã€‚
 //
-// Ê¾Àı£¬¼ÙÉè¾ÍÒÔresource_maker.cppÎª×ÊÔ´ÎÄ¼ş£¬Ôò£º
-// 1) ½«resource_maker.cpp±àÒë³ÉC++´úÂë£º./resource_maker ./resource_maker.cpp
-// 2) ¿ÉÒÔ¿´µ½Éú³ÉÁË¶ÔÓ¦µÄc++´úÂëÎÄ¼ş£ºres_resource_maker.cpp
-// 3) ´ò¿ªres_resource_maker.cppÎÄ¼ş£¬¿ÉÒÔ¿´µ½µÄÁ½¸öresourceÃû×Ö¿Õ¼äÄÚµÄÈ«¾Ö±äÁ¿£º
-// size_t resource_maker_sizeºÍunsigned char resource_maker[];
+// ç¤ºä¾‹ï¼Œå‡è®¾å°±ä»¥resource_maker.cppä¸ºèµ„æºæ–‡ä»¶ï¼Œåˆ™ï¼š
+// 1) å°†resource_maker.cppç¼–è¯‘æˆC++ä»£ç ï¼š./resource_maker ./resource_maker.cpp
+// 2) å¯ä»¥çœ‹åˆ°ç”Ÿæˆäº†å¯¹åº”çš„c++ä»£ç æ–‡ä»¶ï¼šres_resource_maker.cpp
+// 3) æ‰“å¼€res_resource_maker.cppæ–‡ä»¶ï¼Œå¯ä»¥çœ‹åˆ°çš„ä¸¤ä¸ªresourceåå­—ç©ºé—´å†…çš„å…¨å±€å˜é‡ï¼š
+// size_t resource_maker_sizeå’Œunsigned char resource_maker[];
 //
-// ½ÓÏÂÀ´£¬¾Í¿ÉÒÔ¸ù¾İĞèÇóÊ¹ÓÃÒÔ±äÁ¿µÄĞÎÊ½ÔÚc++´úÂëÖĞÒÔÖ»¶ÁµÄ·½Ê½·ÃÎÊ×ÊÔ´ÎÄ¼şÁË£¬Èç£º
+// æ¥ä¸‹æ¥ï¼Œå°±å¯ä»¥æ ¹æ®éœ€æ±‚ä½¿ç”¨ä»¥å˜é‡çš„å½¢å¼åœ¨c++ä»£ç ä¸­ä»¥åªè¯»çš„æ–¹å¼è®¿é—®èµ„æºæ–‡ä»¶äº†ï¼Œå¦‚ï¼š
 // namespace resource {
 //     extern size_t resource_maker_size;
 //     extern unsigned char resource_maker[];
 // }
 // int main()
 // {
-//     // ÒòÎªresource_maker.cppÊÇÎÄ±¾¸ñÊ½£¬ËùÒÔ¿ÉÒÔprintf£¬
-//     // µ«Èç¹ûÊÇÍ¼Æ¬¡¢ÒôÆµµÈ¶ş½øÖÆ¸ñÊ½µÄÎÄ¼ş£¬ÏÔÊ¾¾Í²»ÄÜÕâÑùÁË¡£
+//     // å› ä¸ºresource_maker.cppæ˜¯æ–‡æœ¬æ ¼å¼ï¼Œæ‰€ä»¥å¯ä»¥printfï¼Œ
+//     // ä½†å¦‚æœæ˜¯å›¾ç‰‡ã€éŸ³é¢‘ç­‰äºŒè¿›åˆ¶æ ¼å¼çš„æ–‡ä»¶ï¼Œæ˜¾ç¤ºå°±ä¸èƒ½è¿™æ ·äº†ã€‚
 //     printf("%s\n", static_cast<char*>(resource::resource_maker));
 //     return 0;
 // }
@@ -38,28 +38,28 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-// ´ÓÎÄ¼şÂ·¾¶ÖĞ¿Û³ö²»´øĞ±¸Ü½áÎ²µÄÄ¿Â¼Â·¾¶
+// ä»æ–‡ä»¶è·¯å¾„ä¸­æ‰£å‡ºä¸å¸¦æ–œæ ç»“å°¾çš„ç›®å½•è·¯å¾„
 static std::string extract_dirpath_without_slash(const std::string& filepath);
 
-// ´ÓÎÄ¼şÂ·¾¶ÖĞ¿Û³ö²»´øºó×ºµÄÎÄ¼şÃû
+// ä»æ–‡ä»¶è·¯å¾„ä¸­æ‰£å‡ºä¸å¸¦åç¼€çš„æ–‡ä»¶å
 static std::string extract_filename_without_suffix(const std::string& filepath);
 
-// ½«Ò»¸öÎÄ¼şÄÚÈİÈ«¶ÁÈ¡³öÀ´£¬·Åµ½bufferÖĞ
+// å°†ä¸€ä¸ªæ–‡ä»¶å†…å®¹å…¨è¯»å–å‡ºæ¥ï¼Œæ”¾åˆ°bufferä¸­
 static bool file2string(const std::string& filepath, std::string* buffer);
 
-// Ğ´.hÎÄ¼ş
+// å†™.hæ–‡ä»¶
 static bool write_h_file(const std::string& resource_h_filepath, const std::string& c_variable_name);
 
-// Ğ´.cppÎÄ¼ş
+// å†™.cppæ–‡ä»¶
 static bool write_cpp_file(const std::string& resource_cpp_filepath, const std::string& c_variable_name, const std::string& buffer);
 
-// ½«Ò»¸öÊ®½øÖÆÖµ×ª»»³ÉÊ®Áù½øÖÆ£¬²¢´øÇ°×º0x£¬Èç¹û²»×ãÎ»×Ö·û¿í¶È£¬Ôò±»0
-// Èç£ºa±ä³É0x61£¬1±ä³É0x31£¬¡£¡£¡£
+// å°†ä¸€ä¸ªåè¿›åˆ¶å€¼è½¬æ¢æˆåå…­è¿›åˆ¶ï¼Œå¹¶å¸¦å‰ç¼€0xï¼Œå¦‚æœä¸è¶³ä½å­—ç¬¦å®½åº¦ï¼Œåˆ™è¢«0
+// å¦‚ï¼šaå˜æˆ0x61ï¼Œ1å˜æˆ0x31ï¼Œã€‚ã€‚ã€‚
 static std::string dec2hex(unsigned char c);
 
-// ÓÃ·¨£¬´ø2¸ö²ÎÊı£º
-// ²ÎÊı1£ºresource_maker ×ÊÔ´ÎÄ¼ş
-// ²ÎÊı2£ºÎÄ¼şÃûÇ°×º£¨¿ÉÑ¡£¬Ä¬ÈÏÎªres_£¬Èç¹ûÎÄ¼şÃûÊÇÂæÍÕÃüÃû·ç¸ñ£¬½¨Òé¸ÄÎªRes£©
+// ç”¨æ³•ï¼Œå¸¦2ä¸ªå‚æ•°ï¼š
+// å‚æ•°1ï¼šresource_maker èµ„æºæ–‡ä»¶
+// å‚æ•°2ï¼šæ–‡ä»¶åå‰ç¼€ï¼ˆå¯é€‰ï¼Œé»˜è®¤ä¸ºres_ï¼Œå¦‚æœæ–‡ä»¶åæ˜¯éª†é©¼å‘½åé£æ ¼ï¼Œå»ºè®®æ”¹ä¸ºResï¼‰
 int main(int argc, char* argv[])
 {
     std::string filename_prefix = (3 == argc)? argv[2]: "res_";
@@ -69,15 +69,15 @@ int main(int argc, char* argv[])
 
     std::string resource_h_filepath = resource_dirpath + "/" + filename_prefix + filename_without_suffix + ".h";
     std::string resource_cpp_filepath = resource_dirpath + "/" + filename_prefix + filename_without_suffix + ".cpp";
-    std::string buffer; // ÓÃÀ´´æ´¢×ÊÔ´ÎÄ¼şµÄÄÚÈİ
-    std::string c_variable_name = filename_without_suffix; // ÓÃÕâ¸ö±äÁ¿À´´æ´¢±àÂëºóµÄ×ÊÔ´ÎÄ¼şÄÚÈİ
+    std::string buffer; // ç”¨æ¥å­˜å‚¨èµ„æºæ–‡ä»¶çš„å†…å®¹
+    std::string c_variable_name = filename_without_suffix; // ç”¨è¿™ä¸ªå˜é‡æ¥å­˜å‚¨ç¼–ç åçš„èµ„æºæ–‡ä»¶å†…å®¹
 
     fprintf(stdout, "h file: %s\n", resource_h_filepath.c_str());
     fprintf(stdout, "cpp file: %s\n", resource_cpp_filepath.c_str());
     fprintf(stdout, "variable name: %s\n", c_variable_name.c_str());
 
-    // ÊäÈë²ÎÊı¼ì²é£¬
-    // ÒªÇó´øÒ»¸ö²ÎÊı
+    // è¾“å…¥å‚æ•°æ£€æŸ¥ï¼Œ
+    // è¦æ±‚å¸¦ä¸€ä¸ªå‚æ•°
     if ((argc != 2) && (argc != 3))
     {
         fprintf(stderr, "usage: %s resouce_filepath <filename_prefix>\n", basename(argv[0]));
@@ -115,7 +115,7 @@ std::string extract_filename_without_suffix(const std::string& filepath)
 {
     char* tmp = strdup(filepath.c_str());
 
-    // È¥µôÄ¿Â¼²¿·Ö
+    // å»æ‰ç›®å½•éƒ¨åˆ†
     std::string filename = basename(tmp);
     std::string::size_type dot_pos = filename.rfind('.');
 
@@ -132,15 +132,15 @@ bool file2string(const std::string& filepath, std::string* buffer)
         return false;
     }
 
-    // µÃµ½ÎÄ¼ş´óĞ¡
+    // å¾—åˆ°æ–‡ä»¶å¤§å°
     fs.seekg(0, std::ifstream::end);
     std::streamoff file_size = fs.tellg();
 
-    // µ÷Õûbuffer´óĞ¡
+    // è°ƒæ•´bufferå¤§å°
     buffer->resize(static_cast<std::string::size_type>(file_size + 1));
     (*buffer)[file_size] = '\0';
 
-    // ½«Õû¸öÎÄ¼ş¶Áµ½bufferÖĞ
+    // å°†æ•´ä¸ªæ–‡ä»¶è¯»åˆ°bufferä¸­
     fs.seekg(0, std::ifstream::beg);
     fs.read(const_cast<char*>(buffer->data()), file_size);
 
@@ -163,7 +163,7 @@ bool write_cpp_file(const std::string& resource_cpp_filepath, const std::string&
         return false;
     }
 
-    // Ğ´ÎÄ¼şÍ·
+    // å†™æ–‡ä»¶å¤´
     fs << "// DO NOT EDIT!!!" << std::endl;
     fs << "// this file is auto generated by resource_maker" << std::endl;
     fs << "// edit the generator if necessary" << std::endl;
@@ -172,7 +172,7 @@ bool write_cpp_file(const std::string& resource_cpp_filepath, const std::string&
     fs << "namespace resource { // namespace resource BEGIN" << std::endl;
     fs << std::endl;
 
-    // ¼ÇµÃ¼õÈ¥½áÎ²·û
+    // è®°å¾—å‡å»ç»“å°¾ç¬¦
     fs << "    " << "size_t " << c_variable_name << "_size = " << buffer.size() - 1 << ";" << std::endl;
     fs << "    " << "unsigned char " << c_variable_name << "[] = {" << std::endl;
 
@@ -198,10 +198,10 @@ bool write_cpp_file(const std::string& resource_cpp_filepath, const std::string&
         }
     }
 
-    // Ëõ½ø4¸ö¿Õ¸ñ
+    // ç¼©è¿›4ä¸ªç©ºæ ¼
     fs << "    " << "};" << std::endl;
 
-    // Ğ´ÎÄ¼şÎ²°Í
+    // å†™æ–‡ä»¶å°¾å·´
     fs << std::endl;
     fs << "} // namespace resouce END" << std::endl;
     return true;
@@ -209,7 +209,7 @@ bool write_cpp_file(const std::string& resource_cpp_filepath, const std::string&
 
 std::string dec2hex(unsigned char c)
 {
-    char buf[2+2+1]; // µÚÒ»¸ö2ÎªÇ°×º0x£¬µÚ¶ş¸ö2ÎªÄÚÈİ£¬µÚÈı¸ö1Îª½áÎ²·û
-    snprintf(buf, sizeof(buf), "0x%02x", c); // ×¢ÒâcÀàĞÍÈç¹ûÎªchar£¬ÔòĞèÒªÇ¿ÖÆ×ª»»³ÉunsignedÀàĞÍ
+    char buf[2+2+1]; // ç¬¬ä¸€ä¸ª2ä¸ºå‰ç¼€0xï¼Œç¬¬äºŒä¸ª2ä¸ºå†…å®¹ï¼Œç¬¬ä¸‰ä¸ª1ä¸ºç»“å°¾ç¬¦
+    snprintf(buf, sizeof(buf), "0x%02x", c); // æ³¨æ„cç±»å‹å¦‚æœä¸ºcharï¼Œåˆ™éœ€è¦å¼ºåˆ¶è½¬æ¢æˆunsignedç±»å‹
     return buf;
 }
