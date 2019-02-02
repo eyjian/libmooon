@@ -27,7 +27,7 @@ UTILS_NAMESPACE_BEGIN
 class CStringUtils
 {
 public:
-    uint32_t crc32(const std::string& str, uint32_t crc=0);
+    static uint32_t crc32(const std::string& str, uint32_t crc=0);
 
     // 反转字符串
     // 输入空则啥也不做，输入单个字符则啥也不做，
