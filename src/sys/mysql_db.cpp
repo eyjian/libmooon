@@ -312,8 +312,8 @@ uint64_t CMySQLConnection::update(const char* format, ...) throw (CDBException)
     // 如果查询成功，返回0。如果出现错误，返回非0值
     if (mysql_real_query(mysql_handle, sql.get(), (unsigned long)excepted) != 0)
     {
-        throw CDBException(sql.get(), utils::StringFormatter("sql[%s] error: %s", sql.get(), mysql_error(mysql_handle)).c_str(),
-                mysql_errno(mysql_handle), __FILE__, __LINE__);
+        throw CDBException(sql.get(), utils::StringFormatter("%s", mysql_error(mysql_handle)).c_str(),
+                mysql_errno(mysql_handle), __FILE__, __LINE__); // 不将sql包含在error中，因为sql可能很长
     }
 
     return static_cast<uint64_t>(mysql_affected_rows(mysql_handle));
@@ -376,7 +376,7 @@ void CMySQLConnection::do_query(DBTable& db_table, const char* sql, int sql_leng
     // 如果查询成功，返回0。如果出现错误，返回非0值
     if (mysql_real_query(mysql_handle, sql, (unsigned long)sql_length) != 0)
     {
-        throw CDBException(NULL, utils::StringFormatter("sql[%s] error: %s", sql, mysql_error(mysql_handle)).c_str(),
+        throw CDBException(sql, utils::StringFormatter("%s", mysql_error(mysql_handle)).c_str(),
                 mysql_errno(mysql_handle), __FILE__, __LINE__);
     }
 
@@ -384,8 +384,8 @@ void CMySQLConnection::do_query(DBTable& db_table, const char* sql, int sql_leng
     MYSQL_RES* result_set = mysql_store_result(mysql_handle);
     if (NULL == result_set)
     {
-        throw CDBException(sql, utils::StringFormatter("sql[%s] error: %s", sql, mysql_error(mysql_handle)).c_str(),
-                mysql_errno(mysql_handle), __FILE__, __LINE__);
+        throw CDBException(sql, utils::StringFormatter("%s", mysql_error(mysql_handle)).c_str(),
+                mysql_errno(mysql_handle), __FILE__, __LINE__); // 不将sql包含在error中，因为sql可能很长
     }
     else
     {
