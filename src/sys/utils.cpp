@@ -146,7 +146,6 @@ void CUtils::selectsleep(int milliseconds)
     // may update the timeout argument to indicate how much time was left,
     // pselect() does not change this argument.
     struct timeval timeout = { milliseconds / 1000, (milliseconds % 1000) };
-    struct timeval old_timeout = { timeout.tv_sec, timeout.tv_usec };
     while (true)
     {
         (void)select(0, NULL, NULL, NULL, &timeout);
