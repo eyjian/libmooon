@@ -78,7 +78,7 @@ public:
     
     virtual std::string prefix() const throw ()
     {
-        return "db_exception://";
+        return "dbexception://";
     }
 
     /** 返回执行出错的SQL语句，如果不是执行SQL语句，则仅返回一个字符串结尾符 */
@@ -86,7 +86,13 @@ public:
     {
         return _sql.c_str();
     }
-    
+
+    /** 返回SQL语句长度（字节数） */
+    size_t sql_length() const
+    {
+        return _sql.size();
+    }
+
 private:   
     std::string _sql;
 };
