@@ -281,8 +281,13 @@ int CUtils::get_program_parameters(std::vector<std::string>* parameters, uint32_
             raw_full_cmdline_buf[n] = '\0';
 
             std::string parameter;
-            for (int i=0; i<n; ++i)
+            for (int i=0; i<=n; ++i)
             {
+                if (i == n)
+                {
+                    parameters->push_back(parameter);
+                    break;
+                }
                 if ('\0' == raw_full_cmdline_buf[i])
                 {
                     parameters->push_back(parameter);
