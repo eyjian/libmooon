@@ -20,6 +20,7 @@
 #define MOOON_UTILS_STRING_UTILS_H
 #include "mooon/utils/config.h"
 #include <math.h>
+#include <map>
 #include <sstream>
 #include <vector>
 UTILS_NAMESPACE_BEGIN
@@ -421,6 +422,14 @@ public:
     // 如果不符合此格式返回false，或者端口不在有效范围内的数字也返回false
     // 对ip只做了弱检查，即长度要求满足IPV4的地址长度，没做更严格的检查。
     static bool nodeV4_from_str(const std::string& node, std::string* ip, uint16_t* port);
+
+    // 字符串模板实例化
+    //
+    // template_str 字符串模板，需要被替换的词使用“{}”括起来，如：{DATE}，转义符为“\”，如：\{
+    // parameters 参数表，其中key为被替换的词，value为用来替换的值
+    // str 存储模板实例化后的字符串
+    // errmsg 存储出错原因
+    static bool instantiate_str(const std::string& template_str, const std::map<std::string, std::string>& parameters, std::string* str, std::string* errmsg);
 };
 
 UTILS_NAMESPACE_END

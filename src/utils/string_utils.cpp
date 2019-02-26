@@ -1292,4 +1292,85 @@ bool CStringUtils::nodeV4_from_str(const std::string& node, std::string* ip, uin
     }
 }
 
+bool CStringUtils::instantiate_str(const std::string& template_str, const std::map<std::string, std::string>& parameters, std::string* str, std::string* errmsg)
+{
+    str->clear();
+
+    for (std::string::size_type i=0; i<template_str.size();)
+    {
+        char c = template_str[i];
+
+        if ('\\' == c)
+        {
+            // 跳过转义符
+            ++i;
+            c = template_str[i];
+            if ('\0' == c)
+            {
+                *errmsg = "invalid '\'";
+                return false;
+            }
+
+            str->push_back(c);
+            ++i;
+        }
+        else if (c != '{')
+        {
+            str->push_back(c);
+            ++i;
+        }
+        else
+        {
+            std::string name;
+
+            ++i;
+            for (std::string::size_type j=i; j<template_str.size()+1; ++j,++i)
+            {
+                c = template_str[j];
+
+                if ('\0' == c)
+                {
+                    // 没有匹配的右花括号“}”
+                    *errmsg = "'}' not found";
+                    return false;
+                }
+                else if ('}' == c)
+                {
+                    if (name.empty())
+                    {
+                        // 不能为空
+                        *errmsg = "empty name";
+                        return false;
+                    }
+                    else
+                    {
+                        // 完成的name
+                        const std::map<std::string, std::string>::const_iterator iter = parameters.find(name);
+
+                        if (iter == parameters.end())
+                        {
+                            // 没有对应的参数值
+                            *errmsg = std::string("no value for ") + name;
+                            return false;
+                        }
+                        else
+                        {
+                            const std::string& value = iter->second;
+                            str->append(value);
+                            ++i;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    name.push_back(c);
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 UTILS_NAMESPACE_END
