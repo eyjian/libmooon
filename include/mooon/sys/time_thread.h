@@ -18,7 +18,7 @@ public:
     CTimeThread();
     ~CTimeThread();
     time_t get_seconds() const;
-    void stop();
+    void stop(); // 同一对象在stop后不能重复使用
     bool start();
     void wait();
     void run();
