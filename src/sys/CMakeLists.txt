@@ -56,6 +56,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/shared_library.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/simple_db.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/time_thread.cpp
     CACHE INTERNAL
     MOOON_SYS_SRC
 )

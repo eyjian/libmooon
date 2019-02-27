@@ -19,7 +19,11 @@ CTimeThread::~CTimeThread()
 
 time_t CTimeThread::get_seconds() const
 {
-    const int64_t seconds = _seconds;
+#if __WORDSIZE==64
+    const int64_t seconds = _seconds.operator int64_t();
+#else
+    const int64_t seconds = _seconds.operator int();
+#endif // __WORDSIZE==64
     return static_cast<time_t>(seconds);
 }
 
