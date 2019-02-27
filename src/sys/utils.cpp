@@ -285,7 +285,8 @@ int CUtils::get_program_parameters(std::vector<std::string>* parameters, uint32_
             {
                 if (i == n)
                 {
-                    parameters->push_back(parameter);
+                    if (!parameter.empty())
+                        parameters->push_back(parameter);
                     break;
                 }
                 if ('\0' == raw_full_cmdline_buf[i])
