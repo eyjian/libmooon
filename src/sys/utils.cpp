@@ -59,6 +59,28 @@ static char *g_arg_start = NULL;
 static char *g_arg_end   = NULL;
 static char *g_env_start = NULL;
 
+// 函数rdtsc取自Linux内核（linux-4.20）源代码，
+// 所在文件：tools/perf/jvmti/jvmti_agent.c
+//
+// RDTSC: ReaD Time Stamp Counter
+// 由于RDTSC指令跟CPU核相关，
+// 因此使用时为得到准确数据，需要线程和CPU核心建立亲和关系
+//
+// 另一CPU指令CPUID可用于获取CPU的厂商信息
+//
+// 相关：
+// HPET: 高精度定时器（High Precision Event Timer），依赖Linux内核的墙上时间xtime
+uint64_t CUtils::rdtsc()
+{
+#if defined(__i386__) || defined(__x86_64__)
+    unsigned int low, high;
+    asm volatile("rdtsc" : "=a" (low), "=d" (high));
+    return low | ((uint64_t)high) << 32;
+#else
+    return 0;
+#endif
+}
+
 // #include <chrono>
 // #include <system_error>
 // std::this_thread::sleep_for(std::chrono::milliseconds(1000));

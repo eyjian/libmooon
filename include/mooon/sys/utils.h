@@ -31,6 +31,10 @@ SYS_NAMESPACE_BEGIN
 class CUtils
 {
 public:
+    // 由于rdtsc跟CPU核相关，
+    // 因此使用时为得到准确数据，需要线程和CPU核心建立亲和关系
+    static uint64_t rdtsc();
+
     // 基于nanosleep实现的sleep，保证至少睡眠milliseconds指定的时长
     static void millisleep(uint32_t milliseconds);
 
