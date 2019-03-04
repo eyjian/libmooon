@@ -295,10 +295,10 @@ bool parent_process(IMainHelper* main_helper, pid_t child_pid, int& child_exit_c
 ////////////////////////////////////////////////////////////////////////////////
 // CMainHelper
 
-CMainHelper::CMainHelper(int log_level_signo, const std::string& log_suffix, uint16_t logline_size)
-    : _log_level_signo(log_level_signo),
-      _log_suffix(log_suffix),
+CMainHelper::CMainHelper(const std::string& log_suffix, uint16_t logline_size, int log_level_signo)
+    : _log_suffix(log_suffix),
       _logline_size(logline_size),
+      _log_level_signo(log_level_signo),
       _stop(false),
       _signal_thread(NULL)
 {

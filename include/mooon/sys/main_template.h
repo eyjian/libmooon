@@ -184,9 +184,9 @@ public:
     //
     // 注意：对传入的ReportSelf，创建者不需要delete，CMainHelper析构时会对它调用delete
     CMainHelper(
-            int log_level_signo=SIGUSR2,
             const std::string& log_suffix=std::string(""),
-            uint16_t logline_size=mooon::SIZE_4K);
+            uint16_t logline_size=mooon::SIZE_4K,
+            int log_level_signo=SIGUSR2);
     ~CMainHelper();
     void signal_thread();
 
@@ -244,9 +244,9 @@ protected:
     bool to_stop() const { return _stop; }
 
 private:
-    const int _log_level_signo;
     const std::string _log_suffix;
     const uint16_t _logline_size;
+    const int _log_level_signo;
     CAtomic<bool> _stop;
     mooon::sys::CThreadEngine* _signal_thread;
 };
