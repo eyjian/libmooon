@@ -295,8 +295,12 @@ bool parent_process(IMainHelper* main_helper, pid_t child_pid, int& child_exit_c
 ////////////////////////////////////////////////////////////////////////////////
 // CMainHelper
 
-CMainHelper::CMainHelper(int log_level_signo)
-    : _stop(false), _log_level_signo(log_level_signo), _signal_thread(NULL)
+CMainHelper::CMainHelper(int log_level_signo, const std::string& log_suffix, uint16_t logline_size)
+    : _log_level_signo(log_level_signo),
+      _log_suffix(log_suffix),
+      _logline_size(logline_size),
+      _stop(false),
+      _signal_thread(NULL)
 {
 }
 
@@ -338,7 +342,7 @@ bool CMainHelper::init(int argc, char* argv[])
     // 创建日志器
     try
     {
-        mooon::sys::g_logger = mooon::sys::create_safe_logger();
+        mooon::sys::g_logger = mooon::sys::create_safe_logger(true, _logline_size, _log_suffix);
     }
     catch (mooon::sys::CSyscallException& ex)
     {
@@ -366,7 +370,9 @@ bool CMainHelper::init(int argc, char* argv[])
         else
         {
             // 创建信号线程
-            _signal_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&CMainHelper::signal_thread, this));
+            _signal_thread = new mooon::sys::CThreadEngine(
+                    mooon::sys::bind(
+                            &CMainHelper::signal_thread, this));
             return true;
         }
     }

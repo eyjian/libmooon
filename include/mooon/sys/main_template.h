@@ -179,8 +179,14 @@ public:
     // 动态调整日志级别的信号，通过该信号可让日志级别在DEBUG和INFO两个级别间互相切换
     // 如果值为0或负值，表示不启用该功能
     //
+    // log_suffix 日志文件名后缀
+    // logline_size 单行日志长度（字节数）
+    //
     // 注意：对传入的ReportSelf，创建者不需要delete，CMainHelper析构时会对它调用delete
-    CMainHelper(int log_level_signo=SIGUSR2);
+    CMainHelper(
+            int log_level_signo=SIGUSR2,
+            const std::string& log_suffix=std::string(""),
+            uint16_t logline_size=mooon::SIZE_4K);
     ~CMainHelper();
     void signal_thread();
 
@@ -238,8 +244,10 @@ protected:
     bool to_stop() const { return _stop; }
 
 private:
+    const int _log_level_signo;
+    const std::string _log_suffix;
+    const uint16_t _logline_size;
     CAtomic<bool> _stop;
-    int _log_level_signo;
     mooon::sys::CThreadEngine* _signal_thread;
 };
 
