@@ -69,7 +69,7 @@ static void* signal_thread_proc(void* param)
     while (true)
     {
         int signo = -1;
-        int errcode = sigwait(&sg_sigset, &signo);
+        const int errcode = sigwait(&sg_sigset, &signo);
         if (EINTR == errcode)
         {
             continue;
@@ -115,11 +115,11 @@ int main_template(IMainHelper* main_helper, int argc, char* argv[], IReportSelf*
 
     while (true)
     {
-        pid_t pid = self_restart(main_helper)? fork(): 0;
+        const  pid_t pid = self_restart(main_helper)? fork(): 0;
         if (-1 == pid)
         {
             // fork失败
-            fprintf(stderr, "fork error: %s.\n", sys::CUtils::get_last_error_message().c_str());
+            fprintf(stderr, "Fork error: %s.\n", sys::CUtils::get_last_error_message().c_str());
             break;
         }
         else if (0 == pid)
@@ -144,9 +144,8 @@ bool self_restart(IMainHelper* main_helper)
     if (env_name.empty()) return true;
 
     // 由环境变量SELF_RESTART来决定是否自重启
-    char* restart = getenv(env_name.c_str());
-    return (restart != NULL)
-        && (0 == strcasecmp(restart, "true"));
+    const char* restart = getenv(env_name.c_str());
+    return (restart != NULL) && (0 == strcasecmp(restart, "true"));
 }
 
 void child_process(IMainHelper* main_helper, int argc, char* argv[], IReportSelf* report_self)
@@ -202,6 +201,7 @@ void child_process(IMainHelper* main_helper, int argc, char* argv[], IReportSelf
     // 启动上报
     report_self->start_report_self();
 
+    // 正式运行
     if (!main_helper->run())
 	{
 		//fprintf(stderr, "Main helper run failed.\n");
@@ -295,10 +295,9 @@ bool parent_process(IMainHelper* main_helper, pid_t child_pid, int& child_exit_c
 ////////////////////////////////////////////////////////////////////////////////
 // CMainHelper
 
-CMainHelper::CMainHelper(const std::string& log_suffix, uint16_t logline_size, int log_level_signo)
-    : _log_suffix(log_suffix),
-      _logline_size(logline_size),
-      _log_level_signo(log_level_signo),
+CMainHelper::CMainHelper(int log_level_signo)
+    : _log_level_signo(log_level_signo),
+      _logline_size(mooon::SIZE_4K),
       _stop(false),
       _signal_thread(NULL)
 {
@@ -315,77 +314,74 @@ void CMainHelper::signal_thread()
     {
         mooon::sys::CSignalHandler::handle(this);
     }
-
-    MYLOG_INFO("signal thread exit\n");
+    MYLOG_INFO("Signal thread exit\n");
 }
 
 bool CMainHelper::init(int argc, char* argv[])
 {
-    // 命令行参数解析
-    std::string errmsg;
-    if (!mooon::utils::parse_arguments(argc, argv, &errmsg))
+    do
     {
-        if (!errmsg.empty())
-            fprintf(stderr, "%s\n\n", errmsg.c_str());
-        fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
-        return false;
-    }
-
-    // 参数检查
-    if (!on_check_parameter())
-    {
-        fprintf(stderr, "\n");
-        fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
-        return false;
-    }
-
-    // 创建日志器
-    try
-    {
-        mooon::sys::g_logger = mooon::sys::create_safe_logger(true, _logline_size, _log_suffix);
-    }
-    catch (mooon::sys::CSyscallException& ex)
-    {
-        fprintf(stderr, "create logger failed: %s\n", ex.str().c_str());
-        return false;
-    }
-
-    try
-    {
-        // 通过SIGTERM幽雅退出
-        mooon::sys::CSignalHandler::block_signal(SIGTERM);
-        // 控制日志级别信号
-        if (_log_level_signo > 0)
+        // 命令行参数解析
+        std::string errmsg;
+        if (!mooon::utils::parse_arguments(argc, argv, &errmsg))
         {
-            mooon::sys::CSignalHandler::block_signal(_log_level_signo);
+            if (!errmsg.empty())
+                fprintf(stderr, "%s\n\n", errmsg.c_str());
+            fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+            break;
+        }
+        // 参数检查
+        if (!on_check_parameter())
+        {
+            fprintf(stderr, "\n");
+            fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+            break;
         }
 
-        // 让子类有机会阻塞其它信号
-        on_block_signal();
-
-        if (!on_init(argc, argv))
+        // 创建日志器
+        try
         {
-            return false;
+            mooon::sys::g_logger = mooon::sys::create_safe_logger(true, _logline_size, _log_suffix);
         }
-        else
+        catch (mooon::sys::CSyscallException& ex)
         {
-            // 创建信号线程
-            _signal_thread = new mooon::sys::CThreadEngine(
+            fprintf(stderr, "Create logger failed: %s\n", ex.str().c_str());
+            break;
+        }
+        try
+        {
+            // 通过SIGTERM幽雅退出
+            mooon::sys::CSignalHandler::block_signal(SIGTERM);
+            // 控制日志级别信号
+            if (_log_level_signo > 0)
+            {
+                mooon::sys::CSignalHandler::block_signal(_log_level_signo);
+            }
+
+            on_block_signal(); // 让子类有机会阻塞其它信号
+            if (!on_init(argc, argv)) // 执行初始化
+            {
+                break;
+            }
+            _signal_thread = new mooon::sys::CThreadEngine( // 创建信号线程
                     mooon::sys::bind(
                             &CMainHelper::signal_thread, this));
             return true;
         }
+        catch (mooon::sys::CSyscallException& ex)
+        {
+            MYLOG_ERROR("%s\n", ex.str().c_str());
+            break;
+        }
+        catch (mooon::utils::CException& ex)
+        {
+            MYLOG_ERROR("%s\n", ex.str().c_str());
+            break;
+        }
     }
-    catch (mooon::sys::CSyscallException& ex)
-    {
-        MYLOG_ERROR("%s\n", ex.str().c_str());
-        return false;
-    }
-    catch (mooon::utils::CException& ex)
-    {
-        MYLOG_ERROR("%s\n", ex.str().c_str());
-        return false;
-    }
+    while (false);
+
+    return false;
 }
 
 void CMainHelper::fini()
@@ -404,7 +400,7 @@ void CMainHelper::fini()
     on_fini();
     if (_stop)
     {
-        MYLOG_INFO("exit now\n");
+        MYLOG_INFO("Exit now\n");
     }
 }
 
@@ -412,11 +408,16 @@ void CMainHelper::on_terminated()
 {
     // 优雅退出
     _stop = true;
-    MYLOG_INFO("will exit by SIGTERM\n");
+    MYLOG_INFO("Will exit by SIGTERM\n");
 }
 
 void CMainHelper::on_child_end(pid_t child_pid, int child_exited_status)
 {
+}
+
+void CMainHelper::on_exception(int errcode)
+{
+    MYLOG_ERROR("(%d)%s\n", errcode, mooon::sys::Error::to_string(errcode).c_str());
 }
 
 void CMainHelper::on_signal_handler(int signo)
@@ -439,9 +440,11 @@ void CMainHelper::on_signal_handler(int signo)
     }
 }
 
-void CMainHelper::on_exception(int errcode)
+void CMainHelper::set_logger(const std::string& log_suffix, uint16_t logline_size)
 {
-    MYLOG_ERROR("(%d)%s\n", errcode, mooon::sys::Error::to_string(errcode).c_str());
+    _log_suffix = log_suffix;
+    if (logline_size > 0)
+        _logline_size = logline_size;
 }
 
 SYS_NAMESPACE_END
