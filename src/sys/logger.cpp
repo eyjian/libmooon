@@ -71,6 +71,12 @@ std::string get_log_filename(const std::string& suffix)
         return log_filename + std::string("_") + suffix + std::string(".log");
 }
 
+std::string get_log_filename(const std::string& log_filename, const std::string& suffix)
+{
+    const std::string& log_shortname = utils::CStringUtils::remove_suffix(log_filename);
+    return log_shortname + std::string("_") + suffix + std::string(".log");
+}
+
 std::string get_log_dirpath(bool enable_program_path)
 {
     std::string log_dirpath;

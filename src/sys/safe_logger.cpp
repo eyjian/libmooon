@@ -35,7 +35,11 @@ static uint64_t get_current_thread_id()
     return static_cast<uint64_t>(pthread_self());
 }
 
-CSafeLogger* create_safe_logger(bool enable_program_path, uint16_t log_line_size, const std::string& suffix, bool enable_syslog) throw (CSyscallException)
+CSafeLogger* create_safe_logger(
+        bool enable_program_path,
+        uint16_t log_line_size,
+        const std::string& suffix,
+        bool enable_syslog) throw (CSyscallException)
 {
     const std::string& log_dirpath = get_log_dirpath(enable_program_path);
     const std::string& log_filename = get_log_filename(suffix);
@@ -50,7 +54,29 @@ CSafeLogger* create_safe_logger(bool enable_program_path, uint16_t log_line_size
     return logger;
 }
 
-CSafeLogger* create_safe_logger(const std::string& log_dirpath, const std::string& cpp_filename, uint16_t log_line_size, bool enable_syslog) throw (CSyscallException)
+CSafeLogger* create_safe_logger(
+        const std::string& log_filename,
+        uint16_t log_line_size,
+        bool enable_program_path,
+        bool enable_syslog) throw (CSyscallException)
+{
+    const std::string& log_dirpath = get_log_dirpath(enable_program_path);
+    CSafeLogger* logger = new CSafeLogger(log_dirpath.c_str(), log_filename.c_str(), log_line_size, enable_syslog);
+
+    set_log_level_by_env(logger);
+    enable_screen_log_by_env(logger);
+    enable_trace_log_by_env(logger);
+    set_log_filesize_by_env(logger);
+    set_log_backup_by_env(logger);
+
+    return logger;
+}
+
+CSafeLogger* create_safe_logger(
+        const std::string& log_dirpath,
+        const std::string& cpp_filename,
+        uint16_t log_line_size,
+        bool enable_syslog) throw (CSyscallException)
 {
     const std::string& only_filename = utils::CStringUtils::extract_filename(cpp_filename);
     const std::string& log_filename = utils::CStringUtils::replace_suffix(only_filename, ".log");
