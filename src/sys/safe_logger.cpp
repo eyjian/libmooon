@@ -567,7 +567,16 @@ void CSafeLogger::rotate_log()
         }
     }
 
-    if (backup_number > 0)
+    if (backup_number <= 0)
+    {
+        // 如果不保留备份，则直接删除重来
+        if (-1 == unlink(_log_filepath.c_str()))
+        {
+            if (_sys_log_enabled)
+                syslog(LOG_ERR, "[%s:%d][%u][%" PRIu64"] unlink %s failed: %s\n", __FILE__, __LINE__, getpid(), get_current_thread_id(), _log_filepath.c_str(), strerror(errno));
+        }
+    }
+    else
     {
         // 当前滚动
         new_path = _log_dir + std::string("/") + _log_filename + std::string(".1");
@@ -617,7 +626,7 @@ void CSafeLogger::write_log(const char* log_line, int log_line_size)
             if (need_rotate(log_fd.get()))
             {
                 std::string lock_path = _log_dir + std::string("/.") + _log_filename + std::string(".lock");
-                FileLocker file_locker(lock_path.c_str(), true); // 确保这里一定加锁
+                FileLocker file_locker(lock_path.c_str(), true); // 确保这里一定加锁，以互斥多进程
 
                 // _fd可能已被其它进程或线程滚动了，所以这里需要重新open一下
                 int new_log_fd = open(_log_filepath.c_str(), O_WRONLY|O_CREAT|O_APPEND, FILE_DEFAULT_PERM);
@@ -631,11 +640,22 @@ void CSafeLogger::write_log(const char* log_line, int log_line_size)
                     try
                     {
                         if (need_rotate(new_log_fd))
+                        {
                             rotate_log();
+                            close(new_log_fd);
+
+                            // new_log_fd被滚动了，需要重新打开
+                            new_log_fd = open(_log_filepath.c_str(), O_WRONLY|O_CREAT|O_APPEND, FILE_DEFAULT_PERM);
+                            if (-1 == new_log_fd)
+                            {
+                                if (_sys_log_enabled)
+                                    syslog(LOG_ERR, "[%s:%d][%u][%" PRIu64"][%s] open failed: %s\n", __FILE__, __LINE__, getpid(), get_current_thread_id(), _log_filepath.c_str(), strerror(errno));
+                            }
+                        }
 
                         // 不管谁滚动的，都需要重设_log_fd，
                         // 原因是如果是由其它进程滚动的，则当前进程的_log_fd是不会变化的
-                        WriteLockHelper rlh(_read_write_lock);
+                        WriteLockHelper rlh(_read_write_lock); // 确保这里一定加锁，以互斥同一进程的多线程
                         if (0 == close(_log_fd))
                             _log_fd = new_log_fd;
                         else
