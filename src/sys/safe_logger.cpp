@@ -658,7 +658,7 @@ void CSafeLogger::write_log(const char* log_line, int log_line_size)
                         WriteLockHelper rlh(_read_write_lock); // 确保这里一定加锁，以互斥同一进程的多线程
                         if (0 == close(_log_fd))
                             _log_fd = new_log_fd;
-                        else
+                        else if (new_log_fd != -1)
                             close(new_log_fd);
                     }
                     catch (CSyscallException& syscall_ex)
