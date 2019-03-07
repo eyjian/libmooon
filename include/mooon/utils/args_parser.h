@@ -675,7 +675,7 @@ public:
 
     virtual bool is_false() const
     {
-        return _bool_value;
+        return !_bool_value;
     }
 
     virtual bool set_value(const std::string& new_value, std::string* errmsg)
