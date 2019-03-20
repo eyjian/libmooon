@@ -313,8 +313,11 @@ int CUtils::get_program_parameters(std::vector<std::string>* parameters, uint32_
                 }
                 if ('\0' == raw_full_cmdline_buf[i])
                 {
-                    parameters->push_back(parameter);
-                    parameter.clear();
+                    if (!parameter.empty())
+                    {
+                        parameters->push_back(parameter);
+                        parameter.clear();
+                    }
                 }
                 else
                 {
