@@ -571,6 +571,8 @@ void* CLibssh2::open_scp_write_channel(const std::string& remote_filepath, int f
         int errcode = get_session_errcode();
         if (errcode != LIBSSH2_ERROR_EAGAIN)
         {
+            // 错误“[-28]failed to send file”，
+            // 实际可能是（使用scp可测出来）：Text file busy。
             THROW_EXCEPTION(get_session_errmsg(), errcode);
         }
         else

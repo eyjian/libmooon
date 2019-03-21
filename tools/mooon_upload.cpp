@@ -38,6 +38,8 @@
 // warning: Using 'getpwuid_r' in statically linked applications
 // warning: Using 'getaddrinfo' in statically linked applications
 //
+// glibc使用libnss支持地址解析，然而不能静态链接libnss
+//
 // 检查静态链接效果：
 // > ldd -r mooon_ssh
 //        not a dynamic executable
