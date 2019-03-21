@@ -771,6 +771,13 @@ std::string CDatetimeUtils::to_time(time_t datetime, const char* format)
     return time_buffer;
 }
 
+uint64_t CDatetimeUtils::get_current_milliseconds()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return static_cast<uint64_t>(tv.tv_sec) * 1000 + static_cast<uint64_t>(tv.tv_usec/1000);
+}
+
 uint64_t CDatetimeUtils::get_current_microseconds()
 {
     struct timeval tv;
