@@ -202,7 +202,7 @@ std::string& CStringUtils::to_upper(std::string& source)
 
 std::string CStringUtils::to_upper(const std::string& source)
 {
-    std::string str = source;
+    std::string str(source.c_str(), source.size());
     return to_upper(str);
 }
 
@@ -216,7 +216,7 @@ std::string& CStringUtils::to_lower(std::string& source)
 
 std::string CStringUtils::to_lower(const std::string& source)
 {
-    std::string str = source;
+    std::string str(source.c_str(), source.size());
     return to_lower(str);
 }
 
@@ -308,7 +308,7 @@ std::string& CStringUtils::trim(std::string& source)
 
 std::string CStringUtils::trim(const std::string& source)
 {
-    std::string str = source;
+    std::string str(source.c_str(), source.size());
     trim_left(str);
     trim_right(str);
     return str;
@@ -331,7 +331,7 @@ std::string& CStringUtils::trim_left(std::string& source)
 
 std::string CStringUtils::trim_left(const std::string& source)
 {
-    std::string str = source;
+    std::string str(source.c_str(), source.size());
     trim_left(str);
     return str;
 }
@@ -353,7 +353,7 @@ std::string& CStringUtils::trim_right(std::string& source)
 
 std::string CStringUtils::trim_right(const std::string& source)
 {
-    std::string str = source;
+    std::string str(source.c_str(), source.size());
     trim_right(str);
     return str;
 }

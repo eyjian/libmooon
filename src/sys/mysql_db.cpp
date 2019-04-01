@@ -127,13 +127,15 @@ bool CMySQLConnection::is_disconnected_exception(CDBException& db_error) const
     // CR_SERVER_GONE_ERROR：比如客户端将连接close了
     // CR_SERVER_LOST: 比如强制kill了MySQL连接（If connect_timeout > 0 and it took longer than connect_timeout seconds to connect to the server or if the server died while executing the init-command.）
     // ER_SERVER_SHUTDOWN(1053) Server shutdown in progress 当执行关闭MySQL时
-    return (ER_QUERY_INTERRUPTED == errcode) ||  // Query execution was interrupted
-           (CR_CONN_HOST_ERROR == errcode) ||    // Can't connect to MySQL server
-           (CR_SERVER_GONE_ERROR == errcode) ||  // MySQL server has gone away
-           (CR_SERVER_LOST == errcode) ||        // Lost connection to MySQL server during query
-           (CR_CONNECTION_ERROR == errcode) ||   // Can't connect to local MySQL server through socket '%s' (%d)
-           (CR_IPSOCK_ERROR == errcode) ||       // Can't create TCP/IP socket (%d)
-           (CR_SERVER_HANDSHAKE_ERR == errcode); // Error in server handshake
+    // ER_CON_COUNT_ERROR(1040) Too many connections
+    return (ER_QUERY_INTERRUPTED == errcode) ||    // Query execution was interrupted
+           (CR_CONN_HOST_ERROR == errcode) ||      // Can't connect to MySQL server
+           (CR_SERVER_GONE_ERROR == errcode) ||    // MySQL server has gone away
+           (CR_SERVER_LOST == errcode) ||          // Lost connection to MySQL server during query
+           (CR_CONNECTION_ERROR == errcode) ||     // Can't connect to local MySQL server through socket '%s' (%d)
+           (CR_IPSOCK_ERROR == errcode) ||         // Can't create TCP/IP socket (%d)
+           (CR_SERVER_HANDSHAKE_ERR == errcode) || // Error in server handshake
+           (ER_CON_COUNT_ERROR == errcode);        // Too many connections
 }
 
 bool CMySQLConnection::is_deadlock_exception(CDBException& db_error) const
