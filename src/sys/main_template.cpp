@@ -359,13 +359,13 @@ bool CMainHelper::init(int argc, char* argv[])
             }
 
             on_block_signal(); // 让子类有机会阻塞其它信号
+            _signal_thread = new mooon::sys::CThreadEngine( // 创建信号线程
+                    mooon::sys::bind(
+                            &CMainHelper::signal_thread, this));
             if (!on_init(argc, argv)) // 执行初始化
             {
                 break;
             }
-            _signal_thread = new mooon::sys::CThreadEngine( // 创建信号线程
-                    mooon::sys::bind(
-                            &CMainHelper::signal_thread, this));
             return true;
         }
         catch (mooon::sys::CSyscallException& ex)
