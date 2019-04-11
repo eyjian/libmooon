@@ -447,8 +447,10 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
 void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::stop()
 {
-    _server->stop();
-    _thread_manager->stop();
+    if (_server != NULL)
+        _server->stop();
+    if (_thread_manager != NULL)
+        _thread_manager->stop();
 }
 
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
