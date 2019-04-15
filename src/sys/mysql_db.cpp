@@ -100,6 +100,7 @@ void CMySQLConnection::escape_string(const std::string& str, std::string* escape
 CMySQLConnection::CMySQLConnection(size_t sql_max, bool multistatements)
     : CDBConnectionBase(sql_max), _mysql_handle(NULL), _client_flag(0)
 {
+    // In MySQL 5.7, CLIENT_MULTI_RESULTS is enabled by default.
     if (multistatements)
         _client_flag = CLIENT_MULTI_STATEMENTS; // Tell the server that the client may send multiple statements in a single string (separated by ; characters).
 }
@@ -370,6 +371,103 @@ void CMySQLConnection::enable_autocommit(bool enabled) throw (CDBException)
         THROW_DB_EXCEPTION(NULL, mysql_error(mysql_handle), mysql_errno(mysql_handle));
 }
 
+void CMySQLConnection::multi_statements(const char* sql, int sql_length) throw (CDBException)
+{
+    // https://dev.mysql.com/doc/refman/5.7/en/c-api-multiple-queries.html
+    MOOON_ASSERT(_mysql_handle != NULL);
+    MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
+
+    // 如果查询成功，返回0。如果出现错误，返回非0值
+    if (mysql_real_query(mysql_handle, sql, (unsigned long)sql_length) != 0)
+    {
+        throw CDBException(sql, utils::StringFormatter("%s", mysql_error(mysql_handle)).c_str(),
+                mysql_errno(mysql_handle), __FILE__, __LINE__);
+    }
+}
+
+std::pair<bool,uint64_t>
+CMySQLConnection::fetch_results(DBTable& db_table) throw (CDBException)
+{
+    MOOON_ASSERT(_mysql_handle != NULL);
+    MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
+    uint64_t affected_rows = 0;
+
+    MYSQL_RES* result_set = mysql_store_result(mysql_handle);
+    if (result_set != NULL)
+    {
+        // SELECT
+        // 取得字段个数
+        const int num_fields = mysql_num_fields(result_set);
+
+        db_table.clear();
+        while (true)
+        {
+            MYSQL_ROW row = mysql_fetch_row(result_set);
+            if (NULL == row)
+            {
+                break;
+            }
+
+            DBRow db_row;
+            for (int i=0; i<num_fields; ++i)
+            {
+                const char* field_value = row[i];
+
+                if (NULL == field_value)
+                    db_row.push_back(_null_value);
+                else
+                    db_row.push_back(field_value);
+            }
+
+            db_table.push_back(db_row);
+        }
+
+        affected_rows = static_cast<uint64_t>(db_table.size());
+        mysql_free_result(result_set);
+    }
+    else
+    {
+        // INSERT/UPDATE/error
+        if (mysql_field_count(mysql_handle) == 0)
+        {
+            // query does not return data (it was not a SELECT)
+            affected_rows = static_cast<uint64_t>(mysql_affected_rows(mysql_handle));
+        }
+        else
+        {
+            // error
+            throw CDBException(NULL, utils::StringFormatter("%s", mysql_error(mysql_handle)).c_str(),
+                    mysql_errno(mysql_handle), __FILE__, __LINE__);
+        }
+    }
+
+    return std::make_pair((result_set!=NULL), affected_rows);
+}
+
+bool CMySQLConnection::have_more_results() const throw (CDBException)
+{
+    // https://dev.mysql.com/doc/refman/5.7/en/mysql-next-result.html
+    MOOON_ASSERT(_mysql_handle != NULL);
+    MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
+
+    // mysql_next_result() is used when you execute multiple statements specified as a single statement string,
+    // or when you use CALL statements to execute stored procedures,
+    // which can return multiple result sets.
+    //
+    // Before each call to mysql_next_result(),
+    // you must call mysql_free_result() for the current statement
+    // if it is a statement that returned a result set (rather than just a result status).
+    //
+    // 0 Successful and there are more results
+    // -1 Successful and there are no more results
+    // > 0 An error occurred
+    const int status = mysql_next_result(mysql_handle);
+    if (status > 0)
+        throw CDBException(NULL, utils::StringFormatter("%s", mysql_error(mysql_handle)).c_str(),
+                mysql_errno(mysql_handle), __FILE__, __LINE__);
+    return 0 == status;
+}
+
 void CMySQLConnection::do_query(DBTable& db_table, const char* sql, int sql_length) throw (CDBException)
 {
     MOOON_ASSERT(_mysql_handle != NULL);
@@ -383,6 +481,19 @@ void CMySQLConnection::do_query(DBTable& db_table, const char* sql, int sql_leng
     }
 
     // 取结果集
+    // You need not call mysql_store_result() or mysql_use_result() for other statements,
+    // but it does not do any harm or cause any notable performance degradation if you call mysql_store_result() in all cases.
+    // You can detect whether the statement has a result set by checking whether
+    // mysql_store_result() returns a nonzero value (more about this later).
+    // If you want to know whether a statement should return a result set,
+    // you can use mysql_field_count() to check for this.
+    //
+    // mysql_store_result() reads the entire result of a query to the client,
+    // allocates a MYSQL_RES structure, and places the result into this structure.
+    // mysql_store_result() returns NULL if the statement did not return a result set (for example, if it was an INSERT statement),
+    // or an error occurred and reading of the result set failed.
+    // An empty result set is returned if there are no rows returned.
+    // (An empty result set differs from a null pointer as a return value.)
     MYSQL_RES* result_set = mysql_store_result(mysql_handle);
     if (NULL == result_set)
     {
@@ -392,6 +503,13 @@ void CMySQLConnection::do_query(DBTable& db_table, const char* sql, int sql_leng
     else
     {
         // 取得字段个数
+        // You can get the number of columns either from a pointer to a result set or to a connection handler.
+        // You would use the connection handler if mysql_store_result() or mysql_use_result()
+        // returned NULL (and thus you have no result set pointer).
+        // In this case, you can call mysql_field_count() to determine
+        // whether mysql_store_result() should have produced a nonempty result.
+        // This enables the client program to take proper action
+        // without knowing whether the query was a SELECT (or SELECT-like) statement.
         int num_fields = mysql_num_fields(result_set);
 
         while (true)

@@ -112,6 +112,37 @@ public:
     /** 是否允许自动提交事务，注意只有open()或reopen()成功之后，才可以调用 */
     virtual void enable_autocommit(bool enabled) throw (CDBException);
 
+public:
+    // 如果构造函数的multistatements为true，即一次性执行多条语句（可为SELECT和UPDATE等组合），
+    // 这时不能调用query和update来执行，而应当调用multi_statements执行。
+    // 执行的结果通过调用fetch_results来取得，
+    // fetch_results返回两个值，如果第一个值为true，表示返回的是SELECT结果，否则是UPDATE等结果。
+    //
+    // 使用示例（注意fetch_results和have_more_results的调用顺序）：
+    // CMySQLConnection mysql
+    // mysql.multi_statements(sql.c_str(), sql.size());
+    // while (true) {
+    //     DBTable dbtable;
+    //     const std::pair<bool, uint64_t> ret = mysql.fetch_results(dbtable);
+    //     if (ret.first) {
+    //         handle(dbtable);
+    //     }
+    //     else {
+    //         printf("affected rows: %" PRIu64"\n", ret.second);
+    //     }
+    //     if (!mysql.have_more_results())
+    //         break;
+    // }
+    //
+    // CR_COMMANDS_OUT_OF_SYNC Commands were executed in an improper order.
+    void multi_statements(const char* sql, int sql_length) throw (CDBException);
+
+    // 注意fetch_results和have_more_results的调用顺序
+    std::pair<bool,uint64_t> fetch_results(DBTable& db_table) throw (CDBException);
+
+    // 注意fetch_results和have_more_results的调用顺序
+    bool have_more_results() const throw (CDBException);
+
 private:
     virtual void do_query(DBTable& db_table, const char* sql, int sql_length) throw (CDBException);
 
