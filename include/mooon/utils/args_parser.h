@@ -736,9 +736,9 @@ public:
         return _value;
     }
 
-    const std::string& str_value() const
+    const std::string str_value() const
     {
-        return _str_value;
+        return utils::CStringUtils::int_tostring(_value);
     }
 
 public:
@@ -758,7 +758,6 @@ public:
         uint8_t converted_length = 0; // 阻止调用模板类型的string2int，在一些环境这将导致编译错误，原因是long等类型并不没有对应的带长度的类型
         bool ignored_zero = false;
 
-        _str_value = new_value;
         if (!mooon::utils::CStringUtils::string2int(new_value.c_str(), value, converted_length, ignored_zero))
         {
             *errmsg = CStringUtils::format_string("invalid value[%s] of argument[%s]", new_value.c_str(), c_name());
@@ -802,7 +801,6 @@ public:
     }
 
 private:
-    std::string _str_value;
     IntType _default_value;
     IntType _min_value;
     IntType _max_value;
