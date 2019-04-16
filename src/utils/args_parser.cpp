@@ -119,7 +119,7 @@ bool CArgumentContainer::set_argument(const std::string& name, const std::string
 
     if (iter == _argument_table.end())
     {
-        *errmsg = CStringUtils::format_string("undefined argument: %s", name.c_str());
+        *errmsg = CStringUtils::format_string("Undefined argument: %s", name.c_str());
         return false;
     }
     else
@@ -134,7 +134,7 @@ std::string CArgumentContainer::usage_string() const
 {
     std::stringstream usage_stream;
 
-    usage_stream << "usage:" << std::endl;
+    usage_stream << "Usage:" << std::endl;
     for (ArgumentList::size_type i=0; i<_argument_list.size(); ++i)
     {
         CArgumentBase* argument = _argument_list[i];
