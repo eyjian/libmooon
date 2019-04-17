@@ -202,7 +202,10 @@ class CThriftServerHelper
 {
 public:
     // set_log_function 是否设置写日志函数，默认设置为debug级别日志
-    CThriftServerHelper(apache::thrift::server::TServerEventHandler* server_event_handler=NULL, bool set_log_function=true);
+    CThriftServerHelper(
+            boost::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler=boost::shared_ptr<apache::thrift::server::TServerEventHandler>(),
+            boost::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler=boost::shared_ptr<apache::thrift::TProcessorEventHandler>(),
+            bool set_log_function=true);
 
     // 启动rpc服务，请注意该调用是同步阻塞的，所以需放最后调用
     // port thrift服务端的监听端口号
@@ -261,8 +264,17 @@ public:
     }
 
 private:
-    void init1(apache::thrift::server::TServerEventHandler* server_event_handler, bool set_log_function);
-    void init2(const std::string &ip, uint16_t port, uint8_t num_worker_threads, uint8_t num_io_threads);
+    // 被构造函数调用
+    void init1(
+            boost::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler,
+            boost::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler,
+            bool set_log_function);
+    // 被serve函数调用
+    void init2(
+            const std::string &ip,
+            uint16_t port,
+            uint8_t num_worker_threads,
+            uint8_t num_io_threads);
 
 private:
     boost::shared_ptr<apache::thrift::server::TServerEventHandler> _server_event_handler;
@@ -419,19 +431,29 @@ uint16_t CThriftClientHelper<ThriftClient, Protocol, Transport>::get_port() cons
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
-CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::CThriftServerHelper(apache::thrift::server::TServerEventHandler* server_event_handler, bool set_log_function)
+CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::CThriftServerHelper(
+        boost::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler,
+        boost::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler,
+        bool set_log_function)
 {
-    init1(server_event_handler, set_log_function);
+    init1(server_event_handler, processor_event_handler, set_log_function);
 }
 
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
-void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serve(uint16_t port, uint8_t num_worker_threads, uint8_t num_io_threads)
+void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serve(
+        uint16_t port,
+        uint8_t num_worker_threads,
+        uint8_t num_io_threads)
 {
     serve("0.0.0.0", port, num_worker_threads, num_io_threads);
 }
 
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
-void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serve(const std::string &ip, uint16_t port, uint8_t num_worker_threads, uint8_t num_io_threads)
+void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serve(
+        const std::string &ip,
+        uint16_t port,
+        uint8_t num_worker_threads,
+        uint8_t num_io_threads)
 {
     init2("0.0.0.0", port, num_worker_threads, num_io_threads);
 
@@ -442,7 +464,12 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
 }
 
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
-void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serve(const std::string &ip, uint16_t port, uint8_t num_worker_threads, uint8_t num_io_threads, void* attached)
+void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serve(
+        const std::string &ip,
+        uint16_t port,
+        uint8_t num_worker_threads,
+        uint8_t num_io_threads,
+        void* attached)
 {
     init2(ip, port, num_worker_threads, num_io_threads);
 
@@ -457,7 +484,11 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
 }
 
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
-void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serve(uint16_t port, void* attached, uint8_t num_worker_threads, uint8_t num_io_threads)
+void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serve(
+        uint16_t port,
+        void* attached,
+        uint8_t num_worker_threads,
+        uint8_t num_io_threads)
 {
     init2("0.0.0.0", port, num_worker_threads, num_io_threads);
 
@@ -480,24 +511,33 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::stop
         _thread_manager->stop();
 }
 
+// 被构造函数调用
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
-void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init1(apache::thrift::server::TServerEventHandler* server_event_handler, bool set_log_function)
+void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init1(
+        boost::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler,
+        boost::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler,
+        bool set_log_function)
 {
     if (set_log_function)
-    {
         set_thrift_debug_log_function();
-    }
-
-    _server_event_handler.reset(server_event_handler);
+    if (server_event_handler.get() != NULL)
+        _server_event_handler = server_event_handler;
     _handler.reset(new ThriftHandler);
     _processor.reset(new ServiceProcessor(_handler));
+    if (processor_event_handler.get() != NULL)
+        _processor->setEventHandler(processor_event_handler);
 
     // ProtocolFactory默认为apache::thrift::protocol::TBinaryProtocolFactory
     _protocol_factory.reset(new ProtocolFactory());
 }
 
+// 被serve函数调用
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
-void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init2(const std::string &ip, uint16_t port, uint8_t num_worker_threads, uint8_t num_io_threads)
+void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init2(
+        const std::string &ip,
+        uint16_t port,
+        uint8_t num_worker_threads,
+        uint8_t num_io_threads)
 {
     _thread_manager = apache::thrift::server::ThreadManager::newSimpleThreadManager(num_worker_threads);
     _thread_factory.reset(new apache::thrift::concurrency::PosixThreadFactory());
@@ -505,7 +545,8 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init
     _thread_manager->threadFactory(_thread_factory);
     _thread_manager->start();
 
-    apache::thrift::server::TNonblockingServer* server = new apache::thrift::server::TNonblockingServer(_processor, _protocol_factory, port, _thread_manager);
+    apache::thrift::server::TNonblockingServer* server = new apache::thrift::server::TNonblockingServer(
+            _processor, _protocol_factory, port, _thread_manager);
     server->setNumIOThreads(num_io_threads);
     server->setServerEventHandler(_server_event_handler);
     _server.reset(server);
