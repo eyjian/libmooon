@@ -18,8 +18,9 @@
  * 用以简化thrift的使用
  * 注意依赖boost：thrift的接口中有使用到boost::shared_ptr
  *
- * 从Thrift-0.2.0开始，去掉了对boost库的依赖，但新依赖C++11，
- * 比如使用C++11新增的std::shared_ptr替代了boost库的boost::shared_ptr。
+ * 从Thrift-0.12.0开始，去掉了对boost库的依赖，但新依赖C++11，
+ * 比如使用C++11新增的std::shared_ptr替代了boost库的boost::shared_ptr，
+ * Thrift-0.12.0在C++03/C++98中已无法使用。
  *
  * 目前，本文件只支持boost版本的Thrift。
  */
