@@ -17,6 +17,11 @@
  * Author: jian yi, eyjian@qq.com or eyjian@gmail.com
  * 用以简化thrift的使用
  * 注意依赖boost：thrift的接口中有使用到boost::shared_ptr
+ *
+ * 从Thrift-0.2.0开始，去掉了对boost库的依赖，但新依赖C++11，
+ * 比如使用C++11新增的std::shared_ptr替代了boost库的boost::shared_ptr。
+ *
+ * 目前，本文件只支持boost版本的Thrift。
  */
 #ifndef MOOON_NET_THRIFT_HELPER_H
 #define MOOON_NET_THRIFT_HELPER_H
@@ -223,14 +228,36 @@ public:
     // }
     void stop();
 
-    ThriftHandler* get()
+    boost::shared_ptr<ThriftHandler> get()
     {
-        return _handler.get();
+        return _handler;
     }
 
-    ThriftHandler* get() const
+    boost::shared_ptr<ThriftHandler> get() const
     {
-        return _handler.get();
+        return _handler;
+    }
+
+    boost::shared_ptr<apache::thrift::server::TServer> get_server()
+    {
+        return _server;
+    }
+
+    boost::shared_ptr<apache::thrift::server::TServer> get_server() const
+    {
+        return _server;
+    }
+
+    boost::shared_ptr<apache::thrift::server::TServerEventHandler>
+    get_server_event_handler()
+    {
+        return _server_event_handler;
+    }
+
+    boost::shared_ptr<apache::thrift::server::TServerEventHandler>
+    get_server_event_handler() const
+    {
+        return _server_event_handler;
     }
 
 private:
