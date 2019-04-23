@@ -449,4 +449,58 @@ bool is_local_ipv4(const std::string& ip)
     return (ip.size() >= 7) && is_local_ipv4(n);
 }
 
+bool get_self(int sockfd, std::string* ip, uint16_t* port, std::string* errmsg)
+{
+    struct sockaddr_in addr_in;
+    socklen_t addrlen = sizeof(addr_in);
+
+    if (0 == getsockname(sockfd, (struct sockaddr*)&addr_in, &addrlen))
+    {
+        *ip = ip2string(addr_in.sin_addr.s_addr);
+        *port = ntohs(addr_in.sin_port);
+        return true;
+    }
+    else
+    {
+        if (errmsg != NULL)
+            *errmsg = strerror(errno);
+        return false;
+    }
+}
+
+bool get_peer(int sockfd, std::string* ip, uint16_t* port, std::string* errmsg)
+{
+    struct sockaddr_in addr_in;
+    socklen_t addrlen = sizeof(addr_in);
+
+    if (0 == getpeername(sockfd, (struct sockaddr*)&addr_in, &addrlen))
+    {
+        *ip = ip2string(addr_in.sin_addr.s_addr);
+        *port = ntohs(addr_in.sin_port);
+        return true;
+    }
+    else
+    {
+        if (errmsg != NULL)
+            *errmsg = strerror(errno);
+        return false;
+    }
+}
+
+std::string get_self(int sockfd)
+{
+    std::string ip;
+    uint16_t port = 0;
+    get_self(sockfd, &ip, &port);
+    return utils::CStringUtils::format_string("%s:%d", ip.c_str(), port);
+}
+
+std::string get_peer(int sockfd)
+{
+    std::string ip;
+    uint16_t port = 0;
+    get_peer(sockfd, &ip, &port);
+    return utils::CStringUtils::format_string("%s:%d", ip.c_str(), port);
+}
+
 NET_NAMESPACE_END

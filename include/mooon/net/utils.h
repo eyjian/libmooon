@@ -259,5 +259,12 @@ extern bool is_local_ipv4(uint32_t ip);
 extern bool is_local_ipv4(const char* ip);
 extern bool is_local_ipv4(const std::string& ip);
 
+// 通过sockfd取得自己的IP和端口
+extern bool get_self(int sockfd, std::string* ip, uint16_t* port, std::string* errmsg=NULL);
+// 通过sockfd取得对端的IP和端口
+extern bool get_peer(int sockfd, std::string* ip, uint16_t* port, std::string* errmsg=NULL);
+extern std::string get_self(int sockfd);
+extern std::string get_peer(int sockfd);
+
 NET_NAMESPACE_END
 #endif // MOOON_NET_UTILS_H
