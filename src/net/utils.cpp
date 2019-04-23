@@ -224,7 +224,7 @@ void CUtils::get_ethx_ip(eth_ip_array_t& eth_ip_array)
     for (int i=0; i<ethx_count; ++i)
     {
         // 获取指定网卡上的IP地址
-        if (-1 == ioctl(fd, SIOCGIFADDR, (char *)&ifr[i])) continue;
+        if (-1 == ioctl(fd, SIOCGIFADDR, (char *)&ifr[i])) continue; // getifaddrs/freeifaddrs
         if (NULL == ifr[i].ifr_name) continue;                
 
         const char* retval;
