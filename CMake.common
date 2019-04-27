@@ -15,6 +15,9 @@
 
 # 让make时显示编译命令
 set(CMAKE_VERBOSE_MAKEFILE ON)
+#set(CMAKE_BUILD_TYPE "Debug")
+#set(CMAKE_C_COMPILER /usr/local/gcc/bin/gcc)
+#set(CMAKE_CXX_COMPILER /usr/local/gcc/bin/c++)
 
 # 定义颜色值，message()时可用到
 if (NOT WIN32)
