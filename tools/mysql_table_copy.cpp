@@ -40,6 +40,9 @@ BOOL_STRING_ARG_DEFINE(ignore, "false", "If true errors that occur while executi
 // 显示详细信息
 BOOL_STRING_ARG_DEFINE(verbose, "false", "Displays runtime details, example: --verbose=true");
 
+// 单次查询数据条数硬限制（0表示不限制）
+INTEGER_ARG_DEFINE(int, hdlimit, 100000, 0, std::numeric_limits<int>::max(), "The maximum number of records to query, example: --hdlimit=100000");
+
 class CTableCopyer
 {
 public:
@@ -159,18 +162,31 @@ int CTableCopyer::copy()
     }
     try
     {
+        const bool have_limit = strcasestr(mooon::argument::sql->c_value(), " LIMIT ") != NULL; // 是否已含有LIMIT
         std::vector<std::string> values;
         std::string values_str;
         std::string first_field;
         std::string ignore_str;
+        std::string querysql;
         mooon::sys::DBTable dbtable;
 
-        tag = "SELECT_FROM_SOURCE";
-        _source_mysql.query(dbtable, "%s", mooon::argument::sql->c_value());
+        // 防止单词SELECT数据量过大，强制加上LIMIT硬保护
+        if (have_limit || mooon::argument::hdlimit->value()==0)
+        {
+            querysql = mooon::argument::sql->value();
+        }
+        else
+        {
+            querysql = mooon::utils::CStringUtils::format_string(
+                    "%s LIMIT %d", mooon::argument::sql->c_value(), mooon::argument::hdlimit->value());
+        }
         if (mooon::argument::verbose->is_true())
         {
-            fprintf(stdout, "[SELECTSQL] %s\n", mooon::argument::sql->c_value());
+            fprintf(stdout, "[SELECTSQL] %s\n", querysql.c_str());
         }
+
+        tag = "SELECT_FROM_SOURCE";
+        _source_mysql.query(dbtable, "%s", querysql.c_str());
         for (mooon::sys::DBTable::size_type row=0; row<dbtable.size(); ++row)
         {
             const mooon::sys::DBRow& dbrow = dbtable[row];
@@ -216,7 +232,11 @@ int CTableCopyer::copy()
         if (mooon::argument::test->is_true() ||
             mooon::argument::verbose->is_true())
         {
-            fprintf(stdout, "[INSERTSQL] %s\n", insertsql.c_str());
+            if (insertsql.size() < mooon::SIZE_32K)
+                fprintf(stdout, "[INSERTSQL] %s\n", insertsql.c_str());
+            else
+                fprintf(stdout, "[INSERTSQL] %.*s ... (%zu more than %d)\n",
+                        mooon::SIZE_32K, insertsql.c_str(), insertsql.size(), mooon::SIZE_32K);
         }
         if (mooon::argument::test->is_false())
         {
