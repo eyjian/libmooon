@@ -9,6 +9,7 @@
 // 如果数据不为空，则在成功标识“SUCCESS”后紧跟第一个字段的最新值，
 // 如果这是一个自增字段值，则可借助这个值实现增量复制。
 #include <mooon/sys/mysql_db.h>
+#include <mooon/sys/stop_watch.h>
 #include <mooon/sys/utils.h>
 #include <mooon/utils/args_parser.h>
 #include <mooon/utils/string_utils.h>
@@ -48,6 +49,7 @@ private:
     bool init();
     bool init_source_mysql();
     bool init_destination_mysql();
+    void print_cost(_IO_FILE* stdxxx, mooon::sys::CStopWatch& stopwatch);
 
 private:
     mooon::sys::CMySQLConnection _source_mysql;
@@ -147,9 +149,11 @@ int CTableCopyer::copy()
 {
     std::string tag;
     std::string insertsql;
+    mooon::sys::CStopWatch stopwatch;
 
     if (!init())
     {
+        print_cost(stderr, stopwatch);
         fprintf(stderr, "FAILED\n");
         return 1;
     }
@@ -221,11 +225,13 @@ int CTableCopyer::copy()
         }
         if (first_field.empty())
         {
+            print_cost(stdout, stopwatch);
             fprintf(stdout, "SUCCESS: none\n");
         }
         else
         {
-            fprintf(stdout, "SUCCESS: %s <The latest value of the first field>\n", first_field.c_str());
+            print_cost(stdout, stopwatch);
+            fprintf(stdout, "SUCCESS: %s (The latest value of the first field)\n", first_field.c_str());
         }
         return 0;
     }
@@ -241,6 +247,8 @@ int CTableCopyer::copy()
                 fprintf(stderr, "[INSERTSQL] %s\n", insertsql.c_str());
             fprintf(stderr, "[%s] %s\n", tag.c_str(), ex.str().c_str());
         }
+
+        print_cost(stderr, stopwatch);
         fprintf(stderr, "FAILED\n");
         return 1;
     }
@@ -293,4 +301,11 @@ bool CTableCopyer::init_destination_mysql()
         fprintf(stderr, "Intialize destination MySQL failed: %s\n", ex.str().c_str());
         return false;
     }
+}
+
+void CTableCopyer::print_cost(_IO_FILE* stdxxx, mooon::sys::CStopWatch& stopwatch)
+{
+    const uint64_t microseconds = stopwatch.get_elapsed_microseconds();
+    const double seconds = microseconds / (1000000.0);
+    fprintf(stdxxx, "COST: %.3fs (%" PRIu64"us)\n", seconds, microseconds);
 }
