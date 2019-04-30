@@ -226,11 +226,13 @@ int CTableCopyer::copy()
         if (first_field.empty())
         {
             print_cost(stdout, stopwatch);
+            fprintf(stdout, "ROW: %zu\n", dbtable.size());
             fprintf(stdout, "SUCCESS: none\n");
         }
         else
         {
             print_cost(stdout, stopwatch);
+            fprintf(stdout, "ROW: %zu\n", dbtable.size());
             fprintf(stdout, "SUCCESS: %s (The latest value of the first field)\n", first_field.c_str());
         }
         return 0;
