@@ -87,12 +87,17 @@ endif ()
 if (MOOON_HAVE_MYSQL)    
     add_executable(mysql_escape_test mysql_escape_test.cpp)
     target_link_libraries(mysql_escape_test libmooon.a libmysqlclient.a)
-    
-    # CMAKE_INSTALL_PREFIX
-    install(
-            TARGETS mysql_escape_test
-            DESTINATION bin
-           ) 
+    install( # CMAKE_INSTALL_PREFIX
+        TARGETS mysql_escape_test
+        DESTINATION bin
+    ) 
+           
+    add_executable(mysql_table_copy mysql_table_copy.cpp)
+    target_link_libraries(mysql_table_copy libmooon.a libmysqlclient.a)
+    install( # CMAKE_INSTALL_PREFIX
+        TARGETS mysql_table_copy
+        DESTINATION bin
+    )
 endif ()
 
 if (MOOON_HAVE_ZOOKEEPER)
