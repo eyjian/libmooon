@@ -25,6 +25,8 @@
 #include <openssl/pem.h>
 UTILS_NAMESPACE_BEGIN
 
+// 参考：
+// http://hayageek.com/rsa-encryption-decryption-openssl-c/
 void CRSAHelper::public_encrypt(const std::string& pub_keyfile, const std::string& instr, std::string* outstr, PaddingFlag flag)
 {
     int errcode = 0;
