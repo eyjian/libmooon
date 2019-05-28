@@ -696,7 +696,7 @@ void CUtils::set_process_title(const char* format, ...)
     set_process_title(std::string(title));
 }
 
-std::string CUtils::get_random_string()
+std::string CUtils::get_random_string(const char* prefix)
 {
     // 随机数因子
     static atomic_t s_random_factor = ATOMIC_INIT(0);
@@ -720,7 +720,10 @@ std::string CUtils::get_random_string()
     uint64_t m3 = random() % std::numeric_limits<uint64_t>::max();
 
     atomic_add(3, &s_random_factor);
-    return utils::CStringUtils::format_string("%" PRIu64"%" PRIu64"%u%" PRIu64"%" PRIu64"%" PRIu64, static_cast<uint64_t>(tv.tv_sec), static_cast<uint64_t>(tv.tv_usec), random_factor, m1, m2, m3);
+    if (prefix == NULL)
+        return utils::CStringUtils::format_string("%" PRIu64"%" PRIu64"%u%" PRIu64"%" PRIu64"%" PRIu64, static_cast<uint64_t>(tv.tv_sec), static_cast<uint64_t>(tv.tv_usec), random_factor, m1, m2, m3);
+    else
+        return utils::CStringUtils::format_string("%s%" PRIu64"%" PRIu64"%u%" PRIu64"%" PRIu64"%" PRIu64, prefix, static_cast<uint64_t>(tv.tv_sec), static_cast<uint64_t>(tv.tv_usec), random_factor, m1, m2, m3);
 }
 
 bool CUtils::process_exists(int64_t pid)

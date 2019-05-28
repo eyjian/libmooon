@@ -226,7 +226,7 @@ public:
     }
 
     // 取一个随机字符串
-    static std::string get_random_string();
+    static std::string get_random_string(const char* prefix=NULL);
 
     // 指定进程ID的进程是否存在
     static bool process_exists(int64_t pid);
