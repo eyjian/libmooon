@@ -151,6 +151,13 @@ bool CMySQLConnection::is_shutdowning_exception(CDBException& db_error) const
     return ER_SERVER_SHUTDOWN == errcode;
 }
 
+bool CMySQLConnection::is_notable_exception(CDBException& db_error) const
+{
+    // #define ER_NO_SUCH_TABLE 1146
+    const int errcode = db_error.errcode();
+    return ER_NO_SUCH_TABLE == errcode;
+}
+
 bool CMySQLConnection::is_lost_connection_exception(CDBException& db_error) const
 {
     const int errcode = db_error.errcode();

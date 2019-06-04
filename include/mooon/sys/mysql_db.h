@@ -81,6 +81,7 @@ public:
     virtual bool is_disconnected_exception(CDBException& db_error) const;
     virtual bool is_deadlock_exception(CDBException& db_error) const;
     virtual bool is_shutdowning_exception(CDBException& db_error) const;
+    virtual bool is_notable_exception(CDBException& db_error) const; // 表不存在异常
 
     // 如果一条查询语句过慢，可能导致大量的lost错误消耗光MySQL连接
     // 因此遇到此错误时，需要考虑降慢重连接速度，即使开启了自动得连接！
