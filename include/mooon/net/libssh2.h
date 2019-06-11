@@ -97,7 +97,7 @@ class CLibssh2
 {
 public:
     // 初始化ssh2环境，为非线程安全函数，每个进程启动时调用一次
-    static void init() throw (utils::CException);
+    static void init();
     // 清理初始化时产生的资源，每个进程退出时调用一次，或者不再使用ssh2时调用一次
     static void fini();
 
@@ -108,7 +108,7 @@ public:
     // password 用户名username的密码
     // timeout_seconds 连接超时时长，单位为秒
     // nonblocking 连接是否主国非阻塞方式，为true表示为非阻塞，为false表示为阻塞方式，建议采用非阻塞方式
-    CLibssh2(const std::string& ip, uint16_t port, const std::string& username, const std::string& password, uint32_t timeout_seconds=2, bool nonblocking=false) throw (utils::CException, sys::CSyscallException);
+    CLibssh2(const std::string& ip, uint16_t port, const std::string& username, const std::string& password, uint32_t timeout_seconds=2, bool nonblocking=false);
     ~CLibssh2();
 
     // command 被远程执行的命令，如：whoami
@@ -116,16 +116,16 @@ public:
     // exitcode 远程命令执行结束后的退出代码，如：0
     // exitsignal 远程命令执行时接收到的信号，如：TERM
     // num_bytes 远程命令吐出的字节数
-    void remotely_execute(const std::string& command, std::ostream& out, int* exitcode, std::string* exitsignal, std::string* errmsg, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException);
+    void remotely_execute(const std::string& command, std::ostream& out, int* exitcode, std::string* exitsignal, std::string* errmsg, int64_t* num_bytes);
 
     // 下载远端的文件到本地
     // remote_filepath 被下载的远端文件
     // num_bytes 远端文件的字节数
-    void download(const std::string& remote_filepath, std::ostream& out, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException);
+    void download(const std::string& remote_filepath, std::ostream& out, int64_t* num_bytes);
 
     // 上传本地文件到远端
     // num_bytes 本地文件的字节数
-    void upload(const std::string& local_filepath, const std::string& remote_filepath, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException);
+    void upload(const std::string& local_filepath, const std::string& remote_filepath, int64_t* num_bytes);
 
 private:
     int get_session_errcode() const;

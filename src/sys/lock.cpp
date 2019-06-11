@@ -21,7 +21,7 @@
 #include "sys/lock.h"
 SYS_NAMESPACE_BEGIN
 
-CLock::CLock(bool recursive) throw (CSyscallException)
+CLock::CLock(bool recursive)
 {
     int errcode = 0;
     if (recursive)
@@ -63,21 +63,21 @@ CLock::~CLock()
     pthread_mutex_destroy(&_mutex);
 }
 
-void CLock::lock() throw (CSyscallException)
+void CLock::lock()
 {
     int errcode = pthread_mutex_lock(&_mutex);
     if (errcode != 0)
         THROW_SYSCALL_EXCEPTION(NULL, errcode, "pthread_mutex_lock");
 }
 
-void CLock::unlock() throw (CSyscallException)
+void CLock::unlock()
 {
     int errcode = pthread_mutex_unlock(&_mutex);
     if (errcode != 0)
         THROW_SYSCALL_EXCEPTION(NULL, errcode, "pthread_mutex_unlock");
 }
 
-bool CLock::try_lock() throw (CSyscallException)
+bool CLock::try_lock()
 {
     int errcode = pthread_mutex_trylock(&_mutex);
 
@@ -87,7 +87,7 @@ bool CLock::try_lock() throw (CSyscallException)
 	THROW_SYSCALL_EXCEPTION(NULL, errcode, "pthread_mutex_trylock");
 }
 
-bool CLock::timed_lock(uint32_t millisecond) throw (CSyscallException)
+bool CLock::timed_lock(uint32_t millisecond)
 {
 	int errcode;
 

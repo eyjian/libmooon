@@ -27,7 +27,7 @@ CListener::CListener()
 {
 }
 
-void CListener::listen(const ip_address_t& ip, uint16_t port, bool nonblock, bool enabled_address_zero, bool reuse_port) throw (sys::CSyscallException)
+void CListener::listen(const ip_address_t& ip, uint16_t port, bool nonblock, bool enabled_address_zero, bool reuse_port)
 {    
     // 是否允许是任意地址上监听
     if (!enabled_address_zero && ip.is_zero_address())
@@ -126,19 +126,19 @@ void CListener::listen(const ip_address_t& ip, uint16_t port, bool nonblock, boo
     }
 }
 
-void CListener::listen(const ipv4_node_t& ip_node, bool nonblock, bool enabled_address_zero, bool reuse_port) throw (sys::CSyscallException)
+void CListener::listen(const ipv4_node_t& ip_node, bool nonblock, bool enabled_address_zero, bool reuse_port)
 {
     ip_address_t ip = ip_node.ip;
     listen(ip, ip_node.port, nonblock, enabled_address_zero);
 }
 
-void CListener::listen(const ipv6_node_t& ip_node, bool nonblock, bool enabled_address_zero, bool reuse_port) throw (sys::CSyscallException)
+void CListener::listen(const ipv6_node_t& ip_node, bool nonblock, bool enabled_address_zero, bool reuse_port)
 {
     ip_address_t ip = (uint32_t*)ip_node.ip;
     listen(ip, ip_node.port, nonblock, enabled_address_zero);
 }
 
-int CListener::accept(ip_address_t& peer_ip, uint16_t& peer_port) throw (sys::CSyscallException)
+int CListener::accept(ip_address_t& peer_ip, uint16_t& peer_port)
 {
     struct sockaddr_in6 peer_addr_in6;
     struct sockaddr* peer_addr = (struct sockaddr*)&peer_addr_in6;        

@@ -206,7 +206,7 @@ bool CMySQLConnection::is_ipsock_exception(CDBException& db_error) const
     return CR_IPSOCK_ERROR == errcode;
 }
 
-std::string CMySQLConnection::escape_string(const std::string& str) const throw (CDBException)
+std::string CMySQLConnection::escape_string(const std::string& str) const
 {
     MOOON_ASSERT(_mysql_handle != NULL);
 
@@ -250,7 +250,7 @@ std::string CMySQLConnection::escape_string(const std::string& str) const throw 
     }
 }
 
-void CMySQLConnection::change_charset(const std::string& charset) throw (CDBException)
+void CMySQLConnection::change_charset(const std::string& charset)
 {
     if (!charset.empty())
     {
@@ -265,7 +265,7 @@ void CMySQLConnection::change_charset(const std::string& charset) throw (CDBExce
     }
 }
 
-void CMySQLConnection::open() throw (CDBException)
+void CMySQLConnection::open()
 {    
     _id = utils::CStringUtils::format_string("mysql://%s@%s:%d", _db_name.c_str(), _db_ip.c_str(), _db_port);
     do_open();
@@ -283,14 +283,14 @@ void CMySQLConnection::close() throw ()
     }
 }
 
-void CMySQLConnection::reopen() throw (CDBException)
+void CMySQLConnection::reopen()
 {
     // 先关闭释放资源，才能再建立
     close();
     do_open();
 }
 
-uint64_t CMySQLConnection::update(const char* format, ...) throw (CDBException)
+uint64_t CMySQLConnection::update(const char* format, ...)
 {
     MOOON_ASSERT(_mysql_handle != NULL);
 
@@ -341,7 +341,7 @@ std::string CMySQLConnection::str() throw ()
     return _id;
 }
 
-void CMySQLConnection::ping() throw (CDBException)
+void CMySQLConnection::ping()
 {
     MOOON_ASSERT(_mysql_handle != NULL);
     MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
@@ -350,7 +350,7 @@ void CMySQLConnection::ping() throw (CDBException)
         THROW_DB_EXCEPTION(NULL, mysql_error(mysql_handle), mysql_errno(mysql_handle));
 }
 
-void CMySQLConnection::commit() throw (CDBException)
+void CMySQLConnection::commit()
 {
     MOOON_ASSERT(_mysql_handle != NULL);
     MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
@@ -359,7 +359,7 @@ void CMySQLConnection::commit() throw (CDBException)
         THROW_DB_EXCEPTION(NULL, mysql_error(mysql_handle), mysql_errno(mysql_handle));
 }
 
-void CMySQLConnection::rollback() throw (CDBException)
+void CMySQLConnection::rollback()
 {
     MOOON_ASSERT(_mysql_handle != NULL);
     MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
@@ -368,7 +368,7 @@ void CMySQLConnection::rollback() throw (CDBException)
         THROW_DB_EXCEPTION(NULL, mysql_error(mysql_handle), mysql_errno(mysql_handle));
 }
 
-void CMySQLConnection::enable_autocommit(bool enabled) throw (CDBException)
+void CMySQLConnection::enable_autocommit(bool enabled)
 {
     MOOON_ASSERT(_mysql_handle != NULL);
     MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
@@ -378,7 +378,7 @@ void CMySQLConnection::enable_autocommit(bool enabled) throw (CDBException)
         THROW_DB_EXCEPTION(NULL, mysql_error(mysql_handle), mysql_errno(mysql_handle));
 }
 
-void CMySQLConnection::multi_statements(const char* sql, int sql_length) throw (CDBException)
+void CMySQLConnection::multi_statements(const char* sql, int sql_length)
 {
     // https://dev.mysql.com/doc/refman/5.7/en/c-api-multiple-queries.html
     MOOON_ASSERT(_mysql_handle != NULL);
@@ -393,7 +393,7 @@ void CMySQLConnection::multi_statements(const char* sql, int sql_length) throw (
 }
 
 std::pair<bool,uint64_t>
-CMySQLConnection::fetch_results(DBTable& db_table) throw (CDBException)
+CMySQLConnection::fetch_results(DBTable& db_table)
 {
     MOOON_ASSERT(_mysql_handle != NULL);
     MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
@@ -451,7 +451,7 @@ CMySQLConnection::fetch_results(DBTable& db_table) throw (CDBException)
     return std::make_pair((result_set!=NULL), affected_rows);
 }
 
-bool CMySQLConnection::have_more_results() const throw (CDBException)
+bool CMySQLConnection::have_more_results() const
 {
     // https://dev.mysql.com/doc/refman/5.7/en/mysql-next-result.html
     MOOON_ASSERT(_mysql_handle != NULL);
@@ -475,7 +475,7 @@ bool CMySQLConnection::have_more_results() const throw (CDBException)
     return 0 == status;
 }
 
-void CMySQLConnection::do_query(DBTable& db_table, const char* sql, int sql_length) throw (CDBException)
+void CMySQLConnection::do_query(DBTable& db_table, const char* sql, int sql_length)
 {
     MOOON_ASSERT(_mysql_handle != NULL);
     MYSQL* mysql_handle = static_cast<MYSQL*>(_mysql_handle);
@@ -545,7 +545,7 @@ void CMySQLConnection::do_query(DBTable& db_table, const char* sql, int sql_leng
     }
 }
 
-void CMySQLConnection::do_open() throw (CDBException)
+void CMySQLConnection::do_open()
 {
     MOOON_ASSERT(NULL == _mysql_handle);
 

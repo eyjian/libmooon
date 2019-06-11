@@ -42,9 +42,9 @@ public:
       * @enabled_address_zero: 是否允许在0.0.0.0上监听，安全起见，默认不允许
       * @exception: 如果发生错误，则抛出CSyscallException异常
       */
-    void listen(const ip_address_t& ip, uint16_t port, bool nonblock=true, bool enabled_address_zero=false, bool reuse_port=false) throw (sys::CSyscallException);
-    void listen(const ipv4_node_t& ip_node, bool nonblock=true, bool enabled_address_zero=false, bool reuse_port=false) throw (sys::CSyscallException);
-    void listen(const ipv6_node_t& ip_node, bool nonblock=true, bool enabled_address_zero=false, bool reuse_port=false) throw (sys::CSyscallException);
+    void listen(const ip_address_t& ip, uint16_t port, bool nonblock=true, bool enabled_address_zero=false, bool reuse_port=false);
+    void listen(const ipv4_node_t& ip_node, bool nonblock=true, bool enabled_address_zero=false, bool reuse_port=false);
+    void listen(const ipv6_node_t& ip_node, bool nonblock=true, bool enabled_address_zero=false, bool reuse_port=false);
 
     /***
       * 接受连接请求
@@ -53,7 +53,7 @@ public:
       * @return: 新的SOCKET句柄
       * @exception: 如果发生错误，则抛出CSyscallException异常
       */
-    int accept(ip_address_t& peer_ip, uint16_t& peer_port) throw (sys::CSyscallException);
+    int accept(ip_address_t& peer_ip, uint16_t& peer_port);
     
     /** 得到监听的IP地址 */
     const ip_address_t& get_listen_ip() const throw () { return _ip; }

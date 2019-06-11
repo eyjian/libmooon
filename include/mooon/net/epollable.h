@@ -53,7 +53,7 @@ typedef enum
   * @return: 如果具有指定的标志值，则返回true，否则返回false
   * @exception: 如果发生错误，则抛出CSyscallException异常
   */
-bool has_the_flags(int fd, int flags) throw (sys::CSyscallException);
+bool has_the_flags(int fd, int flags);
 
 /***
   * 判断指定fd是否为非阻塞的
@@ -61,7 +61,7 @@ bool has_the_flags(int fd, int flags) throw (sys::CSyscallException);
   * @return: 如果fd为非阻塞的，则返回true，否则返回false
   * @exception: 如果发生错误，则抛出CSyscallException异常
   */
-bool is_nonblock(int fd) throw (sys::CSyscallException);
+bool is_nonblock(int fd);
 
 /***
   * 判断指定fd是否为非延迟的
@@ -69,7 +69,7 @@ bool is_nonblock(int fd) throw (sys::CSyscallException);
   * @return: 如果fd为非延迟的，则返回true，否则返回false
   * @exception: 如果发生错误，则抛出CSyscallException异常
   */
-bool is_nodelay(int fd) throw (sys::CSyscallException);
+bool is_nodelay(int fd);
 
 /***
   * 为指定的fd增加或删除指定的标志
@@ -78,15 +78,15 @@ bool is_nodelay(int fd) throw (sys::CSyscallException);
   * @flags: 标志值
   * @exception: 如果发生错误，则抛出CSyscallException异常
   */
-void set_socket_flags(int fd, bool yes, int flags) throw (sys::CSyscallException);
+void set_socket_flags(int fd, bool yes, int flags);
 
-void set_linger(int fd, bool onoff, int linger_interval) throw (sys::CSyscallException);
+void set_linger(int fd, bool onoff, int linger_interval);
 
 /***
   * 设置TCP选项（TCP_CORK，TCP_NODELAY）
   * @exception: 如果发生错误，则抛出CSyscallException异常
   */
-void set_tcp_option(int fd, bool yes, int option) throw (sys::CSyscallException);
+void set_tcp_option(int fd, bool yes, int option);
 
 /***
   * 为指定fd的增加或删除非阻塞标志
@@ -94,7 +94,7 @@ void set_tcp_option(int fd, bool yes, int option) throw (sys::CSyscallException)
   * @yes: 是否设置为非阻塞标志，如果为true，则设置为非阻塞，否则设置为阻塞
   * @exception: 如果发生错误，则抛出CSyscallException异常
   */
-void set_nonblock(int fd, bool yes) throw (sys::CSyscallException);
+void set_nonblock(int fd, bool yes);
 
 /***
   * 为指定fd的增加或删除非延迟标志
@@ -102,7 +102,7 @@ void set_nonblock(int fd, bool yes) throw (sys::CSyscallException);
   * @yes: 是否设置为非延迟标志，如果为true，则设置为非延迟，否则设置为延迟
   * @exception: 如果发生错误，则抛出CSyscallException异常
   */
-void set_nodelay(int fd, bool yes) throw (sys::CSyscallException);
+void set_nodelay(int fd, bool yes);
 
 /** 关闭指定的句柄
   */

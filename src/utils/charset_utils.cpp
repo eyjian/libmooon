@@ -40,7 +40,7 @@ static int do_convert(iconv_t cd, const char* from, size_t from_size, std::strin
 
 void CCharsetUtils::convert(const std::string& from_charset, const std::string& to_charset,
                             const std::string& from, std::string* to,
-                            bool ignore_error, bool skip_error) throw (CException)
+                            bool ignore_error, bool skip_error)
 {
     std::string result; // 用来保存处理后的内容
     char* in_buf = const_cast<char*>(from.c_str());
@@ -129,22 +129,22 @@ void CCharsetUtils::convert(const std::string& from_charset, const std::string& 
     *to = result;
 }
 
-void CCharsetUtils::gbk_to_utf8(const std::string& from, std::string* to, bool ignore_error, bool skip_error) throw (CException)
+void CCharsetUtils::gbk_to_utf8(const std::string& from, std::string* to, bool ignore_error, bool skip_error)
 {
     convert("gbk", "utf-8", from, to, ignore_error, skip_error);
 }
 
-void CCharsetUtils::utf8_to_gbk(const std::string& from, std::string* to, bool ignore_error, bool skip_error) throw (CException)
+void CCharsetUtils::utf8_to_gbk(const std::string& from, std::string* to, bool ignore_error, bool skip_error)
 {
     convert("utf-8", "gbk", from, to, ignore_error, skip_error);
 }
 
-void CCharsetUtils::gb2312_to_utf8(const std::string& from, std::string* to, bool ignore_error, bool skip_error) throw (CException)
+void CCharsetUtils::gb2312_to_utf8(const std::string& from, std::string* to, bool ignore_error, bool skip_error)
 {
     convert("gb2312", "utf-8", from, to, ignore_error, skip_error);
 }
 
-void CCharsetUtils::utf8_to_gb2312(const std::string& from, std::string* to, bool ignore_error, bool skip_error) throw (CException)
+void CCharsetUtils::utf8_to_gb2312(const std::string& from, std::string* to, bool ignore_error, bool skip_error)
 {
     convert("utf-8", "gb2312", from, to, ignore_error, skip_error);
 }

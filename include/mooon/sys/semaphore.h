@@ -35,7 +35,7 @@ public:
       * @path: 用来创建信号量的路径(包含文件名)，不能为NULL
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    void open(const char* path) throw (CSyscallException);
+    void open(const char* path);
 
     /***
       * 创建一个信号量
@@ -45,32 +45,32 @@ public:
       * @return: 如果已经存在则返回false，否则返回true
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    bool create(const char* path, int16_t init_value=0, mode_t mode=IPC_DEFAULT_PERM) throw (CSyscallException);
+    bool create(const char* path, int16_t init_value=0, mode_t mode=IPC_DEFAULT_PERM);
     
     /***
       * 删除信号量
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    void remove() throw (CSyscallException);
+    void remove();
     
     /*** 
       * 信号量V操作，对信号量进行增操作，如果相加结果信号量值不小于0，则不阻塞
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    void verhoog(uint16_t value) throw (CSyscallException);
+    void verhoog(uint16_t value);
 
     /***
       * 信号量P操作，对信号量减操作，如果减后仍大于或等于0，则不阻塞，否则阻塞
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    void passeren(uint16_t value) throw (CSyscallException);
+    void passeren(uint16_t value);
 
     /***
       * 尝试进行信号量P操作
       * @return: 如果P操作成功返回true，否则返回false
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    bool try_passeren(uint16_t value) throw (CSyscallException);
+    bool try_passeren(uint16_t value);
 
     /***
       * 超时方式进行信号量P操作
@@ -78,10 +78,10 @@ public:
       * @return: 如果在指定的时间内成功，则返回true，否则返回false
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    bool timed_passeren(uint16_t value, int milliseconds) throw (CSyscallException);
+    bool timed_passeren(uint16_t value, int milliseconds);
     
 private:
-    bool semaphore_operation(int value, int flag, int milliseconds) throw (CSyscallException);
+    bool semaphore_operation(int value, int flag, int milliseconds);
     
 private:
     int _semid; /** 信号量句柄 */

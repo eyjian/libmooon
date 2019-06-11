@@ -21,7 +21,7 @@
 #include <unistd.h>
 NET_NAMESPACE_BEGIN
 
-CUdpSocket::CUdpSocket() throw (sys::CSyscallException)
+CUdpSocket::CUdpSocket()
 {
     int fd = ::socket(AF_INET, SOCK_DGRAM, 0);
     if (-1 == fd)
@@ -30,12 +30,12 @@ CUdpSocket::CUdpSocket() throw (sys::CSyscallException)
     set_fd(fd);
 }
 
-void CUdpSocket::listen(uint16_t port, bool nonblock, bool reuse_port) throw (sys::CSyscallException)
+void CUdpSocket::listen(uint16_t port, bool nonblock, bool reuse_port)
 {
 	listen("0.0.0.0", port, nonblock, reuse_port);
 }
 
-void CUdpSocket::listen(const std::string& ip, uint16_t port, bool nonblock, bool reuse_port) throw (sys::CSyscallException)
+void CUdpSocket::listen(const std::string& ip, uint16_t port, bool nonblock, bool reuse_port)
 {
 	struct sockaddr_in listen_addr;
 
@@ -69,7 +69,7 @@ void CUdpSocket::listen(const std::string& ip, uint16_t port, bool nonblock, boo
 	    set_nonblock(true);
 }
 
-int CUdpSocket::send_to(const void* buffer, size_t buffer_size, uint32_t to_ip, uint16_t to_port) throw (sys::CSyscallException)
+int CUdpSocket::send_to(const void* buffer, size_t buffer_size, uint32_t to_ip, uint16_t to_port)
 {
     struct sockaddr_in to_addr;
 
@@ -81,12 +81,12 @@ int CUdpSocket::send_to(const void* buffer, size_t buffer_size, uint32_t to_ip, 
     return send_to(buffer, buffer_size, to_addr);
 }
 
-int CUdpSocket::send_to(const void* buffer, size_t buffer_size, const char* to_ip, uint16_t to_port) throw (sys::CSyscallException)
+int CUdpSocket::send_to(const void* buffer, size_t buffer_size, const char* to_ip, uint16_t to_port)
 {
     return send_to(buffer, buffer_size, inet_addr(to_ip), to_port);
 }
 
-int CUdpSocket::send_to(const void* buffer, size_t buffer_size, const struct sockaddr_in& to_addr) throw (sys::CSyscallException)
+int CUdpSocket::send_to(const void* buffer, size_t buffer_size, const struct sockaddr_in& to_addr)
 {
     int bytes = ::sendto(get_fd(), buffer, buffer_size, 0, (struct sockaddr*)&to_addr, sizeof(struct sockaddr_in));
     if (-1 == bytes)
@@ -98,7 +98,7 @@ int CUdpSocket::send_to(const void* buffer, size_t buffer_size, const struct soc
     return bytes;
 }
 
-int CUdpSocket::receive_from(void* buffer, size_t buffer_size, uint32_t* from_ip, uint16_t* from_port) throw (sys::CSyscallException)
+int CUdpSocket::receive_from(void* buffer, size_t buffer_size, uint32_t* from_ip, uint16_t* from_port)
 {
     struct sockaddr_in from_addr;
 
@@ -112,7 +112,7 @@ int CUdpSocket::receive_from(void* buffer, size_t buffer_size, uint32_t* from_ip
     return bytes;
 }
 
-int CUdpSocket::receive_from(void* buffer, size_t buffer_size, struct sockaddr_in* from_addr) throw (sys::CSyscallException)
+int CUdpSocket::receive_from(void* buffer, size_t buffer_size, struct sockaddr_in* from_addr)
 {
     socklen_t address_len = sizeof(struct sockaddr_in);
 
@@ -128,7 +128,7 @@ int CUdpSocket::receive_from(void* buffer, size_t buffer_size, struct sockaddr_i
 
 // UDP无应用层发送缓存区，数据直接进入网卡输出队列，如果网卡输出队列已满，则设置errno值为ENOBUFS，
 // 但根据man 2 sendto说明，一般情况下，Linux不会出现ENOBUFS，一旦网卡输出队列满则直接丢弃数据。
-int CUdpSocket::timed_receive_from(void* buffer, size_t buffer_size, uint32_t* from_ip, uint16_t* from_port, uint32_t milliseconds) throw (sys::CSyscallException)
+int CUdpSocket::timed_receive_from(void* buffer, size_t buffer_size, uint32_t* from_ip, uint16_t* from_port, uint32_t milliseconds)
 {
     if (!CUtils::timed_poll(get_fd(), POLLIN, milliseconds))
         THROW_SYSCALL_EXCEPTION("receive timeout", ETIMEDOUT, "pool");
@@ -136,7 +136,7 @@ int CUdpSocket::timed_receive_from(void* buffer, size_t buffer_size, uint32_t* f
     return receive_from(buffer, buffer_size, from_ip, from_port);
 }
 
-int CUdpSocket::timed_receive_from(void* buffer, size_t buffer_size, struct sockaddr_in* from_addr, uint32_t milliseconds) throw (sys::CSyscallException)
+int CUdpSocket::timed_receive_from(void* buffer, size_t buffer_size, struct sockaddr_in* from_addr, uint32_t milliseconds)
 {
     if (!CUtils::timed_poll(get_fd(), POLLIN, milliseconds))
         THROW_SYSCALL_EXCEPTION("receive timeout", ETIMEDOUT, "pool");

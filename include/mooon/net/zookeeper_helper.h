@@ -234,11 +234,11 @@ public:
     // keep_watch 是否保持watch该path
     //
     // 如果成功返回数据实际大小，如果出错则抛异常
-    int get_zk_data(const char* zk_path, std::string* zk_data, int data_size=SIZE_4K, bool keep_watch=true) const throw (utils::CException);
-    std::string get_zk_data(const char* zk_path, int data_size=SIZE_4K, bool keep_watch=true) const throw (utils::CException);
+    int get_zk_data(const char* zk_path, std::string* zk_data, int data_size=SIZE_4K, bool keep_watch=true) const;
+    std::string get_zk_data(const char* zk_path, int data_size=SIZE_4K, bool keep_watch=true) const;
 
     // 设置节点的数据
-    void set_zk_data(const std::string& zk_path, const std::string& zk_data, struct Stat *stat=NULL, int version=-1) throw (utils::CException);
+    void set_zk_data(const std::string& zk_path, const std::string& zk_data, struct Stat *stat=NULL, int version=-1);
 
     // 取函数connect_zookeeper的参数指定的zk_nodes
     const std::string& get_zk_nodes() const throw () { return _zk_nodes; }
@@ -259,10 +259,10 @@ public:
     // session_timeout_seconds会间于minSessionTimeout和maxSessionTimeout才有效。
     //
     // 如果报错“no port in ... Invalid argument”，是因为参数zk_nodes没有包含端口或端口号错误
-    void create_session(const std::string& zk_nodes, int session_timeout_seconds=10) throw (utils::CException);
+    void create_session(const std::string& zk_nodes, int session_timeout_seconds=10);
 
     // 关闭与zookeeper的连接
-    void close_session() throw (utils::CException);
+    void close_session();
 
     // 重新创建与zookeeper的会话（Session），
     // 重连接之前会先关闭和释放已建立连接的资源（包括会话）
@@ -270,7 +270,7 @@ public:
     // 请注意，
     // 在调用connect_zookeeper()或reconnect_zookeeper()后，
     // 都应当重新调用race_master()去竞争成为master。
-    void recreate_session() throw (utils::CException);
+    void recreate_session();
 
     // 得到当前连接的zookeeper host
     std::string get_connected_host() const throw ();
@@ -327,16 +327,23 @@ public:
     // 1) ZOO_OPEN_ACL_UNSAFE 全开放，不做权限控制
     // 2) ZOO_READ_ACL_UNSAFE 只读的
     // 3) ZOO_CREATOR_ALL_ACL 创建者拥有所有权限
-    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags, const struct ACL_vector *acl) throw (utils::CException);
-    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name) throw (utils::CException);
-    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data) throw (utils::CException);
-    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags) throw (utils::CException);
-    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, const struct ACL_vector *acl) throw (utils::CException);
+    //
+    // 出错抛异常CException
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags, const struct ACL_vector *acl);
+    // 出错抛异常CException
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name);
+    // 出错抛异常CException
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data);
+    // 出错抛异常CException
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags);
+    // 出错抛异常CException
+    void create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, const struct ACL_vector *acl);
 
     // 删除一个节点
     //
     // version 如果值为-1，则不做版本检查直接删除，否则因版本不致删除失败
-    void delete_node(const std::string& zk_path, int version=-1) throw (utils::CException);
+    // 出错抛异常CException
+    void delete_node(const std::string& zk_path, int version=-1);
 
     // 设置ACL（Access Control List）
     //
@@ -344,20 +351,25 @@ public:
     // 1) ZOO_OPEN_ACL_UNSAFE 全开放，不做权限控制
     // 2) ZOO_READ_ACL_UNSAFE 只读的
     // 3) ZOO_CREATOR_ALL_ACL 创建者拥有所有权限
-    void set_access_control_list(const std::string& zk_path, const struct ACL_vector *acl, int version=-1) throw (utils::CException);
+    //
+    // 出错抛异常CException
+    void set_access_control_list(const std::string& zk_path, const struct ACL_vector *acl, int version=-1);
 
     // 获取ACL
-    void get_access_control_list(const std::string& zk_path, struct ACL_vector *acl, struct Stat *stat) throw (utils::CException);
+    // 出错抛异常CException
+    void get_access_control_list(const std::string& zk_path, struct ACL_vector *acl, struct Stat *stat);
 
     // 取得指定路径下的所有子节点，返回子节点个数
-    int get_all_children(std::vector<std::string>* children, const std::string& zk_path, bool keep_watch=true) throw (utils::CException);
+    // 出错抛异常CException
+    int get_all_children(std::vector<std::string>* children, const std::string& zk_path, bool keep_watch=true);
 
     // 将指定节点的数据存储到文件
     // data_filepath 存储数据的文件
     // zk_path 数据所在zookeeper节点完整路径
     //
     // 返回数据的字节数
-    int store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch=true) throw (sys::CSyscallException, utils::CException);
+    // 出错抛异常CSyscallException和CException
+    int store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch=true);
 
 public: // 仅局限于被zk_watcher()调用，其它情况均不应当调用
     void zookeeper_session_connected(const char* path);
@@ -465,7 +477,7 @@ inline CZookeeperHelper::~CZookeeperHelper()
     (void)close_session();
 }
 
-inline int CZookeeperHelper::get_zk_data(const char* zk_path, std::string* zk_data, int data_size, bool keep_watch) const throw (utils::CException)
+inline int CZookeeperHelper::get_zk_data(const char* zk_path, std::string* zk_data, int data_size, bool keep_watch) const
 {
     const int watch = keep_watch? 1: 0;
     const int data_size_ = (data_size < 1)? 1: data_size;
@@ -485,14 +497,14 @@ inline int CZookeeperHelper::get_zk_data(const char* zk_path, std::string* zk_da
     }
 }
 
-inline std::string CZookeeperHelper::get_zk_data(const char* zk_path, int data_size, bool keep_watch) const throw (utils::CException)
+inline std::string CZookeeperHelper::get_zk_data(const char* zk_path, int data_size, bool keep_watch) const
 {
     std::string zk_data;
     (void)get_zk_data(zk_path, &zk_data, data_size, keep_watch);
     return zk_data;
 }
 
-inline void CZookeeperHelper::set_zk_data(const std::string& zk_path, const std::string& zk_data, struct Stat *stat, int version) throw (utils::CException)
+inline void CZookeeperHelper::set_zk_data(const std::string& zk_path, const std::string& zk_data, struct Stat *stat, int version)
 {
     int errcode;
     if (NULL == stat)
@@ -506,7 +518,7 @@ inline void CZookeeperHelper::set_zk_data(const std::string& zk_path, const std:
     }
 }
 
-inline void CZookeeperHelper::create_session(const std::string& zk_nodes, int session_timeout_seconds) throw (utils::CException)
+inline void CZookeeperHelper::create_session(const std::string& zk_nodes, int session_timeout_seconds)
 {
     if (zk_nodes.empty())
     {
@@ -527,7 +539,7 @@ inline void CZookeeperHelper::create_session(const std::string& zk_nodes, int se
     }
 }
 
-inline void CZookeeperHelper::close_session() throw (utils::CException)
+inline void CZookeeperHelper::close_session()
 {
     if (_zk_handle != NULL)
     {
@@ -546,7 +558,7 @@ inline void CZookeeperHelper::close_session() throw (utils::CException)
     }
 }
 
-inline void CZookeeperHelper::recreate_session() throw (utils::CException)
+inline void CZookeeperHelper::recreate_session()
 {
     close_session();
     _zk_handle = zookeeper_init(_zk_nodes.c_str(), zk_watcher, _expected_session_timeout_seconds, _zk_clientid, this, 0);
@@ -690,7 +702,7 @@ inline bool CZookeeperHelper::race_master(const std::string& zk_path, const std:
     }
 }
 
-inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags, const struct ACL_vector *acl) throw (utils::CException)
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags, const struct ACL_vector *acl)
 {
     const struct ACL_vector *acl_ = (NULL == acl)? &ZOO_OPEN_ACL_UNSAFE: acl;
     const std::string& zk_path = zk_parent_path + std::string("/") + zk_node_name;
@@ -701,7 +713,7 @@ inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, con
     }
 }
 
-inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name) throw (utils::CException)
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name)
 {
     const std::string zk_node_data;
     const int flags = -1;
@@ -709,26 +721,26 @@ inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, con
     create_node(zk_parent_path, zk_node_name, zk_node_data, flags, acl);
 }
 
-inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data) throw (utils::CException)
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data)
 {
     const int flags = -1;
     const struct ACL_vector *acl = NULL;
     create_node(zk_parent_path, zk_node_name, zk_node_data, flags, acl);
 }
 
-inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags) throw (utils::CException)
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, int flags)
 {
     const struct ACL_vector *acl = NULL;
     create_node(zk_parent_path, zk_node_name, zk_node_data, flags, acl);
 }
 
-inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, const struct ACL_vector *acl) throw (utils::CException)
+inline void CZookeeperHelper::create_node(const std::string& zk_parent_path, const std::string& zk_node_name, const std::string& zk_node_data, const struct ACL_vector *acl)
 {
     const int flags = -1;
     create_node(zk_parent_path, zk_node_name, zk_node_data, flags, acl);
 }
 
-inline void CZookeeperHelper::delete_node(const std::string& zk_path, int version) throw (utils::CException)
+inline void CZookeeperHelper::delete_node(const std::string& zk_path, int version)
 {
     const int errcode = zoo_delete(_zk_handle, zk_path.c_str(), version);
     if (errcode != ZOK)
@@ -737,7 +749,7 @@ inline void CZookeeperHelper::delete_node(const std::string& zk_path, int versio
     }
 }
 
-inline void CZookeeperHelper::set_access_control_list(const std::string& zk_path, const struct ACL_vector *acl, int version) throw (utils::CException)
+inline void CZookeeperHelper::set_access_control_list(const std::string& zk_path, const struct ACL_vector *acl, int version)
 {
     const int errcode = zoo_set_acl(_zk_handle, zk_path.c_str(), version, acl);
     if (errcode != ZOK)
@@ -746,7 +758,7 @@ inline void CZookeeperHelper::set_access_control_list(const std::string& zk_path
     }
 }
 
-inline void CZookeeperHelper::get_access_control_list(const std::string& zk_path, struct ACL_vector *acl, struct Stat *stat) throw (utils::CException)
+inline void CZookeeperHelper::get_access_control_list(const std::string& zk_path, struct ACL_vector *acl, struct Stat *stat)
 {
     const int errcode = zoo_get_acl(_zk_handle, zk_path.c_str(), acl, stat);
     if (errcode != ZOK)
@@ -755,7 +767,7 @@ inline void CZookeeperHelper::get_access_control_list(const std::string& zk_path
     }
 }
 
-inline int CZookeeperHelper::get_all_children(std::vector<std::string>* children, const std::string& zk_path, bool keep_watch) throw (utils::CException)
+inline int CZookeeperHelper::get_all_children(std::vector<std::string>* children, const std::string& zk_path, bool keep_watch)
 {
     struct String_vector strings;
     const int watch = keep_watch? 1: 0;
@@ -775,7 +787,7 @@ inline int CZookeeperHelper::get_all_children(std::vector<std::string>* children
     return static_cast<int>(children->size());
 }
 
-inline int CZookeeperHelper::store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch) throw (sys::CSyscallException, utils::CException)
+inline int CZookeeperHelper::store_data(const std::string& data_filepath, const std::string& zk_path, bool keep_watch)
 {
     int errcode = 0;
     std::string zk_data;

@@ -27,7 +27,7 @@ SYS_NAMESPACE_BEGIN
 void CDirUtils::list(const std::string& dirpath
                   , std::vector<std::string>* subdir_names
                   , std::vector<std::string>* file_names
-                  , std::vector<std::string>* link_names) throw (CSyscallException)
+                  , std::vector<std::string>* link_names)
 {
     int errcode = 0;
     DIR* dir = opendir(dirpath.c_str());
@@ -87,13 +87,13 @@ void CDirUtils::list(const std::string& dirpath
     closedir(dir);
 }
 
-void CDirUtils::remove(const std::string& dirpath) throw (CSyscallException)
+void CDirUtils::remove(const std::string& dirpath)
 {
     if (-1 == rmdir(dirpath.c_str()))
         THROW_SYSCALL_EXCEPTION(NULL, errno, "rmdir");
 }
 
-bool CDirUtils::exist(const std::string& dirpath) throw (CSyscallException)
+bool CDirUtils::exist(const std::string& dirpath)
 {
     struct stat buf;
 

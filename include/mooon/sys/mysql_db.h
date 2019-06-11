@@ -95,23 +95,23 @@ public:
     virtual bool is_server_handshake_exception(CDBException& db_error) const;
     virtual bool is_ipsock_exception(CDBException& db_error) const;
 
-    virtual std::string escape_string(const std::string& str) const throw (CDBException);
-    virtual void change_charset(const std::string& charset) throw (CDBException);
-    virtual void open() throw (CDBException);
+    virtual std::string escape_string(const std::string& str) const;
+    virtual void change_charset(const std::string& charset);
+    virtual void open();
     virtual void close() throw ();
-    virtual void reopen() throw (CDBException);
+    virtual void reopen();
 
     // 如果update的值并没变化返回0，否则返回变修改的行数
-    virtual uint64_t update(const char* format, ...) throw (CDBException) __attribute__((format(printf, 2, 3)));
+    virtual uint64_t update(const char* format, ...) __attribute__((format(printf, 2, 3)));
     virtual uint64_t get_insert_id() const;
     virtual std::string str() throw ();
 
-    virtual void ping() throw (CDBException);
-    virtual void commit() throw (CDBException);
-    virtual void rollback() throw (CDBException);
+    virtual void ping();
+    virtual void commit();
+    virtual void rollback();
 
     /** 是否允许自动提交事务，注意只有open()或reopen()成功之后，才可以调用 */
-    virtual void enable_autocommit(bool enabled) throw (CDBException);
+    virtual void enable_autocommit(bool enabled);
 
 public:
     // 如果构造函数的multistatements为true，即一次性执行多条语句（可为SELECT和UPDATE等组合），
@@ -136,19 +136,19 @@ public:
     // }
     //
     // CR_COMMANDS_OUT_OF_SYNC Commands were executed in an improper order.
-    void multi_statements(const char* sql, int sql_length) throw (CDBException);
+    void multi_statements(const char* sql, int sql_length);
 
     // 注意fetch_results和have_more_results的调用顺序
-    std::pair<bool,uint64_t> fetch_results(DBTable& db_table) throw (CDBException);
+    std::pair<bool,uint64_t> fetch_results(DBTable& db_table);
 
     // 注意fetch_results和have_more_results的调用顺序
-    bool have_more_results() const throw (CDBException);
+    bool have_more_results() const;
 
 private:
-    virtual void do_query(DBTable& db_table, const char* sql, int sql_length) throw (CDBException);
+    virtual void do_query(DBTable& db_table, const char* sql, int sql_length);
 
 private:
-    void do_open() throw (CDBException);
+    void do_open();
 
 private:
     void* _mysql_handle; // MySQL句柄

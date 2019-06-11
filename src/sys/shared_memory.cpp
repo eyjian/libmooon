@@ -25,7 +25,7 @@ CSysVSharedMemory::CSysVSharedMemory() throw ()
 {
 }
 
-void CSysVSharedMemory::open(const char* path) throw (CSyscallException)
+void CSysVSharedMemory::open(const char* path)
 {
     if (NULL == path)
         THROW_SYSCALL_EXCEPTION(NULL, EINVAL, NULL);
@@ -39,7 +39,7 @@ void CSysVSharedMemory::open(const char* path) throw (CSyscallException)
         THROW_SYSCALL_EXCEPTION(NULL, errno, "shmget");
 }
 
-bool CSysVSharedMemory::create(const char* path, mode_t mode) throw (CSyscallException)
+bool CSysVSharedMemory::create(const char* path, mode_t mode)
 {
     key_t key = IPC_PRIVATE;
     
@@ -62,7 +62,7 @@ bool CSysVSharedMemory::create(const char* path, mode_t mode) throw (CSyscallExc
     return true;
 }
 
-void CSysVSharedMemory::close() throw (CSyscallException)
+void CSysVSharedMemory::close()
 {
     if (_shmid != -1)
     {    
@@ -74,7 +74,7 @@ void CSysVSharedMemory::close() throw (CSyscallException)
     }
 }
 
-void CSysVSharedMemory::detach() throw (CSyscallException)
+void CSysVSharedMemory::detach()
 {
     if (_shmaddr != NULL)
     {
@@ -83,7 +83,7 @@ void CSysVSharedMemory::detach() throw (CSyscallException)
     }
 }
 
-void* CSysVSharedMemory::attach(int flag) throw (CSyscallException)
+void* CSysVSharedMemory::attach(int flag)
 {
     if (_shmaddr != NULL)
     {    

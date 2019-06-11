@@ -16,10 +16,10 @@ public:
     void reset();
     const void* get_post() const { return _post; }
 
-    void add_content(const std::string& name, const std::string& contents, const std::string& content_type=std::string("")) throw (utils::CException);
+    void add_content(const std::string& name, const std::string& contents, const std::string& content_type=std::string(""));
 
     // filepath 被上传的文件
-    void add_file(const std::string& name, const std::string& filepath, const std::string& content_type=std::string("")) throw (utils::CException);
+    void add_file(const std::string& name, const std::string& filepath, const std::string& content_type=std::string(""));
 
 private:
     void* _last;
@@ -57,12 +57,12 @@ public:
     // 指定nosignal为true时，DNS解析将不带超时，为此需要configure生成Makefile时指定c-ares（c-ares是一个异步DNS解析库）
     //
     // keepalive特性要求libcurl版本不低于7.25.0，否则忽略
-    CCurlWrapper(int data_timeout_seconds=2, int connect_timeout_seconds=2, bool nosignal=false, bool keepalive=false, int keepidle=120, int keepseconds=60) throw (utils::CException);
+    CCurlWrapper(int data_timeout_seconds=2, int connect_timeout_seconds=2, bool nosignal=false, bool keepalive=false, int keepidle=120, int keepseconds=60);
     ~CCurlWrapper() throw ();
 
     // 一个CCurlWrapper对象多次做不同的get或post调用时，
     // 应当在每次调用前先调用reset()清理掉上一次执行的状态。
-    void reset(bool clear_head_list=true, bool clear_cookie=true) throw (utils::CException);
+    void reset(bool clear_head_list=true, bool clear_cookie=true);
 
     // 添加http请求头名字对
     bool add_request_header(const std::string& name_value_pair);
@@ -72,37 +72,37 @@ public:
     // response_body 输出参数，存放响应的HTTP包体
     //
     // 重复调用之前，须先调用reset()清除上一次调用的状态
-    void http_get(std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
-    void proxy_http_get(std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
+    void http_get(std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
+    void proxy_http_get(std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
 
     // HTTP POST请求
     // 重复调用之前，须先调用reset()清除上一次调用的状态
-    void http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
-    void http_post(const CHttpPostData* http_post, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
+    void http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
+    void http_post(const CHttpPostData* http_post, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
 
-    void proxy_http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
-    void proxy_http_post(const CHttpPostData* http_post, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (utils::CException);
+    void proxy_http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
+    void proxy_http_post(const CHttpPostData* http_post, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
 
     // GET方式下载文件
     // 注意需要处理CSyscallException异常，如果没有创建和写local_filepath权限，会抛出这个异常。
-    void http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
-    void proxy_http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
+    void http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
+    void proxy_http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
 
     // POST方式下载文件
-    void http_post_download(const std::string& data, std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
-    void proxy_http_post_download(const std::string& data, std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL) throw (sys::CSyscallException, utils::CException);
+    void http_post_download(const std::string& data, std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
+    void proxy_http_post_download(const std::string& data, std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure=false, const char* cookie=NULL);
 
     std::string escape(const std::string& source);
     std::string unescape(const std::string& source_encoded);
 
 public:
     // 取得响应的状态码，如：200、403、500等
-    int get_response_code() const throw (utils::CException);
-    std::string get_response_content_type() const throw (utils::CException);
+    int get_response_code() const;
+    std::string get_response_content_type() const;
 
 private:
     // 重置操作
-    void reset(const std::string& url, const char* cookie, bool enable_insecure, size_t (*on_write_response_body_into_FILE_proc)(void*, size_t, size_t, void*)) throw (utils::CException);
+    void reset(const std::string& url, const char* cookie, bool enable_insecure, size_t (*on_write_response_body_into_FILE_proc)(void*, size_t, size_t, void*));
 
 private:
     void* _curl_version_info; // curl_version_info_data

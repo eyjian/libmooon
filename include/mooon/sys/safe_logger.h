@@ -51,14 +51,14 @@ extern CSafeLogger* create_safe_logger(
         bool enable_program_path=true,
         uint16_t log_line_size=SIZE_8K,
         const std::string& suffix=std::string(""),
-        bool enable_syslog=false) throw (CSyscallException);
+        bool enable_syslog=false);
 
 // 根据指定文件名创建日志文件
 extern CSafeLogger* create_safe_logger(
         const std::string& log_filename,
         uint16_t log_line_size=SIZE_8K,
         bool enable_program_path=true,
-        bool enable_syslog=false) throw (CSyscallException);
+        bool enable_syslog=false);
 
 // 根据程序文件创建CSafeLogger
 // 若因目录和文件名，或者创建、打开文件权限等问题，则会抛出CSyscallException异常
@@ -72,7 +72,7 @@ extern CSafeLogger* create_safe_logger(
         const std::string& log_dirpath,
         const std::string& cpp_filename,
         uint16_t log_line_size=8192,
-        bool enable_syslog=false) throw (CSyscallException);
+        bool enable_syslog=false);
 
 /**
   * 多线程和多进程安全的日志器
@@ -84,7 +84,7 @@ public:
             const char* log_dir,
             const char* log_filename,
             uint16_t log_line_size=8192,
-            bool enable_syslog=false) throw (CSyscallException);
+            bool enable_syslog=false);
     virtual ~CSafeLogger();
 
     virtual int get_log_level() const;

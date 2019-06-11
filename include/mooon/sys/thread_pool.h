@@ -44,7 +44,7 @@ public:
       * @exception: 可抛出CSyscallException异常，
       *             如果是因为CPoolThread::before_start返回false，则出错码为0
       */
-    void create(uint16_t thread_count, void* parameter=NULL) throw (CSyscallException)
+    void create(uint16_t thread_count, void* parameter=NULL)
     {
         _thread_array = new ThreadClass*[thread_count];
         for (uint16_t i=0; i<thread_count; ++i)
@@ -70,7 +70,7 @@ public:
     }
 
     /** 销毁线程池，这里会等待所有线程退出，然后删除线程 */
-    void destroy() throw (CSyscallException)
+    void destroy()
     {
         if (_thread_array != NULL)
         {
@@ -91,7 +91,7 @@ public:
       * 激活线程池，将池中的所有线程唤醒，
       * 也可以单独调用各池线程的wakeup将它们唤醒
       */
-    void activate() throw (CSyscallException)
+    void activate()
     {
         for (uint16_t i=0; i<_thread_count; ++i)
             _thread_array[i]->wakeup();

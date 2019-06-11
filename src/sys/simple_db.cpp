@@ -99,7 +99,7 @@ void CDBConnectionBase::set_null_value(const std::string& null_value)
     _null_value = null_value;
 }
     
-void CDBConnectionBase::query(DBTable& db_table, const char* format, ...) throw (CDBException)
+void CDBConnectionBase::query(DBTable& db_table, const char* format, ...)
 {
     int excepted = 0;
     size_t sql_size = _sql_size;
@@ -128,7 +128,7 @@ void CDBConnectionBase::query(DBTable& db_table, const char* format, ...) throw 
     do_query(db_table, sql.get(), excepted);
 }
 
-void CDBConnectionBase::query(DBRow& db_row, const char* format, ...) throw (CDBException)
+void CDBConnectionBase::query(DBRow& db_row, const char* format, ...)
 {
     DBTable db_table;
     int excepted = 0;
@@ -167,7 +167,7 @@ void CDBConnectionBase::query(DBRow& db_row, const char* format, ...) throw (CDB
     }
 }
 
-std::string CDBConnectionBase::query(const char* format, ...) throw (CDBException)
+std::string CDBConnectionBase::query(const char* format, ...)
 {
     DBTable db_table;
     int excepted = 0;
@@ -218,22 +218,22 @@ std::string CDBConnectionBase::query(const char* format, ...) throw (CDBExceptio
     return result;
 }
 
-void CDBConnectionBase::ping() throw (CDBException)
+void CDBConnectionBase::ping()
 {
     THROW_DB_EXCEPTION(NULL, "not supported", DB_NOT_SUPPORTED);
 }
 
-void CDBConnectionBase::commit() throw (CDBException)
+void CDBConnectionBase::commit()
 {
     THROW_DB_EXCEPTION(NULL, "not supported", DB_NOT_SUPPORTED);
 }
 
-void CDBConnectionBase::rollback() throw (CDBException)
+void CDBConnectionBase::rollback()
 {
     THROW_DB_EXCEPTION(NULL, "not supported", DB_NOT_SUPPORTED);
 }
 
-void CDBConnectionBase::enable_autocommit(bool enabled) throw (CDBException)
+void CDBConnectionBase::enable_autocommit(bool enabled)
 {
     THROW_DB_EXCEPTION(NULL, "not supported", DB_NOT_SUPPORTED);
 }

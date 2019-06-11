@@ -39,18 +39,18 @@ public:
     ~CSQLite3Connection();
 
 public:
-    virtual void open() throw (CDBException);
+    virtual void open();
     virtual void close() throw ();
-    virtual void reopen() throw (CDBException);
+    virtual void reopen();
 
-    virtual uint64_t update(const char* format, ...) throw (CDBException) __attribute__((format(printf, 2, 3)));
+    virtual uint64_t update(const char* format, ...) __attribute__((format(printf, 2, 3)));
     virtual std::string str() throw ();
 
 private:
-    virtual void do_query(DBTable& db_table, const char* sql, int sql_length) throw (CDBException);
+    virtual void do_query(DBTable& db_table, const char* sql, int sql_length);
 
 private:
-    void do_open() throw (CDBException);
+    void do_open();
 
 private:
     void* _sqlite;

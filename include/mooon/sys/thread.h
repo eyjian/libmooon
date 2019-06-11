@@ -40,33 +40,33 @@ private:
     /** 在启动线程之前被调用的回调函数，如果返回false，则会导致start调用也返回false。
       * 可以重写该函数，将线程启动之前的逻辑放在这里。
       */
-    virtual void before_start() throw (utils::CException, CSyscallException) {}
+    virtual void before_start() {}
 
     /***
       * stop执行前可安插的动作
       */
-    virtual void before_stop() throw (utils::CException, CSyscallException) {}
+    virtual void before_stop() {}
 
 public:
     /** 得到当前线程号 */
     static uint32_t get_current_thread_id() throw ();
 
 public:
-	CThread() throw (utils::CException, CSyscallException);
+	CThread();
 	virtual ~CThread();
 
     /** 将_stop成员设置为true，线程可以根据_stop状态来决定是否退出线程
       * @wait_stop: 是否等待线程结束，只有当线程是可Join时才有效
       * @exception: 当wait_stop为true时，抛出和join相同的异常，否则不抛异常
       */
-    virtual void stop(bool wait_stop=true) throw (utils::CException, CSyscallException);
+    virtual void stop(bool wait_stop=true);
 
     /** 启动线程
       * @detach: 是否以可分离模式启动线程
       * @exception: 如果失败，则抛出CSyscallException异常，
       *             如果是因为before_start返回false，则出错码为0
       */
-	void start(bool detach=false) throw (utils::CException, CSyscallException);
+	void start(bool detach=false);
 
     /** 设置线程栈大小。应当在start之前调用，否则设置无效，如放在before_start当中。
       * @stack_size: 栈大小字节数
@@ -77,7 +77,7 @@ public:
     /** 得到线程栈大小字节数
       * @exception: 如果失败，则抛出CSyscallException异常
       */
-    size_t get_stack_size() const throw (CSyscallException);
+    size_t get_stack_size() const;
 
     /** 得到本线程号 */
     uint32_t get_thread_id() const { return _thread; }
@@ -85,19 +85,19 @@ public:
     /** 等待线程返回
       * @exception: 如果失败，则抛出CSyscallException异常
       */
-    void join() throw (CSyscallException);
+    void join();
 
     /** 将线程设置为可分离的，
       * 请注意一旦将线程设置为可分离的，则不能再转换为可join。
       * @exception: 如果失败，则抛出CSyscallException异常
       */
-    void detach() throw (CSyscallException);
+    void detach();
 
     /** 返回线程是否可join
       * @return: 如果线程可join则返回true，否则返回false
       * @exception: 如果失败，则抛出CSyscallException异常
       */
-    bool can_join() const throw (CSyscallException);
+    bool can_join() const;
 
     /***
       * 如果线程正处于等待状态，则唤醒
@@ -114,10 +114,10 @@ protected: // 仅供子类使用
       * 毫秒级sleep，线程可以调用它进入睡眠状态，并且可以通过调用do_wakeup唤醒，
       * 请注意只本线程可以调用此函数，其它线程调用无效
       */
-    void do_millisleep(int milliseconds) throw (CSyscallException);
+    void do_millisleep(int milliseconds);
 
 private:
-    void do_wakeup(bool stop) throw (CSyscallException);
+    void do_wakeup(bool stop);
 
 protected:
     CLock _lock; /** 同步锁，可供子类使用 */

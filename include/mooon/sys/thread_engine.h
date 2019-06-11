@@ -905,7 +905,7 @@ public:
     }
 
 public:
-    CThreadEngine(const Functor& functor) throw (CSyscallException)
+    CThreadEngine(const Functor& functor)
         : _thread(0)
     {
         // bind()返回的是一个临时对象，
@@ -952,7 +952,7 @@ public:
         return ret != ESRCH; // 3 (No such process)
     }
 
-    void detach() throw (CSyscallException)
+    void detach()
     {
         int ret = pthread_detach(_thread);
         if (ret != 0)

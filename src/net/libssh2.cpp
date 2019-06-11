@@ -97,7 +97,7 @@ static void kbd_callback(const char *name, int name_len,
     (void)abstract;
 } /* kbd_callback */
 
-void CLibssh2::init() throw (utils::CException)
+void CLibssh2::init()
 {
     int errcode = libssh2_init(0);
     if (errcode != 0)
@@ -109,7 +109,7 @@ void CLibssh2::fini()
     libssh2_exit();
 }
 
-CLibssh2::CLibssh2(const std::string& ip, uint16_t port, const std::string& username, const std::string& password, uint32_t timeout_seconds, bool nonblocking) throw (utils::CException, sys::CSyscallException)
+CLibssh2::CLibssh2(const std::string& ip, uint16_t port, const std::string& username, const std::string& password, uint32_t timeout_seconds, bool nonblocking)
     : _socket_fd(-1), _session(NULL), _ip(ip), _port(port), _username(username), _timeout_seconds(timeout_seconds)
 {
     create_session(nonblocking);
@@ -134,7 +134,7 @@ CLibssh2::~CLibssh2()
 
 void CLibssh2::remotely_execute(
     const std::string& command, std::ostream& out,
-    int* exitcode, std::string* exitsignal, std::string* errmsg, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException)
+    int* exitcode, std::string* exitsignal, std::string* errmsg, int64_t* num_bytes)
 {
     LIBSSH2_CHANNEL* channel = static_cast<LIBSSH2_CHANNEL*>(open_ssh_channel());
 
@@ -170,7 +170,7 @@ void CLibssh2::remotely_execute(
     *exitcode = close_ssh_channel(channel, exitsignal, errmsg);
 }
 
-void CLibssh2::download(const std::string& remote_filepath, std::ostream& out, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException)
+void CLibssh2::download(const std::string& remote_filepath, std::ostream& out, int64_t* num_bytes)
 {
     struct stat fileinfo;
     LIBSSH2_CHANNEL* channel = static_cast<LIBSSH2_CHANNEL*>(open_scp_read_channel(remote_filepath, &fileinfo));
@@ -187,7 +187,7 @@ void CLibssh2::download(const std::string& remote_filepath, std::ostream& out, i
     }
 }
 
-void CLibssh2::upload(const std::string& local_filepath, const std::string& remote_filepath, int64_t* num_bytes) throw (utils::CException, sys::CSyscallException)
+void CLibssh2::upload(const std::string& local_filepath, const std::string& remote_filepath, int64_t* num_bytes)
 {
     int local_fd = -1;
     LIBSSH2_CHANNEL* channel = NULL;

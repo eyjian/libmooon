@@ -33,25 +33,25 @@ private:
     {
     public:
         CPoolThreadHelper(CPoolThread* pool_thread);
-        void millisleep(int milliseconds) throw (CSyscallException);
+        void millisleep(int milliseconds);
 
     private:
         virtual void run();
-        virtual void before_start() throw (utils::CException, CSyscallException);
-        virtual void before_stop() throw (utils::CException, CSyscallException);
+        virtual void before_start();
+        virtual void before_stop();
 
     private:		
         CPoolThread* _pool_thread;
     };
 
 protected: // 禁止直接创建CPoolThread的实例
-    CPoolThread() throw (utils::CException, CSyscallException);
+    CPoolThread();
     virtual ~CPoolThread();
     /***
       * 毫秒级sleep，线程可以调用它进入睡眠状态，并且可以通过调用wakeup唤醒，
       * 请注意只本线程可以调用此函数，其它线程调用无效
       */
-    void do_millisleep(int milliseconds) throw (CSyscallException);
+    void do_millisleep(int milliseconds);
 
 private:    
     /***
@@ -73,12 +73,12 @@ private:
     /***
       * start执行前被调用
       */
-    virtual void before_start() throw (utils::CException, CSyscallException) {}
+    virtual void before_start() {}
 
     /***
       * stop执行前可安插的动作
       */
-    virtual void before_stop() throw (utils::CException, CSyscallException) {}
+    virtual void before_stop() {}
 
     /** 设置线程在池中的顺序号 */
     void set_index(uint16_t index) { _index = index; }    
@@ -92,7 +92,7 @@ public:
       * 唤醒池线程，池线程启动后，都会进入睡眠状态，
       * 直接调用wakeup将它唤醒
       */
-    void wakeup() throw (CSyscallException);
+    void wakeup();
 
     /***
       * 得到池线程在线程池中的序号，序号从0开始，
@@ -109,14 +109,14 @@ public:
     /** 得到线程栈大小字节数
       * @exception: 如果失败，则抛出CSyscallException异常
       */
-    size_t get_stack_size() const throw (CSyscallException);
+    size_t get_stack_size() const;
 
     /** 得到本线程号 */
     uint32_t get_thread_id() const throw ();
 
 private:
-    void start() throw (CSyscallException);  /** 仅供CThreadPool调用 */
-    void stop() throw (CSyscallException);   /** 仅供CThreadPool调用 */
+    void start();  /** 仅供CThreadPool调用 */
+    void stop();   /** 仅供CThreadPool调用 */
 	
 private:	
     uint16_t _index;  /** 池线程在池中的位置 */

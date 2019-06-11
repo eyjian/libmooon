@@ -34,7 +34,7 @@ public:
       * @path: 用来创建共享内存的路径(包含文件名)，不能为NULL
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    void open(const char* path) throw (CSyscallException);
+    void open(const char* path);
 
     /***
       * 创建一个共享内存
@@ -43,26 +43,26 @@ public:
       * @return: 如果已经存在则返回false，否则返回true
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    bool create(const char* path, mode_t mode=IPC_DEFAULT_PERM) throw (CSyscallException);
+    bool create(const char* path, mode_t mode=IPC_DEFAULT_PERM);
     
     /***
       * 关闭已经创建或打开的共享内存，
       * 如果已经没有进程关联到此共享内存，则删除它
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    void close() throw (CSyscallException);
+    void close();
 
     /***
       * 解除和共享内存的关联，将共享内存从进程空间中移除
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    void detach() throw (CSyscallException);
+    void detach();
 
     /***
       * 关联共享内存，将共享内存映射到进程空间
       * @exception: 如果出错则抛出CSyscallException异常
       */
-    void* attach(int flag) throw (CSyscallException);
+    void* attach(int flag);
 
     /***
       * 得到共享内存的地址

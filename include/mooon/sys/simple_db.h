@@ -102,7 +102,7 @@ public:
 
     // 对字符串进行编码，以防止SQL注入
     // str 需要编码的字符串，返回被编码后的字符串
-    virtual std::string escape_string(const std::string& str) const throw (CDBException) = 0;
+    virtual std::string escape_string(const std::string& str) const = 0;
 
     /***
      * 设置需要连接的DB的IP和服务端口号
@@ -172,13 +172,13 @@ public:
      * 设置或修改连接的字符集
      * 如果charset为空，则什么也不做
      */
-    virtual void change_charset(const std::string& charset) throw (CDBException) {}
+    virtual void change_charset(const std::string& charset) {}
 
     /***
      * 建立一个DB连接
      * 出错抛出异常CDBException
      */
-    virtual void open() throw (CDBException) = 0;
+    virtual void open() = 0;
 
     /**
      * 关闭一个DB连接
@@ -191,7 +191,7 @@ public:
      * reopen()会先调用close()关闭连接，然后才重新建立连接，
      * 因此调用reopen()之前，可不调用close()，当然即使调用了close()也不会有问题
      */
-    virtual void reopen() throw (CDBException) = 0;
+    virtual void reopen() = 0;
 
     /***
       * 数据库查询类操作，包括：select, show, describe, explain和check table等，
@@ -206,7 +206,7 @@ public:
       * 注意使用了双%号，否则像“%m”会被query内部调用的vsnprintf解析成它自身内置的“%m”，
       * 比如预期结果为201611，实际返回结果变成了2016success，就是因为这个原因！
       */
-    virtual void query(DBTable& db_table, const char* format, ...) throw (CDBException) __attribute__((format(printf, 3, 4))) = 0;
+    virtual void query(DBTable& db_table, const char* format, ...) __attribute__((format(printf, 3, 4))) = 0;
 
     /**
      * 查询，期望只返回一行记录，
@@ -214,7 +214,7 @@ public:
      * 如果查询失败，抛出CDBException异常，异常的错误码为-1，
      * 如果查询实际返回超过一行记录，抛出CDBException异常，异常的错误码为DB_ERROR_TOO_MANY_ROWS
      */
-    virtual void query(DBRow& db_row, const char* format, ...) throw (CDBException) __attribute__((format(printf, 3, 4))) = 0;
+    virtual void query(DBRow& db_row, const char* format, ...) __attribute__((format(printf, 3, 4))) = 0;
 
     /**
      * 查询，期望只返回单行单列，
@@ -223,14 +223,14 @@ public:
      * 如果查询实际返回超过一行记录，抛出CDBException异常，异常的错误码为DB_ERROR_TOO_MANY_ROWS，
      * 如果查询实际返回只有一行，但超过一列，则抛出CDBException异常，异常的错误码为DB_ERROR_TOO_MANY_COLS
      */
-    virtual std::string query(const char* format, ...) throw (CDBException) __attribute__((format(printf, 2, 3))) = 0;
+    virtual std::string query(const char* format, ...) __attribute__((format(printf, 2, 3))) = 0;
 
     /***
       * 数据库insert和update更新操作
       * 对于MySQL如果update的值并没变化返回0，否则返回变修改的行数
       * 出错则抛出CDBException异常
       */
-    virtual uint64_t update(const char* format, ...) throw (CDBException) __attribute__((format(printf, 2, 3))) = 0;
+    virtual uint64_t update(const char* format, ...) __attribute__((format(printf, 2, 3))) = 0;
 
     /***
      * 取得insert_id，对MySQL有效
@@ -242,12 +242,12 @@ public:
      */
     virtual std::string str() throw () = 0;
 
-    virtual void ping() throw (CDBException) = 0;
-    virtual void commit() throw (CDBException) = 0;
-    virtual void rollback() throw (CDBException) = 0;
+    virtual void ping() = 0;
+    virtual void commit() = 0;
+    virtual void rollback() = 0;
 
     /** 是否允许自动提交事务，注意只有open()或reopen()成功之后，才可以调用 */
-    virtual void enable_autocommit(bool enabled) throw (CDBException) = 0;
+    virtual void enable_autocommit(bool enabled) = 0;
 
     /** 是否已建立DB连接 */
     virtual bool is_established() const = 0;
@@ -263,7 +263,7 @@ public:
     CDBConnectionBase(size_t sql_size);
 
 public:
-    virtual std::string escape_string(const std::string& str) const  throw (CDBException) { return str; }
+    virtual std::string escape_string(const std::string& str) const  { return str; }
     virtual void set_host(const std::string& db_ip, uint16_t db_port);
     virtual void set_db_name(const std::string& db_name);
     virtual void set_user(const std::string& db_user, const std::string& db_password);
@@ -276,22 +276,22 @@ public:
     virtual void set_null_value(const std::string& null_value);
 
 public:
-    virtual void query(DBTable& db_table, const char* format, ...) throw (CDBException) __attribute__((format(printf, 3, 4)));
-    virtual void query(DBRow& db_row, const char* format, ...) throw (CDBException) __attribute__((format(printf, 3, 4)));
-    virtual std::string query(const char* format, ...) throw (CDBException) __attribute__((format(printf, 2, 3)));
+    virtual void query(DBTable& db_table, const char* format, ...) __attribute__((format(printf, 3, 4)));
+    virtual void query(DBRow& db_row, const char* format, ...) __attribute__((format(printf, 3, 4)));
+    virtual std::string query(const char* format, ...) __attribute__((format(printf, 2, 3)));
 
-    virtual void ping() throw (CDBException);
-    virtual void commit() throw (CDBException);
-    virtual void rollback() throw (CDBException);
+    virtual void ping();
+    virtual void commit();
+    virtual void rollback();
 
     /** 是否允许自动提交事务，注意只有open()或reopen()成功之后，才可以调用 */
-    virtual void enable_autocommit(bool enabled) throw (CDBException);
+    virtual void enable_autocommit(bool enabled);
 
     /** 是否已建立DB连接 */
     virtual bool is_established() const;
 
 private:
-    virtual void do_query(DBTable& db_table, const char* sql, int sql_length) throw (CDBException) = 0;
+    virtual void do_query(DBTable& db_table, const char* sql, int sql_length) = 0;
 
 protected:
     const size_t _sql_size; // 支持的最大SQL语句长度，单位为字节数，不含结尾符

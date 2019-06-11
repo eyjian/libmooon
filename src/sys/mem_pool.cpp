@@ -172,25 +172,25 @@ uint32_t CRawMemPool::get_available_number() const throw ()
 //////////////////////////////////////////////////////////////////////////
 // CThreadMemPool
 
-void CThreadMemPool::destroy() throw (CSyscallException)
+void CThreadMemPool::destroy()
 {
     LockHelper<CLock> lock_helper(_lock);
     _raw_mem_pool.destroy();
 }
 
-void CThreadMemPool::create(uint16_t bucket_size, uint32_t bucket_number, bool use_heap, uint8_t guard_size, char guard_flag) throw (CSyscallException)
+void CThreadMemPool::create(uint16_t bucket_size, uint32_t bucket_number, bool use_heap, uint8_t guard_size, char guard_flag)
 {
     LockHelper<CLock> lock_helper(_lock);
     _raw_mem_pool.create(bucket_size, bucket_number, use_heap, guard_size, guard_flag);
 }
 
-void* CThreadMemPool::allocate() throw (CSyscallException)
+void* CThreadMemPool::allocate()
 {
     LockHelper<CLock> lock_helper(_lock);
     return _raw_mem_pool.allocate();
 }
 
-bool CThreadMemPool::reclaim(void* bucket) throw (CSyscallException)
+bool CThreadMemPool::reclaim(void* bucket)
 {
     LockHelper<CLock> lock_helper(_lock);
     return _raw_mem_pool.reclaim(bucket);

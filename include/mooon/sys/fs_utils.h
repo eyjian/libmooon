@@ -64,7 +64,7 @@ public:
       * @stat_buf: 存储统计信息
       * @exception: 如果发生错误，则抛出CSyscallException异常
       */
-    static void stat_fs(int fd, fs_stat_t& stat_buf) throw (CSyscallException);
+    static void stat_fs(int fd, fs_stat_t& stat_buf);
 
     /***
       * 统计指定路径所指向的文件所在的文件系统，得到该文件系统的数据信息
@@ -72,7 +72,7 @@ public:
       * @stat_buf: 存储统计信息
       * @exception: 如果发生错误，则抛出CSyscallException异常
       */
-    static void stat_fs(const char* path, fs_stat_t& stat_buf) throw (CSyscallException);
+    static void stat_fs(const char* path, fs_stat_t& stat_buf);
 };
 
 /***

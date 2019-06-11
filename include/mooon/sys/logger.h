@@ -209,8 +209,8 @@ public:
 
 private:
     virtual void run();
-    virtual void before_stop() throw (utils::CException, CSyscallException);
-    virtual void before_start() throw (utils::CException, CSyscallException);
+    virtual void before_stop();
+    virtual void before_start();
     virtual bool execute();
 
 private:

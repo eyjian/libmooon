@@ -95,10 +95,10 @@ private:
 class CThreadMemPool
 {
 public:
-    CThreadMemPool() throw (CSyscallException) {}
+    CThreadMemPool() {}
 
     /** 销毁由create创建的内存池 */
-    void destroy() throw (CSyscallException);
+    void destroy();
 
     /***
       * 创建内存池
@@ -108,14 +108,14 @@ public:
       * @guard_size: 警戒大小
       * @guard_flag: 警戒标识
       */
-    void create(uint16_t bucket_size, uint32_t bucket_number, bool use_heap=true, uint8_t guard_size=1, char guard_flag='m') throw (CSyscallException);
+    void create(uint16_t bucket_size, uint32_t bucket_number, bool use_heap=true, uint8_t guard_size=1, char guard_flag='m');
 
     /***
       * 分配内存内存
       * @return: 如果内存池不够，且设置了从堆上分配内存，则返回从堆上分配的内存，
       *          否则如果内存池不够时返回NULL，否则返回从内存池中分配的内存
       */
-    void* allocate() throw (CSyscallException);
+    void* allocate();
 
     /***
       * 回收内存内存
@@ -124,7 +124,7 @@ public:
       *          则检查是否为正确的池内存，如果是则回收并返回true，其它情况返回false
       * @return: 如果被回收或删除返回true，否则返回false
       */
-    bool reclaim(void* bucket) throw (CSyscallException);
+    bool reclaim(void* bucket);
 
     /** 返回当内存池不够用时，是否从堆上分配内存 */
     bool use_heap() const throw ();

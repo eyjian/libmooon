@@ -46,17 +46,17 @@ void CPoolThread::CPoolThreadHelper::run()
     }
 }
 
-void CPoolThread::CPoolThreadHelper::before_start() throw (utils::CException, CSyscallException)
+void CPoolThread::CPoolThreadHelper::before_start()
 {
     _pool_thread->before_start();
 }
 
-void CPoolThread::CPoolThreadHelper::before_stop() throw (utils::CException, CSyscallException)
+void CPoolThread::CPoolThreadHelper::before_stop()
 {
     _pool_thread->before_stop();
 }
 
-void CPoolThread::CPoolThreadHelper::millisleep(int milliseconds) throw (CSyscallException)
+void CPoolThread::CPoolThreadHelper::millisleep(int milliseconds)
 {
     do_millisleep(milliseconds);
 }
@@ -64,7 +64,7 @@ void CPoolThread::CPoolThreadHelper::millisleep(int milliseconds) throw (CSyscal
 //////////////////////////////////////////////////////////////////////////
 // CPoolThread
 
-CPoolThread::CPoolThread() throw (utils::CException, CSyscallException)
+CPoolThread::CPoolThread()
 	:_index(std::numeric_limits<uint16_t>::max())
 {
     _pool_thread_helper = new CPoolThreadHelper(this);
@@ -76,17 +76,17 @@ CPoolThread::~CPoolThread()
     _pool_thread_helper->dec_refcount();
 }
 
-void CPoolThread::wakeup() throw (CSyscallException)
+void CPoolThread::wakeup()
 {
 	_pool_thread_helper->wakeup();
 }
 
-void CPoolThread::start() throw (CSyscallException)
+void CPoolThread::start()
 {
     _pool_thread_helper->start();
 }
 
-void CPoolThread::stop() throw (CSyscallException)
+void CPoolThread::stop()
 {
     _pool_thread_helper->stop();    
 }
@@ -96,7 +96,7 @@ void CPoolThread::set_stack_size(size_t stack_size) throw ()
     _pool_thread_helper->set_stack_size(stack_size);
 }
 
-size_t CPoolThread::get_stack_size() const throw (CSyscallException)
+size_t CPoolThread::get_stack_size() const
 {
     return _pool_thread_helper->get_stack_size();
 }
@@ -106,7 +106,7 @@ uint32_t CPoolThread::get_thread_id() const throw ()
     return _pool_thread_helper->get_thread_id();
 }
 
-void CPoolThread::do_millisleep(int milliseconds) throw (CSyscallException)
+void CPoolThread::do_millisleep(int milliseconds)
 {
     _pool_thread_helper->millisleep(milliseconds);
 }

@@ -14,42 +14,42 @@ SYS_NAMESPACE_BEGIN
 class CReadWriteLock
 {
 public:
-	CReadWriteLock() throw (CSyscallException);
+	CReadWriteLock();
 	~CReadWriteLock() throw ();
 
     /***
       * 释放读或写锁
       * @exception: 出错抛出CSyscallException异常
       */
-	void unlock() throw (CSyscallException);
+	void unlock();
 
     /***
       * 获取读锁，如果写锁正被持有则一直等待直到可获取到读锁
       * 注意同一个线程加了同一个对象的读锁后再加写锁会死锁！！！
       * @exception: 出错抛出CSyscallException异常
       */
-	void lock_read() throw (CSyscallException);
+	void lock_read();
 
     /***
       * 获取写锁，如果写锁正被持有则一直等待直到可获取到写锁
       * 注意同一个线程加了同一个对象的读锁后再加写锁会死锁！！！
       * @exception: 出错抛出CSyscallException异常
       */
-	void lock_write() throw (CSyscallException);
+	void lock_write();
 
     /***
       * 尝试去获取读锁，如果写锁正被持有则立即返回
       * @return: 如果成功获取了读锁，则返回true，否则返回false
       * @exception: 出错抛出CSyscallException异常
       */
-	bool try_lock_read() throw (CSyscallException);
+	bool try_lock_read();
 
     /***
       * 尝试去获取写锁，如果写锁正被持有则立即返回
       * @return: 如果成功获取了写锁，则返回true，否则返回false
       * @exception: 出错抛出CSyscallException异常
       */
-	bool try_lock_write() throw (CSyscallException);
+	bool try_lock_write();
 
     /***
       * 以超时方式获取读锁，如果写锁正被持有则等待指定的毫秒数，
@@ -58,7 +58,7 @@ public:
       * @return: 如果在指定的毫秒时间内获取到了读锁，则返回true，否则如果超时则返回false
       * @exception: 出错抛出CSyscallException异常
       */
-	bool timed_lock_read(uint32_t millisecond) throw (CSyscallException);
+	bool timed_lock_read(uint32_t millisecond);
 
     /***
       * 以超时方式获取写锁，如果写锁正被持有则等待指定的毫秒数，
@@ -67,7 +67,7 @@ public:
       * @return: 如果在指定的毫秒时间内获取到了写锁，则返回true，否则如果超时则返回false
       * @exception: 出错抛出CSyscallException异常
       */
-	bool timed_lock_write(uint32_t millisecond) throw (CSyscallException);
+	bool timed_lock_write(uint32_t millisecond);
 	
 private:
 	pthread_rwlock_t _rwlock;

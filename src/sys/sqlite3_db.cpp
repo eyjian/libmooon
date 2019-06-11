@@ -40,7 +40,7 @@ CSQLite3Connection::~CSQLite3Connection()
     close(); // 不要在父类的析构中调用虚拟函数
 }
 
-void CSQLite3Connection::open() throw (CDBException)
+void CSQLite3Connection::open()
 {
     sqlite3* sqlite = NULL;
 
@@ -78,14 +78,14 @@ void CSQLite3Connection::close() throw ()
     }
 }
 
-void CSQLite3Connection::reopen() throw (CDBException)
+void CSQLite3Connection::reopen()
 {
     // 先关闭释放资源，才能再建立
     close();
     open();
 }
 
-uint64_t CSQLite3Connection::update(const char* format, ...) throw (CDBException)
+uint64_t CSQLite3Connection::update(const char* format, ...)
 {
     MOOON_ASSERT(_sqlite != NULL);
 
@@ -134,7 +134,7 @@ std::string CSQLite3Connection::str() throw ()
     return _id;
 }
 
-void CSQLite3Connection::do_query(DBTable& db_table, const char* sql, int sql_length) throw (CDBException)
+void CSQLite3Connection::do_query(DBTable& db_table, const char* sql, int sql_length)
 {
     MOOON_ASSERT(_sqlite != NULL);
 

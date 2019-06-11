@@ -925,12 +925,12 @@ void CLogThread::run()
     remove_object(this);
 }
 
-void CLogThread::before_stop() throw (utils::CException, CSyscallException)
+void CLogThread::before_stop()
 {
     send_signal();
 }
 
-void CLogThread::before_start() throw (utils::CException, CSyscallException)
+void CLogThread::before_start()
 {
     // 创建Epoll
     _epoll_fd = epoll_create(LOGGER_NUMBER_MAX);

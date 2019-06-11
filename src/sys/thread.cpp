@@ -29,7 +29,7 @@ static void* thread_proc(void* thread_param)
     return NULL;
 }
 
-CThread::CThread() throw (utils::CException, CSyscallException)
+CThread::CThread()
     :_lock(true)
     ,_stop(false)
     ,_current_state(state_sleeping)
@@ -51,7 +51,7 @@ uint32_t CThread::get_current_thread_id() throw ()
     return pthread_self();
 }
 
-void CThread::start(bool detach) throw (utils::CException, CSyscallException)
+void CThread::start(bool detach)
 {
     int errcode = 0;
 
@@ -82,7 +82,7 @@ void CThread::start(bool detach) throw (utils::CException, CSyscallException)
     }
 }
 
-size_t CThread::get_stack_size() const throw (CSyscallException)
+size_t CThread::get_stack_size() const
 {
     size_t stack_size = 0;
     int errcode = pthread_attr_getstacksize(&_attr, &stack_size);
@@ -92,7 +92,7 @@ size_t CThread::get_stack_size() const throw (CSyscallException)
     return stack_size;
 }
 
-void CThread::join() throw (CSyscallException)
+void CThread::join()
 {
     // 线程自己不能调用join
     if (CThread::get_current_thread_id() != this->get_thread_id())
@@ -106,14 +106,14 @@ void CThread::join() throw (CSyscallException)
     }
 }
 
-void CThread::detach() throw (CSyscallException)
+void CThread::detach()
 {
     int errcode = pthread_detach(_thread);
     if (errcode != 0)
         THROW_SYSCALL_EXCEPTION(NULL, errcode, "pthread_detach");
 }
 
-bool CThread::can_join() const throw (CSyscallException)
+bool CThread::can_join() const
 {
     int detachstate;
     int errcode = pthread_attr_getdetachstate(&_attr, &detachstate);
@@ -128,7 +128,7 @@ bool CThread::is_stop() const throw ()
     return _stop;
 }
 
-void CThread::do_wakeup(bool stop) throw (CSyscallException)
+void CThread::do_wakeup(bool stop)
 {   
     // 线程终止标识
     if (stop) _stop = stop;
@@ -151,7 +151,7 @@ void CThread::wakeup()
     do_wakeup(false);    
 }
 
-void CThread::stop(bool wait_stop) throw (utils::CException, CSyscallException)
+void CThread::stop(bool wait_stop)
 {
     if (!_stop)
     {
@@ -166,7 +166,7 @@ void CThread::stop(bool wait_stop) throw (utils::CException, CSyscallException)
     }
 }
 
-void CThread::do_millisleep(int milliseconds) throw (CSyscallException)
+void CThread::do_millisleep(int milliseconds)
 {
     // 非本线程调用无效
     if (this->get_thread_id() == CThread::get_current_thread_id())

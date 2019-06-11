@@ -36,7 +36,7 @@ public:
       * @queue_max: 队列最大可容纳的元素个数
       * @exception: 如果出错，则抛出CSyscallException异常
       */
-    CEpollableQueue(uint32_t queue_max) throw (sys::CSyscallException)
+    CEpollableQueue(uint32_t queue_max)
         :_raw_queue(queue_max)
         ,_push_waiter_number(0)
     {
@@ -143,7 +143,7 @@ public:
       * @return: 如果队列已经满，则返回false，否则插入成功并返回true
       * @exception: 如果出错，则抛出CSyscallException异常
       */
-    bool push_back(DataType elem, uint32_t millisecond=0) throw (sys::CSyscallException)
+    bool push_back(DataType elem, uint32_t millisecond=0)
 	{
         sys::LockHelper<sys::CLock> lock_helper(_lock);
         while (_raw_queue.is_full())
@@ -179,7 +179,7 @@ public:
 	}
 
 private:
-    bool do_pop_front(DataType& elem) throw (sys::CSyscallException)
+    bool do_pop_front(DataType& elem)
     {            
         // 没有数据，也不阻塞，如果需要阻塞，应当使用事件队列CEventQueue
         if (_raw_queue.is_empty()) return false;

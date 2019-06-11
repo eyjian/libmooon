@@ -39,14 +39,14 @@ public:
       * 构造一个IPV6地址
       * @exception: 如参数为NULL，则抛出utils::CException异常
       */
-    ip_address_t(const uint32_t* ipv6) throw (utils::CException);
+    ip_address_t(const uint32_t* ipv6);
     
     /***
       * 构造一个IP地址，可以为IPV4，也可为IPV6
       * @ip: 字符串IP地址，如果为NULL，则构造一个0.0.0.0的IPV4地址
       * @exception: 如果为无效IP地址，则抛出utils::CException异常
       */
-    ip_address_t(const char* ip) throw (utils::CException);
+    ip_address_t(const char* ip);
 
     /** 拷贝构造，不抛出异常 */
     ip_address_t(const ip_address_t& ip);
@@ -77,7 +77,7 @@ public:
 
 public: // 赋值和比较操作
     ip_address_t& operator =(uint32_t ipv4);
-    ip_address_t& operator =(const uint32_t* ipv6) throw (utils::CException);
+    ip_address_t& operator =(const uint32_t* ipv6);
     ip_address_t& operator =(const char* ip);
     ip_address_t& operator =(const ip_address_t& other);
     bool operator <(const ip_address_t& other) const;
@@ -85,7 +85,7 @@ public: // 赋值和比较操作
     bool operator ==(const ip_address_t& other) const;    
     
 private:
-    void from_string(const char* ip) throw (utils::CException);
+    void from_string(const char* ip);
     
 private:
     bool _is_ipv6;
@@ -110,7 +110,7 @@ inline ip_address_t::ip_address_t(uint32_t ipv4)
     _ip_data[3] = 0;
 }
 
-inline ip_address_t::ip_address_t(const uint32_t* ipv6) throw (utils::CException)
+inline ip_address_t::ip_address_t(const uint32_t* ipv6)
     :_is_ipv6(true)
 {
     if (NULL == ipv6)
@@ -119,7 +119,7 @@ inline ip_address_t::ip_address_t(const uint32_t* ipv6) throw (utils::CException
     memcpy(_ip_data, ipv6, sizeof(_ip_data));
 }
 
-inline ip_address_t::ip_address_t(const char* ip) throw (utils::CException)
+inline ip_address_t::ip_address_t(const char* ip)
 {
     from_string(ip);
 }
@@ -140,7 +140,7 @@ inline ip_address_t& ip_address_t::operator =(uint32_t ipv4)
     return *this;
 }
 
-inline ip_address_t& ip_address_t::operator =(const uint32_t* ipv6) throw (utils::CException)
+inline ip_address_t& ip_address_t::operator =(const uint32_t* ipv6)
 {
     if (NULL == ipv6)
         THROW_EXCEPTION(NULL, EINVAL);

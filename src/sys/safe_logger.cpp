@@ -39,7 +39,7 @@ CSafeLogger* create_safe_logger(
         bool enable_program_path,
         uint16_t log_line_size,
         const std::string& suffix,
-        bool enable_syslog) throw (CSyscallException)
+        bool enable_syslog)
 {
     const std::string& log_dirpath = get_log_dirpath(enable_program_path);
     const std::string& log_filename = get_log_filename(suffix);
@@ -58,7 +58,7 @@ CSafeLogger* create_safe_logger(
         const std::string& log_filename,
         uint16_t log_line_size,
         bool enable_program_path,
-        bool enable_syslog) throw (CSyscallException)
+        bool enable_syslog)
 {
     const std::string& log_dirpath = get_log_dirpath(enable_program_path);
     CSafeLogger* logger = new CSafeLogger(log_dirpath.c_str(), log_filename.c_str(), log_line_size, enable_syslog);
@@ -76,7 +76,7 @@ CSafeLogger* create_safe_logger(
         const std::string& log_dirpath,
         const std::string& cpp_filename,
         uint16_t log_line_size,
-        bool enable_syslog) throw (CSyscallException)
+        bool enable_syslog)
 {
     const std::string& only_filename = utils::CStringUtils::extract_filename(cpp_filename);
     const std::string& log_filename = utils::CStringUtils::replace_suffix(only_filename, ".log");
@@ -92,7 +92,7 @@ CSafeLogger* create_safe_logger(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-CSafeLogger::CSafeLogger(const char* log_dir, const char* log_filename, uint16_t log_line_size, bool enable_syslog) throw (CSyscallException)
+CSafeLogger::CSafeLogger(const char* log_dir, const char* log_filename, uint16_t log_line_size, bool enable_syslog)
     :_log_fd(-1)
     ,_auto_adddot(false)
     ,_auto_newline(true)

@@ -211,7 +211,7 @@ public:
       * 构造一个线程安全的裸对象池
       * @use_heap: 当对象池中无对象时，是否从堆中创建对象
       */
-    CThreadObjectPool(bool use_heap) throw (CSyscallException)
+    CThreadObjectPool(bool use_heap)
         :_raw_object_pool(use_heap)
     {        
     }   
@@ -220,42 +220,42 @@ public:
       * 创建对象池
       * @object_number: 需要创建的对象个数
       */
-    void create(uint32_t object_number) throw (CSyscallException)
+    void create(uint32_t object_number)
     {
         LockHelper<CLock> lock_helper(_lock);
         _raw_object_pool.create(object_number);
     }
 
     /** 销毁对象池 */
-    void destroy() throw (CSyscallException)
+    void destroy()
     {
         LockHelper<CLock> lock_helper(_lock);
         _raw_object_pool.destroy();
     }
 
     /** 向对象池借用一个对象 */
-    ObjectClass* borrow() throw (CSyscallException)
+    ObjectClass* borrow()
     {
         LockHelper<CLock> lock_helper(_lock);
         return _raw_object_pool.borrow();
     }
 
     /** 将一个对象归还给对象池 */
-    void pay_back(ObjectClass* object) throw (CSyscallException)
+    void pay_back(ObjectClass* object)
     {
         LockHelper<CLock> lock_helper(_lock);
         _raw_object_pool.pay_back(object);
     }
 
     /** 得到总的对象个数，包括已经借出的和未借出的 */
-    uint32_t get_pool_size() const throw (CSyscallException)
+    uint32_t get_pool_size() const
     {
         LockHelper<CLock> lock_helper(_lock);
         return _raw_object_pool.get_pool_size();
     }
     
     /** 得到对象池中还未借出的对象个数 */
-    volatile uint32_t get_avaliable_number() const throw (CSyscallException)
+    volatile uint32_t get_avaliable_number()
     {
         LockHelper<CLock> lock_helper(_lock);
         return _raw_object_pool.get_avaliable_number();

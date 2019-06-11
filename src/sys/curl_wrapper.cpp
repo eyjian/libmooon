@@ -26,7 +26,7 @@ void CHttpPostData::reset()
     }
 }
 
-void CHttpPostData::add_content(const std::string& name, const std::string& contents, const std::string& content_type) throw (utils::CException)
+void CHttpPostData::add_content(const std::string& name, const std::string& contents, const std::string& content_type)
 {
     CURLFORMcode errcode = CURL_FORMADD_OK;
 
@@ -50,7 +50,7 @@ void CHttpPostData::add_content(const std::string& name, const std::string& cont
         THROW_EXCEPTION(utils::CStringUtils::format_string("add content[%s] error", name.c_str()), errcode);
 }
 
-void CHttpPostData::add_file(const std::string& name, const std::string& filepath, const std::string& content_type) throw (utils::CException)
+void CHttpPostData::add_file(const std::string& name, const std::string& filepath, const std::string& content_type)
 {
     CURLFORMcode errcode = CURL_FORMADD_OK;
 
@@ -126,7 +126,6 @@ static size_t on_write_response_body_into_FILE(void* buffer, size_t size, size_t
 CCurlWrapper::CCurlWrapper(
         int data_timeout_seconds, int connect_timeout_seconds, bool nosignal,
         bool keepalive, int keepidle, int keepseconds)
-    throw (utils::CException)
     : _curl_version_info(NULL), _curl(NULL),
       _data_timeout_seconds(data_timeout_seconds), _connect_timeout_seconds(connect_timeout_seconds), _nosignal(nosignal),
       _keepalive(keepalive), _keepidle(keepidle), _keepseconds(keepseconds)
@@ -169,7 +168,7 @@ CCurlWrapper::~CCurlWrapper() throw ()
     }
 }
 
-void CCurlWrapper::reset(bool clear_head_list, bool clear_cookie) throw (utils::CException)
+void CCurlWrapper::reset(bool clear_head_list, bool clear_cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -215,7 +214,7 @@ bool CCurlWrapper::add_request_header(const std::string& name_value_pair)
     }
 }
 
-void CCurlWrapper::http_get(std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+void CCurlWrapper::http_get(std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -244,7 +243,7 @@ void CCurlWrapper::http_get(std::string& response_header, std::string& response_
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 }
 
-void CCurlWrapper::proxy_http_get(std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+void CCurlWrapper::proxy_http_get(std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -262,7 +261,7 @@ void CCurlWrapper::proxy_http_get(std::string& response_header, std::string& res
     http_get(response_header, response_body, url, enable_insecure, cookie);
 }
 
-void CCurlWrapper::http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+void CCurlWrapper::http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -296,7 +295,7 @@ void CCurlWrapper::http_post(const std::string& data, std::string& response_head
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 }
 
-void CCurlWrapper::http_post(const CHttpPostData* http_post_data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+void CCurlWrapper::http_post(const CHttpPostData* http_post_data, std::string& response_header, std::string& response_body, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -324,7 +323,7 @@ void CCurlWrapper::http_post(const CHttpPostData* http_post_data, std::string& r
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 }
 
-void CCurlWrapper::proxy_http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+void CCurlWrapper::proxy_http_post(const std::string& data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -342,7 +341,7 @@ void CCurlWrapper::proxy_http_post(const std::string& data, std::string& respons
     http_post(data, response_header, response_body, url, enable_insecure, cookie);
 }
 
-void CCurlWrapper::proxy_http_post(const CHttpPostData* http_post_data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (utils::CException)
+void CCurlWrapper::proxy_http_post(const CHttpPostData* http_post_data, std::string& response_header, std::string& response_body, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -360,7 +359,7 @@ void CCurlWrapper::proxy_http_post(const CHttpPostData* http_post_data, std::str
     http_post(http_post_data, response_header, response_body, url, enable_insecure, cookie);
 }
 
-void CCurlWrapper::http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
+void CCurlWrapper::http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -410,7 +409,7 @@ void CCurlWrapper::http_get_download(std::string& response_header, const std::st
     }
 }
 
-void CCurlWrapper::proxy_http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
+void CCurlWrapper::proxy_http_get_download(std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -428,7 +427,7 @@ void CCurlWrapper::proxy_http_get_download(std::string& response_header, const s
     http_get_download(response_header, local_filepath, url, enable_insecure, cookie);
 }
 
-void CCurlWrapper::http_post_download(const std::string& data, std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
+void CCurlWrapper::http_post_download(const std::string& data, std::string& response_header, const std::string& local_filepath, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -483,7 +482,7 @@ void CCurlWrapper::http_post_download(const std::string& data, std::string& resp
     }
 }
 
-void CCurlWrapper::proxy_http_post_download(const std::string& data, std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie) throw (sys::CSyscallException, utils::CException)
+void CCurlWrapper::proxy_http_post_download(const std::string& data, std::string& response_header, const std::string& local_filepath, const std::string& proxy_host, uint16_t proxy_port, const std::string& url, bool enable_insecure, const char* cookie)
 {
     CURLcode errcode;
     CURL* curl = (CURL*)_curl;
@@ -532,7 +531,7 @@ std::string CCurlWrapper::unescape(const std::string& source_encoded)
     return result;
 }
 
-int CCurlWrapper::get_response_code() const throw (utils::CException)
+int CCurlWrapper::get_response_code() const
 {
     long response_code = 0;
     CURLcode errcode = curl_easy_getinfo(_curl, CURLINFO_RESPONSE_CODE, &response_code);
@@ -542,7 +541,7 @@ int CCurlWrapper::get_response_code() const throw (utils::CException)
     return static_cast<int>(response_code);
 }
 
-std::string CCurlWrapper::get_response_content_type() const throw (utils::CException)
+std::string CCurlWrapper::get_response_content_type() const
 {
     char* content_type = NULL;
     CURLcode errcode = curl_easy_getinfo(_curl, CURLINFO_CONTENT_TYPE, &content_type);
@@ -555,7 +554,7 @@ std::string CCurlWrapper::get_response_content_type() const throw (utils::CExcep
     return (content_type!=NULL)? std::string(content_type): std::string("");
 }
 
-void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable_insecure, size_t (*on_write_response_body_into_FILE_proc)(void*, size_t, size_t, void*)) throw (utils::CException)
+void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable_insecure, size_t (*on_write_response_body_into_FILE_proc)(void*, size_t, size_t, void*))
 {
     const curl_version_info_data* curl_version_info = (curl_version_info_data*)_curl_version_info;
     CURLcode errcode;
