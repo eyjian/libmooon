@@ -3,7 +3,7 @@
 // 将一个表的数据从一个数据库复制到另一个数据库的工具，
 // 数据源通过参数“--sql”指定，可带条件和LIMIT等，
 // 目标字段可通过参数“--dfields”指定，也可以不指定。
-// 失败程序返回1，成功则返回0，
+// 成功则返回0，出错返回1，没数据返回2。
 // 失败信息在标准出错上输出，成功信息在标准输出上输出，
 // 失败信息标识为“FAILED”，成功信息标识为“SUCCESS”。
 // 如果数据不为空，则在成功标识“SUCCESS”后紧跟第一个字段的最新值，
@@ -59,6 +59,9 @@ private:
     mooon::sys::CMySQLConnection _destination_mysql;
 };
 
+// 返回0成功，
+// 返回1出错，
+// 返回2表示没数据
 int main(int argc, char* argv[])
 {
     std::string errmsg;
@@ -148,6 +151,9 @@ int main(int argc, char* argv[])
     return CTableCopyer().copy();
 }
 
+// 返回0成功，
+// 返回1出错，
+// 返回2表示没数据
 int CTableCopyer::copy()
 {
     std::string tag;
@@ -187,6 +193,11 @@ int CTableCopyer::copy()
 
         tag = "SELECT_FROM_SOURCE";
         _source_mysql.query(dbtable, "%s", querysql.c_str());
+        if (dbtable.empty())
+        {
+            fprintf(stderr, "NODATA\n");
+            return 2; // 方便调用者区分错误结束循环
+        }
         for (mooon::sys::DBTable::size_type row=0; row<dbtable.size(); ++row)
         {
             const mooon::sys::DBRow& dbrow = dbtable[row];
