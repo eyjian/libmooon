@@ -226,7 +226,7 @@ int CTableCopyer::copy()
         {
             insertsql = mooon::utils::CStringUtils::format_string(
                     "INSERT%sINTO %s (%s) VALUES %s", ignore_str.c_str(),
-                    mooon::argument::dfields->c_value(), mooon::argument::dtable->c_value(), values_str.c_str());
+                    mooon::argument::dtable->c_value(), mooon::argument::dfields->c_value(), values_str.c_str());
         }
 
         if (mooon::argument::test->is_true() ||
