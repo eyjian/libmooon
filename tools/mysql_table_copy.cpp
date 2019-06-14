@@ -157,6 +157,7 @@ int main(int argc, char* argv[])
 int CTableCopyer::copy()
 {
     std::string tag;
+    std::string querysql;
     std::string insertsql;
     mooon::sys::CStopWatch stopwatch;
 
@@ -173,7 +174,6 @@ int CTableCopyer::copy()
         std::string values_str;
         std::string first_field;
         std::string ignore_str;
-        std::string querysql;
         mooon::sys::DBTable dbtable;
 
         // 防止单词SELECT数据量过大，强制加上LIMIT硬保护
@@ -276,7 +276,9 @@ int CTableCopyer::copy()
         }
         else
         {
-            if (tag == "INSERT_INTO_DESTINATION")
+            if (tag == "SELECT_FROM_SOURCE")
+                fprintf(stderr, "[SELECTSQL] %s\n", querysql.c_str());
+            else if (tag == "INSERT_INTO_DESTINATION")
                 fprintf(stderr, "[INSERTSQL] %s\n", insertsql.c_str());
             fprintf(stderr, "[%s] %s\n", tag.c_str(), ex.str().c_str());
         }
