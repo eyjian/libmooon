@@ -77,4 +77,17 @@ bool CObjectFacotry::object_type_exists(const std::string& type_name) const
     return _object_creator_table.count(type_name) > 0;
 }
 
+std::string CObjectFacotry::get_type_list() const
+{
+    std::string str;
+    for (ObjectCreatorTable::const_iterator iter=_object_creator_table.begin(); iter!=_object_creator_table.end(); ++iter)
+    {
+        if (str.empty())
+            str = iter->first;
+        else
+            str = str + std::string(",") + iter->first;
+    }
+    return str;
+}
+
 UTILS_NAMESPACE_END

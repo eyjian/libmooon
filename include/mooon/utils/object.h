@@ -117,6 +117,9 @@ public:
     // 指定的对象类型是否存在
     bool object_type_exists(const std::string& type_name) const;
 
+    // 取得支持的类型列表
+    std::string get_type_list() const;
+
 private:
     ObjectCreatorTable _object_creator_table;
 };
