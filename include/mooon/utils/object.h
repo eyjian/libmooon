@@ -107,17 +107,17 @@ public:
     // object_creator 实现了create_object()，用来创建对象
     void register_object_creater(const std::string& type_name, CObjectCreator* object_creator);
 
-    // 根据类型名type_name得到它的CObjectCreator
+    // 根据类型名type_name得到它的CObjectCreator，应在register_object_creater()之后使用
     // 返回NULL表示type_name对应的CObjectCreator不存在或未被注册
     CObjectCreator* get_object_creator(const std::string& type_name) const;
 
-    // 根据类型创建一个对象
+    // 根据类型创建一个对象，应在register_object_creater()之后使用
     CObject* create_object(const std::string& type_name) const;
 
-    // 指定的对象类型是否存在
+    // 指定的对象类型是否存在，应在register_object_creater()之后使用
     bool object_type_exists(const std::string& type_name) const;
 
-    // 取得支持的类型列表
+    // 取得支持的类型列表，应在register_object_creater()之后使用
     std::string get_type_list() const;
 
 private:
