@@ -25,40 +25,48 @@ UTILS_NAMESPACE_BEGIN
 // 用来注册CObjectCreator的宏
 // 使用了匿名名字空间，原因是不需要对外可见和使用
 //
-// 注意必须保证同一进程中object_type_name唯一，
-// object_type_name为std::string类型，ObjectClass为CObject的子类类型
+// 注意必须保证同一进程中object_name唯一，
+// object_name为std::string类型，ObjectClass为CObject的子类类型
 //
 // 使用示例：
 // class CMyClass: public mooon::utils::CObject
 // {
 // };
 //
-// REGISTER_OBJECT_CREATOR("myclass", CMyClass);
+// REGISTER_OBJECT_CREATOR("me", CMyClass);
+// _REGISTER_OBJECT_CREATOR_("me1", CMyClass, 0);
+// _REGISTER_OBJECT_CREATOR_("me2", CMyClass, 1);
+// _REGISTER_OBJECT_CREATOR_("me3", CMyClass, 3);
 //
 // 在其它文件中创建CMyClass类型的对象，
 // 如果未调用REGISTER_OBJECT_CREATOR注册，则返回NULL，
 // 如果存在同名的，则debug模式会触发断言错误，非debug模式将导致内存泄露：
 // CMyClass* myclass = (CMyClass*)mooon::utils::CObjectFacotry::get_singleton()->create_object("myclass");
-#define REGISTER_OBJECT_CREATOR(object_type_name, ObjectClass) \
+// _REGISTER_OBJECT_CREATOR_可用于对同一个类注册不同的对象
+#define _REGISTER_OBJECT_CREATOR_(object_name, ObjectClass, index) \
     namespace { \
-        class ObjectClass##Creator: public ::mooon::utils::CObjectCreator \
+        class ObjectClass##Creator##index: public ::mooon::utils::CObjectCreator \
         { \
         public: \
-            ObjectClass##Creator() \
+            ObjectClass##Creator##index() \
             { \
                 ::mooon::utils::CObjectFacotry* object_factory = ::mooon::utils::CObjectFacotry::get_singleton(); \
-                object_factory->register_object_creater(object_type_name, this); \
+                object_factory->register_object_creater(object_name, this); \
             }\
         private: \
             virtual ::mooon::utils::CObject* create_object() \
             { \
                 ObjectClass* object = new ObjectClass; \
-                object->set_type_name(object_type_name); \
+                object->set_type_name(object_name); \
                 return object; \
             } \
         }; \
-        static ObjectClass##Creator _g_##ObjectClass; \
+        static ObjectClass##Creator##index _g_##ObjectClass##Creator##index; \
     }
+
+// _REGISTER_OBJECT_CREATOR_的特化版本
+#define REGISTER_OBJECT_CREATOR(object_name, ObjectClass) \
+    _REGISTER_OBJECT_CREATOR_(object_name, ObjectClass,)
 
 // 需要通过对象工厂创建的所有对象基类
 class CObject
