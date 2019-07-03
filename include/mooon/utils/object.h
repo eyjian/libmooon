@@ -61,7 +61,7 @@ UTILS_NAMESPACE_BEGIN
                 return object; \
             } \
         }; \
-        static ObjectClass##Creator##index _g_##ObjectClass##Creator##index; \
+        static ObjectClass##Creator##index _sg_##ObjectClass##Creator##index; \
     }
 
 // _REGISTER_OBJECT_CREATOR_的特化版本
