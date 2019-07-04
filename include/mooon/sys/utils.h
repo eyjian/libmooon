@@ -235,14 +235,14 @@ public:
     // 如果进程不存在，或没有权限，没返回空字符串
     static std::string get_process_name(int64_t pid);
 
-    // 取得指定名称的所有进程ID
+    // 取得指定名称的所有进程ID（set_process_name设置的名字有效）
     // regex 是否正则匹配
     //
     // 出错返回-1，否则返回符合的个数
     static int get_all_pid(const std::string& process_name, std::vector<int64_t>* pid_array, bool regex=false);
 
     // 杀死指定名称的进程
-    // process_name 需要杀死的进程名
+    // process_name 需要杀死的进程名（set_process_name设置的名字有效）
     // 限制 除非为root，否则没有权限杀死其它用户的进程
     //
     // 返回被杀死的个数和出错的个数（包含不存在的），
