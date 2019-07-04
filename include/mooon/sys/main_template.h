@@ -245,6 +245,9 @@ protected:
     // 设置进程名（对killall和top有效，对ps无效）
     void set_process_name(const std::string& newname);
 
+    // 设置进程title（对ps有效，对killall和top无效）
+    void set_process_title(const std::string& newtitle);
+
     // 返回true表示收到了退出信号，进程应当立即退出
     bool to_stop() const { return _stop; }
 

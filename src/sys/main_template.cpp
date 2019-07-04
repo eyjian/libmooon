@@ -99,6 +99,9 @@ static void* signal_thread_proc(void* param)
   */
 int main_template(IMainHelper* main_helper, int argc, char* argv[], IReportSelf* report_self)
 {
+    // 方便后续调用CUtils::set_process_title
+    CUtils::init_process_title(argc, argv);
+
     // 退出代码，由子进程决定
     int exit_code = 1;
     utils::ScopedPtr<IReportSelf> report_self_((report_self != NULL)? report_self: new CNullReportSelf);
@@ -451,6 +454,12 @@ void CMainHelper::set_process_name(const std::string& newname)
 {
     if (!newname.empty())
         CUtils::set_process_name(newname);
+}
+
+void CMainHelper::set_process_title(const std::string& newtitle)
+{
+    if (!newtitle.empty())
+        CUtils::set_process_title(newtitle);
 }
 
 SYS_NAMESPACE_END

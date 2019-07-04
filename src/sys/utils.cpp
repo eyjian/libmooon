@@ -598,6 +598,10 @@ void CUtils::set_process_name(const std::string& new_name)
 {
     if (!new_name.empty())
     {
+        // #include <libiberty.h> // libiberty.a
+        // Set the title of a process
+        // extern void setproctitle (const char *name, ...);
+        // setproctitle也是对top有效，对ps无效
         if (-1 == prctl(PR_SET_NAME, new_name.c_str()))
             THROW_SYSCALL_EXCEPTION(NULL, errno, "prctl");
     }
@@ -611,7 +615,7 @@ void CUtils::set_process_name(const char* format, ...)
 
     char name[NAME_MAX];
     vsnprintf(name, sizeof(name), format, args);
-    set_process_name(std::string(name));
+    CUtils::set_process_name(std::string(name));
 }
 
 // 参考：http://www.stamhe.com/?p=416
@@ -693,7 +697,7 @@ void CUtils::set_process_title(const char* format, ...)
 
     char title[PATH_MAX];
     vsnprintf(title, sizeof(title), format, args);
-    set_process_title(std::string(title));
+    CUtils::set_process_title(std::string(title));
 }
 
 std::string CUtils::get_random_string(const char* prefix)
