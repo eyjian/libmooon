@@ -242,6 +242,9 @@ protected:
     // logline_size 日志行大小（字节数），如果值为0表示使用默认的
     void set_logger(const std::string& log_suffix, uint16_t logline_size=0);
 
+    // 设置进程名（对killall和top有效，对ps无效）
+    void set_process_name(const std::string& newname);
+
     // 返回true表示收到了退出信号，进程应当立即退出
     bool to_stop() const { return _stop; }
 

@@ -447,4 +447,10 @@ void CMainHelper::set_logger(const std::string& log_suffix, uint16_t logline_siz
         _logline_size = logline_size;
 }
 
+void CMainHelper::set_process_name(const std::string& newname)
+{
+    if (!newname.empty())
+        CUtils::set_process_name(newname);
+}
+
 SYS_NAMESPACE_END
