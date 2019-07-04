@@ -242,6 +242,14 @@ protected:
     // logline_size 日志行大小（字节数），如果值为0表示使用默认的
     void set_logger(const std::string& log_suffix, uint16_t logline_size=0);
 
+    // 设置日志名
+    // 注意：在on_check_parameter中调用才会生效。
+    //
+    // 注意区分set_logger，set_logger只设置日志文件名的后缀（不包括.log后缀），
+    // 而set_logname设置完整的日志文件名（不包括.log后缀），
+    // set_logname优先于set_logger。
+    void set_logname(const std::string& name, uint16_t logline_size=0);
+
     // 设置进程名（对killall和top有效，对ps无效）
     void set_process_name(const std::string& newname);
 
@@ -253,6 +261,7 @@ protected:
 
 private:
     const int _log_level_signo;
+    std::string _log_name;
     std::string _log_suffix;
     uint16_t _logline_size;
     CAtomic<bool> _stop;

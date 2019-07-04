@@ -344,7 +344,10 @@ bool CMainHelper::init(int argc, char* argv[])
         // 创建日志器
         try
         {
-            mooon::sys::g_logger = mooon::sys::create_safe_logger(true, _logline_size, _log_suffix);
+            if (_log_name.empty())
+                mooon::sys::g_logger = mooon::sys::create_safe_logger(true, _logline_size, _log_suffix);
+            else
+                mooon::sys::g_logger = mooon::sys::create_safe_logger(_log_name, _logline_size, true);
         }
         catch (mooon::sys::CSyscallException& ex)
         {
@@ -446,6 +449,13 @@ void CMainHelper::on_signal_handler(int signo)
 void CMainHelper::set_logger(const std::string& log_suffix, uint16_t logline_size)
 {
     _log_suffix = log_suffix;
+    if (logline_size > 0)
+        _logline_size = logline_size;
+}
+
+void CMainHelper::set_logname(const std::string& name, uint16_t logline_size)
+{
+    _log_name = name;
     if (logline_size > 0)
         _logline_size = logline_size;
 }
