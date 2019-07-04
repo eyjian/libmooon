@@ -455,7 +455,8 @@ void CMainHelper::set_logger(const std::string& log_suffix, uint16_t logline_siz
 
 void CMainHelper::set_logname(const std::string& name, uint16_t logline_size)
 {
-    _log_name = name;
+    if (!name.empty())
+        _log_name = name + std::string(".log");
     if (logline_size > 0)
         _logline_size = logline_size;
 }
