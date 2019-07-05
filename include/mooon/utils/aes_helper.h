@@ -29,6 +29,8 @@ UTILS_NAMESPACE_BEGIN
 // 会对加密的Key和加解密的数据进行自动填充，以满足算法的要求。
 // 如果被加密的数据不是16字节或16字节整数倍，
 // 则由decrypt解密后的数据长度会大于加密前的，调用者需要处理好。
+// 更好的是基于EVP系列的实现，可以参考：
+// https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
 class CAESHelper
 {
 public:
