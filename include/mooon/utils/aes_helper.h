@@ -24,11 +24,17 @@ UTILS_NAMESPACE_BEGIN
 
 // 高级加密标准（Advanced Encryption Standard），
 // 在密码学中又称Rijndael加密法，是美国联邦政府采用的一种区块加密标准，用来替代DES
+// 注意：
+// CAESHelper基于AES_encrypt和AES_decrypt实现，
+// 会对加密的Key和加解密的数据进行自动填充，以满足算法的要求。
+// 如果被加密的数据不是16字节或16字节整数倍，
+// 则由decrypt解密后的数据长度会大于加密前的，调用者需要处理好。
 class CAESHelper
 {
 public:
-    // 加密数据块分组长度，必须为128比特（密钥长度可以是128比特、192比特、256比特中的任意一个）
-    static int aes_block_size;
+    // 加密数据块分组长度，必须为128比特（即4×4的字节矩阵），
+    // 密钥长度可以是128比特、192比特、256比特中的任意一个
+    static const int aes_block_size;
 
 public:
     // key 密钥

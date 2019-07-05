@@ -24,9 +24,9 @@
 UTILS_NAMESPACE_BEGIN
 
 #if MOOON_HAVE_OPENSSL == 1
-int CAESHelper::aes_block_size = AES_BLOCK_SIZE; // 16
+const int CAESHelper::aes_block_size = AES_BLOCK_SIZE; // 16
 #else
-int CAESHelper::aes_block_size = 0;
+const int CAESHelper::aes_block_size = 0;
 #endif // MOOON_HAVE_OPENSSL
 
 static std::string errcode2errmsg(int errcode)
