@@ -9,6 +9,7 @@
 // 如果数据不为空，则在成功标识“SUCCESS”后紧跟第一个字段的最新值，
 // 如果这是一个自增字段值，则可借助这个值实现增量复制。
 #include <mooon/sys/mysql_db.h>
+#include <mooon/sys/signal_handler.h>
 #include <mooon/sys/stop_watch.h>
 #include <mooon/sys/utils.h>
 #include <mooon/utils/args_parser.h>
@@ -303,6 +304,7 @@ int CTableCopyer::copy()
 
 bool CTableCopyer::init()
 {
+    mooon::sys::CSignalHandler::ignore_signal(SIGPIPE);
     return (init_source_mysql() && init_destination_mysql());
 }
 
