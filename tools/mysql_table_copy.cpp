@@ -12,6 +12,7 @@
 #include <mooon/sys/stop_watch.h>
 #include <mooon/sys/utils.h>
 #include <mooon/utils/args_parser.h>
+#include <mooon/utils/print_color.h>
 #include <mooon/utils/string_utils.h>
 
 // Source database
@@ -41,7 +42,7 @@ BOOL_STRING_ARG_DEFINE(ignore, "false", "If true errors that occur while executi
 BOOL_STRING_ARG_DEFINE(verbose, "false", "Displays runtime details, example: --verbose=true");
 
 // 单次查询数据条数硬限制（0表示不限制）
-INTEGER_ARG_DEFINE(int, hdlimit, 100000, 0, std::numeric_limits<int>::max(), "The maximum number of records to query, example: --hdlimit=100000");
+INTEGER_ARG_DEFINE(int, hdlimit, 10000, 0, std::numeric_limits<int>::max(), "The number of records for a single query, example: --hdlimit=100000");
 
 class CTableCopyer
 {
@@ -59,6 +60,16 @@ private:
     mooon::sys::CMySQLConnection _destination_mysql;
 };
 
+static void usage()
+{
+    fprintf(stderr, "Exit codes:\n");
+    fprintf(stderr, "1) " PRINT_COLOR_YELLOW"Success" PRINT_COLOR_NONE" exits with 0.\n");
+    fprintf(stderr, "2) " PRINT_COLOR_YELLOW"Error" PRINT_COLOR_NONE" exits with 1.\n");
+    fprintf(stderr, "3) " PRINT_COLOR_YELLOW"No data" PRINT_COLOR_NONE" exits with 2.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+}
+
 // 返回0成功，
 // 返回1出错，
 // 返回2表示没数据
@@ -68,45 +79,46 @@ int main(int argc, char* argv[])
     if (!mooon::utils::parse_arguments(argc, argv, &errmsg))
     {
         if (!errmsg.empty())
-            fprintf(stderr, "%s\n", errmsg.c_str());
+            fprintf(stderr, "%s.\n", errmsg.c_str());
         else
-            fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+            fprintf(stderr, "\n");
+        usage();
         return 1;
     }
 
     // --shost
     if (mooon::argument::shost->value().empty())
     {
-        fprintf(stderr, "Parameter[--shost] is not set\n");
-        fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+        fprintf(stderr, "Parameter[--shost] is not set.\n\n");
+        usage();
         return 1;
     }
     // --sname
     if (mooon::argument::sname->value().empty())
     {
-        fprintf(stderr, "Parameter[--sname] is not set\n");
-        fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+        fprintf(stderr, "Parameter[--sname] is not set.\n\n");
+        usage();
         return 1;
     }
     // --suser
     if (mooon::argument::suser->value().empty())
     {
-        fprintf(stderr, "Parameter[--suser] is not set\n");
-        fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+        fprintf(stderr, "Parameter[--suser] is not set.\n\n");
+        usage();
         return 1;
     }
     // --spassword
     if (mooon::argument::spassword->value().empty())
     {
-        fprintf(stderr, "Parameter[--spassword] is not set\n");
-        fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+        fprintf(stderr, "Parameter[--spassword] is not set.\n\n");
+        usage();
         return 1;
     }
     // --sql
     if (mooon::argument::sql->value().empty())
     {
-        fprintf(stderr, "Parameter[--sql] is not set\n");
-        fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+        fprintf(stderr, "Parameter[--sql] is not set.\n\n");
+        usage();
         return 1;
     }
     if (mooon::argument::test->is_false())
@@ -114,37 +126,37 @@ int main(int argc, char* argv[])
         // --dhost
         if (mooon::argument::dhost->value().empty())
         {
-            fprintf(stderr, "Parameter[--dhost] is not set\n");
-            fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+            fprintf(stderr, "Parameter[--dhost] is not set.\n\n");
+            usage();
             return 1;
         }
         // --dname
         if (mooon::argument::dname->value().empty())
         {
-            fprintf(stderr, "Parameter[--dname] is not set\n");
-            fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+            fprintf(stderr, "Parameter[--dname] is not set.\n\n");
+            usage();
             return 1;
         }
         // --duser
         if (mooon::argument::duser->value().empty())
         {
-            fprintf(stderr, "Parameter[--duser] is not set\n");
-            fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+            fprintf(stderr, "Parameter[--duser] is not set.\n\n");
+            usage();
             return 1;
         }
         // --dpassword
         if (mooon::argument::dpassword->value().empty())
         {
-            fprintf(stderr, "Parameter[--dpassword] is not set\n");
-            fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+            fprintf(stderr, "Parameter[--dpassword] is not set.\n\n");
+            usage();
             return 1;
         }
     }
     // --dtable
     if (mooon::argument::dtable->value().empty())
     {
-        fprintf(stderr, "Parameter[--dtable] is not set\n");
-        fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
+        fprintf(stderr, "Parameter[--dtable] is not set.\n\n");
+        usage();
         return 1;
     }
 
@@ -308,7 +320,7 @@ bool CTableCopyer::init_source_mysql()
     }
     catch (mooon::sys::CDBException& ex)
     {
-        fprintf(stderr, "Intialize source MySQL failed: %s\n", ex.str().c_str());
+        fprintf(stderr, "Intialize source MySQL failed: %s.\n", ex.str().c_str());
         return false;
     }
 }
@@ -333,7 +345,7 @@ bool CTableCopyer::init_destination_mysql()
     }
     catch (mooon::sys::CDBException& ex)
     {
-        fprintf(stderr, "Intialize destination MySQL failed: %s\n", ex.str().c_str());
+        fprintf(stderr, "Intialize destination MySQL failed: %s.\n", ex.str().c_str());
         return false;
     }
 }
