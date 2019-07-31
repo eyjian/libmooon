@@ -23,6 +23,8 @@ STRING_ARG_DEFINE(sname, "", "Source database name, example: --sname=test");
 STRING_ARG_DEFINE(suser, "", "Source database user, example: --suser=root");
 STRING_ARG_DEFINE(spassword, "", "Source database password, example: --spassword='123456'");
 STRING_ARG_DEFINE(sql, "", "The sql to query source table, example: --sql='SELECT * FROM test LIMIT 2019'");
+INTEGER_ARG_DEFINE(int, sconntimeout, 10, 0, 600, "Connect source database timeout in seconds");
+INTEGER_ARG_DEFINE(int, sreadtimeout, 10, 0, 600, "Read source database timeout in seconds");
 
 // Destination database
 STRING_ARG_DEFINE(dhost, "127.0.0.1", "Destination database host, example: --dhost=127.0.0.1");
@@ -32,6 +34,9 @@ STRING_ARG_DEFINE(duser, "", "Destination database user, example: --duser=root")
 STRING_ARG_DEFINE(dpassword, "", "Destination database password, example: --dpassword='123456'");
 STRING_ARG_DEFINE(dtable, "", "Destination database table, example: --dtable=test");
 STRING_ARG_DEFINE(dfields, "*", "Destination database table fields, example: --dfields=a,b,c,d");
+INTEGER_ARG_DEFINE(int, dconntimeout, 10, 0, 600, "Connect destination database timeout in seconds");
+INTEGER_ARG_DEFINE(int, dwritetimeout, 10, 0, 600, "Write destination database timeout in seconds");
+INTEGER_ARG_DEFINE(int, dreadtimeout, 10, 0, 600, "Read destination database timeout in seconds");
 
 // 默认只是测试，不实际写目标DB
 BOOL_STRING_ARG_DEFINE(test, "false", "If true only test, will ignore all destination parameters exclude --dtable and --dfields, example: --test=true");
@@ -310,46 +315,73 @@ bool CTableCopyer::init()
 
 bool CTableCopyer::init_source_mysql()
 {
-    try
+    for (int i=0; i<3; ++i)
     {
-        _source_mysql.set_null_value("");
-        _source_mysql.set_host(mooon::argument::shost->value(), mooon::argument::sport->value());
-        _source_mysql.set_db_name(mooon::argument::sname->value());
-        _source_mysql.set_user(mooon::argument::suser->value(), mooon::argument::spassword->value());
-        _source_mysql.enable_auto_reconnect(true);
-        _source_mysql.open();
-        return true;
+        try
+        {
+            _source_mysql.set_null_value("");
+            _source_mysql.set_host(mooon::argument::shost->value(), mooon::argument::sport->value());
+            _source_mysql.set_db_name(mooon::argument::sname->value());
+            _source_mysql.set_user(mooon::argument::suser->value(), mooon::argument::spassword->value());
+            _source_mysql.enable_auto_reconnect(true);
+            _source_mysql.set_connect_timeout_seconds(mooon::argument::sconntimeout->value());
+            _source_mysql.set_read_timeout_seconds(mooon::argument::sreadtimeout->value());
+            _source_mysql.open();
+            return true;
+        }
+        catch (mooon::sys::CDBException& ex)
+        {
+            if (i == 1) {
+                // 延迟第2次重试
+                mooon::sys::CUtils::millisleep(1000);
+            }
+            else if (i == 2) {
+                fprintf(stderr, "Intialize source MySQL failed: %s.\n", ex.str().c_str());
+                break;
+            }
+        }
     }
-    catch (mooon::sys::CDBException& ex)
-    {
-        fprintf(stderr, "Intialize source MySQL failed: %s.\n", ex.str().c_str());
-        return false;
-    }
+
+    return false;
 }
 
 bool CTableCopyer::init_destination_mysql()
 {
-    try
+    for (int i=0; i<3; ++i)
     {
-        if (mooon::argument::test->is_true())
+        try
         {
-            return true;
+            if (mooon::argument::test->is_true())
+            {
+                return true;
+            }
+            else
+            {
+                _destination_mysql.set_host(mooon::argument::dhost->value(), mooon::argument::dport->value());
+                _destination_mysql.set_db_name(mooon::argument::dname->value());
+                _destination_mysql.set_user(mooon::argument::duser->value(), mooon::argument::dpassword->value());
+                _destination_mysql.enable_auto_reconnect(true);
+                _destination_mysql.set_connect_timeout_seconds(mooon::argument::dconntimeout->value());
+                _destination_mysql.set_write_timeout_seconds(mooon::argument::dwritetimeout->value());
+                _destination_mysql.set_read_timeout_seconds(mooon::argument::dreadtimeout->value());
+                _destination_mysql.open();
+                return true;
+            }
         }
-        else
+        catch (mooon::sys::CDBException& ex)
         {
-            _destination_mysql.set_host(mooon::argument::dhost->value(), mooon::argument::dport->value());
-            _destination_mysql.set_db_name(mooon::argument::dname->value());
-            _destination_mysql.set_user(mooon::argument::duser->value(), mooon::argument::dpassword->value());
-            _destination_mysql.enable_auto_reconnect(true);
-            _destination_mysql.open();
-            return true;
+            if (i == 1) {
+                // 延迟第2次重试
+                mooon::sys::CUtils::millisleep(1000);
+            }
+            else if (i == 2) {
+                fprintf(stderr, "Intialize destination MySQL failed: %s.\n", ex.str().c_str());
+                break;
+            }
         }
     }
-    catch (mooon::sys::CDBException& ex)
-    {
-        fprintf(stderr, "Intialize destination MySQL failed: %s.\n", ex.str().c_str());
-        return false;
-    }
+
+    return false;
 }
 
 void CTableCopyer::print_cost(_IO_FILE* stdxxx, mooon::sys::CStopWatch& stopwatch)
