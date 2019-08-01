@@ -38,12 +38,12 @@
 
 // 队列数
 // 源队列和目标队列数均由此参数决定，也即源队列和目标队列的个数是相等的
-INTEGER_ARG_DEFINE(uint8_t, queues, 1, 1, 10, "the number of queues, e.g. --queues=1");
+INTEGER_ARG_DEFINE(int, queues, 1, 1, 2019, "the number of queues, e.g. --queues=1");
 
 // 线程数系数，
 // 注意并不是线程数，线程数为：threads * queues，
 // 假设queues参数值为2，threads参数值为3，则线程数为6
-INTEGER_ARG_DEFINE(uint8_t, threads, 1, 1, 18, "(threads * queues) to get number of move threads, e.g., --threads=1");
+INTEGER_ARG_DEFINE(int, threads, 1, 1, 20, "(threads * queues) to get number of move threads, e.g., --threads=1");
 
 // 源redis
 STRING_ARG_DEFINE(src_redis, "", "the nodes of source redis, e.g., --src_redis=127.0.0.1:6379,127.0.0.1:6380");
@@ -59,19 +59,19 @@ STRING_ARG_DEFINE(src_prefix, "", "the key prefix of source queue, e.g., --src_p
 STRING_ARG_DEFINE(dst_prefix, "", "the key prefix of destination queue, e.g., --src_prefix='mooon:'");
 
 // 源队列Key是否仅由前缀组成，即src_prefix是key，或只是key的前缀
-INTEGER_ARG_DEFINE(uint8_t, src_only_prefix, 0, 0, 1, "the prefix is the key of source");
+INTEGER_ARG_DEFINE(int, src_only_prefix, 0, 0, 1, "the prefix is the key of source");
 
 // 目标队列Key是否仅由前缀组成，即dst_prefix是key，或只是key的前缀
-INTEGER_ARG_DEFINE(uint8_t, dst_only_prefix, 0, 0, 1, "the prefix is the key of destination");
+INTEGER_ARG_DEFINE(int, dst_only_prefix, 0, 0, 1, "the prefix is the key of destination");
 
 // 多少个时输出一次计数
-INTEGER_ARG_DEFINE(uint32_t, tick, 10000, 1, 10000000, "the times to tick");
+INTEGER_ARG_DEFINE(int, tick, 10000, 1, 10000000, "the times to tick");
 
 // 统计频率（单位：秒）
-INTEGER_ARG_DEFINE(uint32_t, stat_interval, 2, 1, 86400, "the interval to stat in seconds");
+INTEGER_ARG_DEFINE(int, stat_interval, 2, 1, 86400, "the interval to stat in seconds");
 
 // 轮询队列和重试操作的间隔（单位为毫秒）
-INTEGER_ARG_DEFINE(uint32_t, retry_interval, 100, 1, 1000000, "the interval in milliseconds to poll or retry");
+INTEGER_ARG_DEFINE(int, retry_interval, 100, 1, 1000000, "the interval in milliseconds to poll or retry");
 
 // 批量数，即一次批量移动多少
 INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "batch to move");
@@ -86,9 +86,9 @@ static atomic_t g_num_moved;
 static void on_terminated();
 static void signal_thread_proc(); // 信号线程
 static void stat_thread_proc(); // 统计线程
-static void move_thread_proc(uint8_t i); // 移动线程
-static std::string get_src_key(uint8_t i);
-static std::string get_dst_key(uint8_t i);
+static void move_thread_proc(int i); // 移动线程
+static std::string get_src_key(int i);
+static std::string get_dst_key(int i);
 
 int main(int argc, char* argv[])
 {
@@ -148,14 +148,14 @@ int main(int argc, char* argv[])
         mooon::sys::CThreadEngine* signal_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&signal_thread_proc));
         mooon::sys::CThreadEngine* stat_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&stat_thread_proc));
 
-        const uint8_t num_queues = mooon::argument::queues->value();
-        const uint8_t num_threads = num_queues * mooon::argument::threads->value();
+        const int num_queues = mooon::argument::queues->value();
+        const int num_threads = num_queues * mooon::argument::threads->value();
         mooon::sys::CThreadEngine** thread_engines = new mooon::sys::CThreadEngine*[num_threads];
-        for (uint8_t i=0; i<num_threads; ++i)
+        for (int i=0; i<num_threads; ++i)
         {
             thread_engines[i] = new mooon::sys::CThreadEngine(mooon::sys::bind(&move_thread_proc, i));
         }
-        for (uint8_t i=0; i<num_threads; ++i)
+        for (int i=0; i<num_threads; ++i)
         {
             thread_engines[i]->join();
             delete thread_engines[i];
@@ -193,7 +193,7 @@ void stat_thread_proc()
 {
     try
     {
-        const uint32_t seconds = mooon::argument::stat_interval->value();
+        const int seconds = mooon::argument::stat_interval->value();
         uint64_t old_num_moved = 0;
         uint64_t last_num_moved = 0;
         mooon::sys::ILogger* stat_logger = mooon::sys::create_safe_logger(true, mooon::SIZE_32, "stat");
@@ -211,7 +211,8 @@ void stat_thread_proc()
             if (last_num_moved > old_num_moved)
             {
                 const int num_moved = static_cast<int>((last_num_moved - old_num_moved) / seconds);
-                stat_logger->log_raw(" %" PRId64" %" PRId64" %" PRId64" %d/s MOVED\n", last_num_moved, old_num_moved, last_num_moved - old_num_moved, num_moved);
+                stat_logger->log_raw(" %" PRId64" %" PRId64" %" PRId64" %d/s MOVED\n",
+                        last_num_moved, old_num_moved, last_num_moved - old_num_moved, num_moved);
             }
 
             old_num_moved = last_num_moved;
@@ -223,11 +224,11 @@ void stat_thread_proc()
     }
 }
 
-void move_thread_proc(uint8_t i)
+void move_thread_proc(int i)
 {
     const int batch = mooon::argument::batch->value();
-    const uint8_t num_queues = mooon::argument::queues->value();
-    const uint32_t retry_interval = mooon::argument::retry_interval->value();
+    const int num_queues = mooon::argument::queues->value();
+    const int retry_interval = mooon::argument::retry_interval->value();
     const std::string& src_key = get_src_key(i % num_queues); // 源key
     const std::string& dst_key = get_dst_key(i % num_queues); // 目标key
     r3c::CRedisClient src_redis(mooon::argument::src_redis->value());
@@ -282,7 +283,7 @@ void move_thread_proc(uint8_t i)
 #endif
 
                 num_moved += num_moved_;
-                if (num_moved - old_num_moved >= mooon::argument::tick->value())
+                if (num_moved - old_num_moved >= static_cast<uint32_t>(mooon::argument::tick->value()))
                 {
                     old_num_moved = num_moved;
                     MYLOG_INFO("[%s]=>[%s]: %u\n", src_key.c_str(), dst_key.c_str(), num_moved);
@@ -300,7 +301,7 @@ void move_thread_proc(uint8_t i)
     MYLOG_INFO("move thread %d exit\n", i);
 }
 
-std::string get_src_key(uint8_t i)
+std::string get_src_key(int i)
 {
     if (1 == mooon::argument::src_only_prefix->value())
         return mooon::argument::src_prefix->value();
@@ -308,7 +309,7 @@ std::string get_src_key(uint8_t i)
         return mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::src_prefix->c_value(), (int)i);
 }
 
-std::string get_dst_key(uint8_t i)
+std::string get_dst_key(int i)
 {
     if (1 == mooon::argument::dst_only_prefix->value())
         return mooon::argument::dst_prefix->value();
