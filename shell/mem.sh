@@ -13,8 +13,8 @@
 # 则还看不出内存泄漏，可观察更长时间。
 
 if test $# -lt 1; then
-    echo "uage: mem.sh pid interval(seconds)"
-    exit 1
+  echo "uage: mem.sh pid interval(seconds)"
+  exit 1
 fi
 if test $# -eq 2; then
 	interval=$2
@@ -34,19 +34,19 @@ rm -f $file
 echo "                      VSS  RSS"
 while true
 do
-    filesize=$(ls -l /tmp/$pid.mem 2>/dev/null|cut -d' ' -f5)
+  filesize=$(ls -l /tmp/$pid.mem 2>/dev/null|cut -d' ' -f5)
 	if test ! -z $filesize; then
 		if test $filesize -gt 1048576; then
-       		mv /tmp/$file /tmp/$file.old
+      mv /tmp/$file /tmp/$file.old
 		fi
-    fi
+  fi
+
 	virt=0
 	res=0
-    eval $(cat /proc/$pid/statm 2>/dev/null| awk '{ printf("virt=%d\nres=%d", $1*4096/1024/1024,$2*4096/1024/1024); }')
+  eval $(cat /proc/$pid/statm 2>/dev/null| awk '{ printf("virt=%d\nres=%d", $1*4096/1024/1024,$2*4096/1024/1024); }')
 	if test $virt -eq 0 -a $res -eq 0; then
 		break
 	fi
     echo "[`date '+%Y-%m-%d %H:%M:%S'`] ${virt}m ${res}m" | tee -a /tmp/$file
     sleep $interval
 done
-
