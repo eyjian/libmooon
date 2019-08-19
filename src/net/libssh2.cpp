@@ -426,23 +426,36 @@ void CLibssh2::validate_authorization(const std::string& password)
             userauth |= 0x04;
         }
 
-        if (userauth & 0x01)
+        errcode = -1;
+        if (userauth & 0x01) // password
         {
             errcode = libssh2_userauth_password(session, _username.c_str(), password.c_str());
         }
-        else if (userauth & 0x02)
+        if (0 == errcode)
+        {
+            break;
+        }
+        if ((userauth & 0x02) && (errcode != LIBSSH2_ERROR_EAGAIN)) // keyboard
         {
             errcode = libssh2_userauth_keyboard_interactive(session, _username.c_str(), &kbd_callback);
         }
-        else
+        if (0 == errcode)
+        {
+            break;
+        }
+        if ((userauth & 0x04) && (errcode != LIBSSH2_ERROR_EAGAIN)) // publickey
         {
             errcode = libssh2_userauth_publickey_fromfile(session, _username.c_str(),
                 "~/.ssh/id_rsa.pub", "~/.ssh/id_rsa", password.c_str());
         }
-
         if (0 == errcode)
         {
             break;
+        }
+
+        if (-1 == errcode)
+        {
+            THROW_EXCEPTION("no supported methods, please configure sshd with password or keyboard interactive", -1);
         }
         else if (errcode != LIBSSH2_ERROR_EAGAIN)
         {
@@ -452,7 +465,7 @@ void CLibssh2::validate_authorization(const std::string& password)
         {
             if (!timedwait_socket())
             {
-                THROW_SYSCALL_EXCEPTION("validate_authorization timeout", ETIMEDOUT, "poll");
+                THROW_SYSCALL_EXCEPTION("validate authorization timeout", ETIMEDOUT, "poll");
             }
         }
     }
