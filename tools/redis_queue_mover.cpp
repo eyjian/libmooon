@@ -38,7 +38,7 @@
 
 // 队列数
 // 源队列和目标队列数均由此参数决定，也即源队列和目标队列的个数是相等的
-INTEGER_ARG_DEFINE(int, queues, 1, 1, 2019, "the number of queues, e.g. --queues=1");
+INTEGER_ARG_DEFINE(int, queues, 1, 1, 2019, "Number of queues, e.g. --queues=1");
 
 // 线程数系数，
 // 注意并不是线程数，线程数为：threads * queues，
@@ -46,35 +46,41 @@ INTEGER_ARG_DEFINE(int, queues, 1, 1, 2019, "the number of queues, e.g. --queues
 INTEGER_ARG_DEFINE(int, threads, 1, 1, 20, "(threads * queues) to get number of move threads, e.g., --threads=1");
 
 // 源redis
-STRING_ARG_DEFINE(src_redis, "", "the nodes of source redis, e.g., --src_redis=127.0.0.1:6379,127.0.0.1:6380");
+STRING_ARG_DEFINE(src_redis, "", "Nodes of source redis, e.g., --src_redis=127.0.0.1:6379,127.0.0.1:6380");
 
 // 目标redis
 // 当源和目标相同时，应当指定不同的prefix，虽然也可以都相同，但那样无实际意义了
-STRING_ARG_DEFINE(dst_redis, "", "the nodes of destination redis, e.g., --dst_redis=127.0.0.1:6381,127.0.0.1:6382");
+STRING_ARG_DEFINE(dst_redis, "", "Nodes of destination redis, e.g., --dst_redis=127.0.0.1:6381,127.0.0.1:6382");
 
 // 源队列Key前缀
-STRING_ARG_DEFINE(src_prefix, "", "the key prefix of source queue, e.g., --src_prefix='mooon:'");
+STRING_ARG_DEFINE(src_prefix, "", "Key prefix of source queue, e.g., --src_prefix='mooon:'");
 
 // 目标队列Key前缀
-STRING_ARG_DEFINE(dst_prefix, "", "the key prefix of destination queue, e.g., --src_prefix='mooon:'");
+STRING_ARG_DEFINE(dst_prefix, "", "Key prefix of destination queue, e.g., --src_prefix='mooon:'");
 
 // 源队列Key是否仅由前缀组成，即src_prefix是key，或只是key的前缀
-INTEGER_ARG_DEFINE(int, src_only_prefix, 0, 0, 1, "the prefix is the key of source");
+INTEGER_ARG_DEFINE(int, src_only_prefix, 0, 0, 1, "Prefix is the key of source");
 
 // 目标队列Key是否仅由前缀组成，即dst_prefix是key，或只是key的前缀
-INTEGER_ARG_DEFINE(int, dst_only_prefix, 0, 0, 1, "the prefix is the key of destination");
+INTEGER_ARG_DEFINE(int, dst_only_prefix, 0, 0, 1, "Prefix is the key of destination");
 
 // 多少个时输出一次计数
-INTEGER_ARG_DEFINE(int, tick, 10000, 1, 10000000, "the times to tick");
+INTEGER_ARG_DEFINE(int, tick, 10000, 1, 10000000, "Times to tick");
 
 // 统计频率（单位：秒）
-INTEGER_ARG_DEFINE(int, stat_interval, 2, 1, 86400, "the interval to stat in seconds");
+INTEGER_ARG_DEFINE(int, stat_interval, 2, 1, 86400, "Interval to stat in seconds");
 
 // 轮询队列和重试操作的间隔（单位为毫秒）
-INTEGER_ARG_DEFINE(int, retry_interval, 100, 1, 1000000, "the interval in milliseconds to poll or retry");
+INTEGER_ARG_DEFINE(int, retry_interval, 100, 1, 1000000, "Interval in milliseconds to poll or retry");
 
 // 批量数，即一次批量移动多少
-INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "batch to move");
+INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move");
+
+// label
+// 可选的，
+// 用来区分不同的 redis_queue_mover 进程，
+// 以方便监控识别
+STRING_ARG_DEFINE(label, "", "Used to distinguish between different processes, e.g., --label='test'");
 
 static mooon::sys::CAtomic<bool> g_stop(false);
 #if __WORDSIZE==64
@@ -96,31 +102,31 @@ int main(int argc, char* argv[])
 
     if (!mooon::utils::parse_arguments(argc, argv, &errmsg))
     {
-        fprintf(stderr, "%s\n\n", errmsg.c_str());
+        fprintf(stderr, "%s.\n\n", errmsg.c_str());
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
     else if (mooon::argument::src_redis->value().empty())
     {
-        fprintf(stderr, "parameter[--src_redis] not set\n\n");
+        fprintf(stderr, "Parameter[--src_redis] is not set.\n\n");
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
     else if (mooon::argument::dst_redis->value().empty())
     {
-        fprintf(stderr, "parameter[--dst_redis] not set\n\n");
+        fprintf(stderr, "Parameter[--dst_redis] is not set.\n\n");
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
     else if (mooon::argument::src_prefix->value().empty())
     {
-        fprintf(stderr, "parameter[--src_prefix] not set\n\n");
+        fprintf(stderr, "Parameter[--src_prefix] is not set.\n\n");
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
     else if (mooon::argument::dst_prefix->value().empty())
     {
-        fprintf(stderr, "parameter[--dst_prefix] not set\n\n");
+        fprintf(stderr, "Parameter[--dst_prefix] is not set.\n\n");
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
@@ -134,16 +140,16 @@ int main(int argc, char* argv[])
 #endif
 
         mooon::sys::g_logger = mooon::sys::create_safe_logger();
-        MYLOG_INFO("source redis: %s\n", mooon::argument::src_redis->c_value());
-        MYLOG_INFO("destination redis: %s\n", mooon::argument::dst_redis->c_value());
-        MYLOG_INFO("source key prefix: %s\n", mooon::argument::src_prefix->c_value());
-        MYLOG_INFO("destination key prefix: %s\n", mooon::argument::dst_prefix->c_value());
-        MYLOG_INFO("number of queues: %d\n", mooon::argument::queues->value());
-        MYLOG_INFO("factor of threads: %d\n", mooon::argument::threads->value());
-        MYLOG_INFO("number of threads: %d\n", mooon::argument::threads->value() * mooon::argument::queues->value());
-        MYLOG_INFO("number of batch to move: %d\n", mooon::argument::batch->value());
-        MYLOG_INFO("only prefix of source: %d\n", mooon::argument::src_only_prefix->value());
-        MYLOG_INFO("only prefix of destination: %d\n", mooon::argument::dst_only_prefix->value());
+        MYLOG_INFO("Source redis: %s.\n", mooon::argument::src_redis->c_value());
+        MYLOG_INFO("Destination redis: %s.\n", mooon::argument::dst_redis->c_value());
+        MYLOG_INFO("Source key prefix: %s.\n", mooon::argument::src_prefix->c_value());
+        MYLOG_INFO("Destination key prefix: %s.\n", mooon::argument::dst_prefix->c_value());
+        MYLOG_INFO("Number of queues: %d.\n", mooon::argument::queues->value());
+        MYLOG_INFO("Factor of threads: %d.\n", mooon::argument::threads->value());
+        MYLOG_INFO("Number of threads: %d.\n", mooon::argument::threads->value() * mooon::argument::queues->value());
+        MYLOG_INFO("Number of batch to move: %d.\n", mooon::argument::batch->value());
+        MYLOG_INFO("Only prefix of source: %d.\n", mooon::argument::src_only_prefix->value());
+        MYLOG_INFO("Only prefix of destination: %d.\n", mooon::argument::dst_only_prefix->value());
 
         mooon::sys::CThreadEngine* signal_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&signal_thread_proc));
         mooon::sys::CThreadEngine* stat_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&stat_thread_proc));
@@ -166,12 +172,12 @@ int main(int argc, char* argv[])
         delete stat_thread;
         signal_thread->join();
         delete signal_thread;
-        MYLOG_INFO("mover exit\n");
+        MYLOG_INFO("RedisQueueMover process exit now.\n");
         return 0;
     }
     catch (mooon::sys::CSyscallException& ex)
     {
-        MYLOG_ERROR("%s\n", ex.str().c_str());
+        MYLOG_ERROR("%s.\n", ex.str().c_str());
         exit(1);
     }
 }
@@ -220,7 +226,7 @@ void stat_thread_proc()
     }
     catch (mooon::sys::CSyscallException& ex)
     {
-        MYLOG_ERROR("create stat logger failed: %s\n", ex.str().c_str());
+        MYLOG_ERROR("Created stat-logger failed: %s.\n", ex.str().c_str());
     }
 }
 
@@ -237,7 +243,7 @@ void move_thread_proc(int i)
     uint32_t num_moved = 0; // 已移动的数目
     uint32_t old_num_moved = 0; // 上一次移动的数目
 
-    MYLOG_INFO("[%s] => [%s]\n", src_key.c_str(), dst_key.c_str());
+    MYLOG_INFO("[%s] => [%s].\n", src_key.c_str(), dst_key.c_str());
     while (!g_stop)
     {
         values.clear();
@@ -255,12 +261,12 @@ void move_thread_proc(int i)
                 else
                 {
                     values.push_back(value);
-                    MYLOG_DEBUG("[%d] %s\n", k, value.c_str());
+                    MYLOG_DEBUG("[%d] %s.\n", k, value.c_str());
                 }
             }
             catch (r3c::CRedisException& ex)
             {
-                MYLOG_ERROR("[%s]: %s\n", src_key.c_str(), ex.str().c_str());
+                MYLOG_ERROR("[%s]: %s.\n", src_key.c_str(), ex.str().c_str());
             }
         }
         if (values.empty())
@@ -286,19 +292,19 @@ void move_thread_proc(int i)
                 if (num_moved - old_num_moved >= static_cast<uint32_t>(mooon::argument::tick->value()))
                 {
                     old_num_moved = num_moved;
-                    MYLOG_INFO("[%s]=>[%s]: %u\n", src_key.c_str(), dst_key.c_str(), num_moved);
+                    MYLOG_INFO("[%s]=>[%s]: %u.\n", src_key.c_str(), dst_key.c_str(), num_moved);
                 }
                 break;
             }
             catch (r3c::CRedisException& ex)
             {
-                MYLOG_ERROR("[%s]=>[%s]: %s\n", src_key.c_str(), dst_key.c_str(), ex.str().c_str());
+                MYLOG_ERROR("[%s]=>[%s]: %s.\n", src_key.c_str(), dst_key.c_str(), ex.str().c_str());
                 mooon::sys::CUtils::millisleep(retry_interval);
             }
         }
     }
 
-    MYLOG_INFO("move thread %d exit\n", i);
+    MYLOG_INFO("RedisQueueMover thread %d exit now.\n", i);
 }
 
 std::string get_src_key(int i)
