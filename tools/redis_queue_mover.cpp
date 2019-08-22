@@ -139,7 +139,10 @@ int main(int argc, char* argv[])
         atomic_set(&g_num_moved, 0);
 #endif
 
-        mooon::sys::g_logger = mooon::sys::create_safe_logger();
+        if (mooon::argument::label->value().empty())
+            mooon::sys::g_logger = mooon::sys::create_safe_logger();
+        else
+            mooon::sys::g_logger = mooon::sys::create_safe_logger(true, mooon::SIZE_8K, mooon::argument::label->value());
         MYLOG_INFO("Source redis: %s.\n", mooon::argument::src_redis->c_value());
         MYLOG_INFO("Destination redis: %s.\n", mooon::argument::dst_redis->c_value());
         MYLOG_INFO("Source key prefix: %s.\n", mooon::argument::src_prefix->c_value());
@@ -202,7 +205,12 @@ void stat_thread_proc()
         const int seconds = mooon::argument::stat_interval->value();
         uint64_t old_num_moved = 0;
         uint64_t last_num_moved = 0;
-        mooon::sys::ILogger* stat_logger = mooon::sys::create_safe_logger(true, mooon::SIZE_32, "stat");
+        mooon::sys::ILogger* stat_logger;
+        if (mooon::argument::label->value().empty())
+            stat_logger = mooon::sys::create_safe_logger(true, mooon::SIZE_64, "stat");
+        else
+            stat_logger = mooon::sys::create_safe_logger(
+                    true, mooon::SIZE_32, mooon::utils::CStringUtils::format_string("%s_stat", mooon::argument::label->c_value()));
 
         stat_logger->enable_raw_log(true, true);
         while (!g_stop)
