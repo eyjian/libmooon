@@ -261,7 +261,7 @@ fi
 while true; do
     self_count=`ps -C $self_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && ($3==self_full_filepath) && match($0, self_cmdline)) {++num;}} END { printf("%d",num); }' uid=$uid self_full_filepath=$self_full_filepath self_cmdline="$self_cmdline"`
     if test $ONLY_TEST -eq 1; then
-        log "self_count: $self_count\n"
+        log "process_name: $process_name, self_name: $self_name, self_count: $self_count\n"
     fi
     if test ! -z "$self_count"; then
         if test $self_count -gt 2; then
@@ -295,12 +295,12 @@ while true; do
     fi
 
     if test $ONLY_TEST -eq 1; then
-        log "process_count: $process_count\n"
+        log "process_name: $process_name, process_count: $process_count\n"
     fi
     if test ! -z "$process_count"; then
         if test $process_count -lt 1; then
             # 执行重启脚本，要求这个脚本能够将指定的进程拉起来
-            log "restart \"$process_cmdline\"\n"
+            log "[$process_name/$process_count]restart \"$process_cmdline\"\n"
             #sh -c "$restart_script" 2>&1 >> $log_filepath
             msg=`sh -c "$restart_script" 2>&1`
             if test ! -z "${msg}"; then
