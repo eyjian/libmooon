@@ -295,12 +295,12 @@ while true; do
     fi
 
     if test $ONLY_TEST -eq 1; then
-        log "process_name: $process_name, process_count: $process_count\n"
+        log "process_name: $process_name, process_count: $process_count, process_match: $process_match\n"
     fi
     if test ! -z "$process_count"; then
         if test $process_count -lt 1; then
             # 执行重启脚本，要求这个脚本能够将指定的进程拉起来
-            log "[$process_name/$process_count]restart \"$process_cmdline\"\n"
+            log "[$process_name/$process_count][process_match:$process_match]restart \"$process_cmdline\"\n"
             #sh -c "$restart_script" 2>&1 >> $log_filepath
             msg=`sh -c "$restart_script" 2>&1`
             if test ! -z "${msg}"; then
