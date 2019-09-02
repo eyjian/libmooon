@@ -191,7 +191,7 @@ public:
 //////////////////////////////////////////////////////////////////////////
 // 日志宏，方便记录日志
 extern ILogger* g_logger; // 只是声明，不是定义，不能赋值哦！
-extern bool g_null_print_screen; // 当g_logger为空时是否打屏，默认为true
+extern bool g_null_print_screen; // 当g_logger为空时是否打屏，默认为false
 
 #define __MYLOG_DETAIL(logger, module_name, format, ...) \
 do { \
