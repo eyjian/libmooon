@@ -16,8 +16,10 @@ loginterval=10
 topfile=/tmp/mem.top
 # 备份日志文件
 topfileback=$topfile.bak
-# 日志文件大小（默认2M）
-topfilesize=2097152
+# 日志文件大小（默认10M）
+# 因为/tmp目录所在分区可能不大，
+# 所以日志文件大小不能过大
+topfilesize=10485760
 # 记录top多少个
 topN=10
 
