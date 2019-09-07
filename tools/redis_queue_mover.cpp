@@ -25,6 +25,7 @@
 #include <mooon/sys/thread_engine.h>
 #include <mooon/sys/utils.h>
 #include <mooon/utils/args_parser.h>
+#include <mooon/utils/scoped_ptr.h>
 #include <mooon/utils/string_utils.h>
 
 // 如何确定一个redis的key？
@@ -50,7 +51,13 @@ STRING_ARG_DEFINE(src_redis, "", "Nodes of source redis, e.g., --src_redis=127.0
 
 // 目标redis
 // 当源和目标相同时，应当指定不同的prefix，虽然也可以都相同，但那样无实际意义了
+// 如果不指定目标 redis，则落本地文件。
 STRING_ARG_DEFINE(dst_redis, "", "Nodes of destination redis, e.g., --dst_redis=127.0.0.1:6381,127.0.0.1:6382");
+
+// 目标file
+// dst_redis和dst_file不能同时为空，
+// 且dst_redis优先，即如果设置了dst_redis，就会忽略dst_file。
+STRING_ARG_DEFINE(dst_file, "", "File to store, e.g., --dst_file=/home/mooon/mooon.data");
 
 // 源队列Key前缀
 STRING_ARG_DEFINE(src_prefix, "", "Key prefix of source queue, e.g., --src_prefix='mooon:'");
@@ -63,6 +70,18 @@ INTEGER_ARG_DEFINE(int, src_only_prefix, 0, 0, 1, "Prefix is the key of source")
 
 // 目标队列Key是否仅由前缀组成，即dst_prefix是key，或只是key的前缀
 INTEGER_ARG_DEFINE(int, dst_only_prefix, 0, 0, 1, "Prefix is the key of destination");
+
+// 源 redis 读写超时时长（单位：毫秒）
+INTEGER_ARG_DEFINE(int, src_timeout, 10000, 1, 3600, "Source redis timeout in seconds");
+
+// 目标 redis 读写超时时长（单位：毫秒）
+INTEGER_ARG_DEFINE(int, dst_timeout, 10000, 1, 3600, "Destination redis timeout in seconds");
+
+// 源 redis 连接密码
+STRING_ARG_DEFINE(src_password, "", "Password for source redis");
+
+// 目标 redis 连接密码
+STRING_ARG_DEFINE(dst_password, "", "Password for destination redis");
 
 // 多少个时输出一次计数
 INTEGER_ARG_DEFINE(int, tick, 10000, 1, 10000000, "Times to tick");
@@ -112,9 +131,10 @@ int main(int argc, char* argv[])
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
-    else if (mooon::argument::dst_redis->value().empty())
+    else if (mooon::argument::dst_redis->value().empty() &&
+             mooon::argument::dst_file->value().empty())
     {
-        fprintf(stderr, "Parameter[--dst_redis] is not set.\n\n");
+        fprintf(stderr, "Both parameter[--dst_redis] and parameter[--dst_file] are not set.\n\n");
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
@@ -124,7 +144,8 @@ int main(int argc, char* argv[])
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
-    else if (mooon::argument::dst_prefix->value().empty())
+    else if (!mooon::argument::dst_redis->value().empty() &&
+              mooon::argument::dst_prefix->value().empty())
     {
         fprintf(stderr, "Parameter[--dst_prefix] is not set.\n\n");
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
@@ -177,6 +198,11 @@ int main(int argc, char* argv[])
         delete signal_thread;
         MYLOG_INFO("RedisQueueMover process exit now.\n");
         return 0;
+    }
+    catch (r3c::CRedisException& ex)
+    {
+        MYLOG_ERROR("%s.\n", ex.str().c_str());
+        exit(1);
     }
     catch (mooon::sys::CSyscallException& ex)
     {
@@ -245,13 +271,43 @@ void move_thread_proc(int i)
     const int retry_interval = mooon::argument::retry_interval->value();
     const std::string& src_key = get_src_key(i % num_queues); // 源key
     const std::string& dst_key = get_dst_key(i % num_queues); // 目标key
-    r3c::CRedisClient src_redis(mooon::argument::src_redis->value());
-    r3c::CRedisClient dst_redis(mooon::argument::dst_redis->value());
-    std::vector<std::string> values;
+    r3c::CRedisClient src_redis(
+            mooon::argument::src_redis->value(),
+            mooon::argument::src_timeout->value(), mooon::argument::src_timeout->value(),
+            mooon::argument::src_password->value());
+    mooon::utils::ScopedPtr<r3c::CRedisClient> dst_redis;
+    int dst_fd = -1;
     uint32_t num_moved = 0; // 已移动的数目
     uint32_t old_num_moved = 0; // 上一次移动的数目
+    std::vector<std::string> values;
 
-    MYLOG_INFO("[%s] => [%s].\n", src_key.c_str(), dst_key.c_str());
+    try
+    {
+        if (!mooon::argument::dst_redis->value().empty()) {
+            dst_redis.reset(new r3c::CRedisClient (
+                    mooon::argument::dst_redis->value(),
+                    mooon::argument::dst_timeout->value(), mooon::argument::dst_timeout->value(),
+                    mooon::argument::dst_password->value()));
+        }
+        else {
+            dst_fd = open(mooon::argument::dst_file->c_value(), O_RDONLY);
+            if (dst_fd == -1)
+                THROW_SYSCALL_EXCEPTION(strerror(errno), errno, "open");
+        }
+        MYLOG_INFO("[%s] => [%s].\n", src_key.c_str(), dst_key.c_str());
+    }
+    catch (mooon::sys::CSyscallException& ex)
+    {
+        MYLOG_ERROR("%s.\n", ex.str().c_str());
+        return;
+    }
+    catch (r3c::CRedisException& ex)
+    {
+        MYLOG_ERROR("%s.\n", ex.str().c_str());
+        if (dst_fd != -1)
+            close(dst_fd);
+        return;
+    }
     while (!g_stop)
     {
         values.clear();
@@ -268,7 +324,17 @@ void move_thread_proc(int i)
                 }
                 else
                 {
-                    values.push_back(value);
+                    if (!mooon::argument::dst_redis->value().empty()) {
+                        values.push_back(value);
+                    }
+                    else {
+                        value.append("\n");
+                        if (write(dst_fd, value.data(), value.size()) == -1) {
+                            MYLOG_ERROR("Writed file://%s error://%s: %s.\n", mooon::argument::dst_file->c_value(), strerror(errno), value.c_str());
+                            g_stop = false;
+                            break;
+                        }
+                    }
                     MYLOG_DEBUG("[%d] %s.\n", k, value.c_str());
                 }
             }
@@ -276,7 +342,7 @@ void move_thread_proc(int i)
             {
                 MYLOG_ERROR("[%s]: %s.\n", src_key.c_str(), ex.str().c_str());
             }
-        }
+        } // for
         if (values.empty())
         {
             mooon::sys::CUtils::millisleep(retry_interval);
@@ -287,7 +353,8 @@ void move_thread_proc(int i)
         {
             try
             {
-                dst_redis.lpush(dst_key, values);
+                if (dst_redis != NULL)
+                    dst_redis->lpush(dst_key, values);
 
                 const uint32_t num_moved_ = static_cast<uint32_t>(values.size());
 #if __WORDSIZE==64
@@ -309,9 +376,10 @@ void move_thread_proc(int i)
                 MYLOG_ERROR("[%s]=>[%s]: %s.\n", src_key.c_str(), dst_key.c_str(), ex.str().c_str());
                 mooon::sys::CUtils::millisleep(retry_interval);
             }
-        }
-    }
+        } // while (!values.empty())
+    } // while (!g_stop)
 
+    close(dst_fd);
     MYLOG_INFO("RedisQueueMover thread %d exit now.\n", i);
 }
 
