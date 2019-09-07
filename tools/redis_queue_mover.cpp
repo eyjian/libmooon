@@ -44,6 +44,9 @@ INTEGER_ARG_DEFINE(int, queues, 1, 1, 2019, "Number of queues, e.g. --queues=1")
 // 线程数系数，
 // 注意并不是线程数，线程数为：threads * queues，
 // 假设queues参数值为2，threads参数值为3，则线程数为6
+//
+// 如果源为文件，则会强制threads值总是为1，
+// 即固定线程数和队列数相同，目的是一个线程操作一个文件，一个文件只被一个线程操作
 INTEGER_ARG_DEFINE(int, threads, 1, 1, 20, "(threads * queues) to get number of move threads, e.g., --threads=1");
 
 // 源redis
@@ -52,7 +55,16 @@ STRING_ARG_DEFINE(src_redis, "", "Nodes of source redis, e.g., --src_redis=127.0
 // 目标redis
 // 当源和目标相同时，应当指定不同的prefix，虽然也可以都相同，但那样无实际意义了
 // 如果不指定目标 redis，则落本地文件。
+//
+// 实际文件名需带格式为“.N”的数字后缀，如：a.log.1、a.log.2等，数字后缀的最大值等于线程数减一。
 STRING_ARG_DEFINE(dst_redis, "", "Nodes of destination redis, e.g., --dst_redis=127.0.0.1:6381,127.0.0.1:6382");
+
+// 源file（需为文本文件，每行以“\n”结尾，并且包含结尾符一行不能超过4K）
+// src_redis和src_file不能同时为空，
+// 且src_redis优先，即如果设置了src_redis，就会忽略src_file。
+//
+// 实际文件名需带格式为“.N”的数字后缀，如：a.log.1、a.log.2等，数字后缀的最大值等于线程数减一。
+STRING_ARG_DEFINE(src_file, "", "File to move, e.g., --src_file=/home/mooon/mooon.data");
 
 // 目标file
 // dst_redis和dst_file不能同时为空，
@@ -111,9 +123,9 @@ static atomic_t g_num_moved;
 static void on_terminated();
 static void signal_thread_proc(); // 信号线程
 static void stat_thread_proc(); // 统计线程
-static void move_thread_proc(int i); // 移动线程
-static std::string get_src_key(int i);
-static std::string get_dst_key(int i);
+static void move_thread_proc(int thread_index); // 移动线程
+static std::string get_src_key(int queue_index);
+static std::string get_dst_key(int queue_index);
 
 int main(int argc, char* argv[])
 {
@@ -125,9 +137,10 @@ int main(int argc, char* argv[])
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
-    else if (mooon::argument::src_redis->value().empty())
+    else if (mooon::argument::src_redis->value().empty() &&
+             mooon::argument::src_file->value().empty())
     {
-        fprintf(stderr, "Parameter[--src_redis] is not set.\n\n");
+        fprintf(stderr, "Both parameter[--src_redis] and parameter[--src_file] are not set.\n\n");
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
@@ -138,7 +151,8 @@ int main(int argc, char* argv[])
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
-    else if (mooon::argument::src_prefix->value().empty())
+    else if (!mooon::argument::dst_file->value().empty() &&
+              mooon::argument::src_prefix->value().empty())
     {
         fprintf(stderr, "Parameter[--src_prefix] is not set.\n\n");
         fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
@@ -168,6 +182,8 @@ int main(int argc, char* argv[])
         MYLOG_INFO("Destination redis: %s.\n", mooon::argument::dst_redis->c_value());
         MYLOG_INFO("Source key prefix: %s.\n", mooon::argument::src_prefix->c_value());
         MYLOG_INFO("Destination key prefix: %s.\n", mooon::argument::dst_prefix->c_value());
+        MYLOG_INFO("Source file: %s.\n", mooon::argument::src_file->c_value());
+        MYLOG_INFO("Destination file: %s.\n", mooon::argument::dst_file->c_value());
         MYLOG_INFO("Number of queues: %d.\n", mooon::argument::queues->value());
         MYLOG_INFO("Factor of threads: %d.\n", mooon::argument::threads->value());
         MYLOG_INFO("Number of threads: %d.\n", mooon::argument::threads->value() * mooon::argument::queues->value());
@@ -177,9 +193,10 @@ int main(int argc, char* argv[])
 
         mooon::sys::CThreadEngine* signal_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&signal_thread_proc));
         mooon::sys::CThreadEngine* stat_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&stat_thread_proc));
-
         const int num_queues = mooon::argument::queues->value();
-        const int num_threads = num_queues * mooon::argument::threads->value();
+        int num_threads = num_queues * mooon::argument::threads->value();
+        if (mooon::argument::src_redis->value().empty())
+            num_threads = num_queues; // 如果源为文件，则会强制threads值总是为1，即固定线程数和队列数相同
         mooon::sys::CThreadEngine** thread_engines = new mooon::sys::CThreadEngine*[num_threads];
         for (int i=0; i<num_threads; ++i)
         {
@@ -264,18 +281,17 @@ void stat_thread_proc()
     }
 }
 
-void move_thread_proc(int i)
+// thread_index 线程序号，从0开始递增的值，最大值为线程数减一
+void move_thread_proc(int thread_index)
 {
     const int batch = mooon::argument::batch->value();
     const int num_queues = mooon::argument::queues->value();
     const int retry_interval = mooon::argument::retry_interval->value();
-    const std::string& src_key = get_src_key(i % num_queues); // 源key
-    const std::string& dst_key = get_dst_key(i % num_queues); // 目标key
-    r3c::CRedisClient src_redis(
-            mooon::argument::src_redis->value(),
-            mooon::argument::src_timeout->value(), mooon::argument::src_timeout->value(),
-            mooon::argument::src_password->value());
+    const std::string& src_key = get_src_key(thread_index % num_queues); // 源key
+    const std::string& dst_key = get_dst_key(thread_index % num_queues); // 目标key
+    mooon::utils::ScopedPtr<r3c::CRedisClient> src_redis;
     mooon::utils::ScopedPtr<r3c::CRedisClient> dst_redis;
+    FILE* src_fp = NULL;
     int dst_fd = -1;
     uint32_t num_moved = 0; // 已移动的数目
     uint32_t old_num_moved = 0; // 上一次移动的数目
@@ -283,6 +299,20 @@ void move_thread_proc(int i)
 
     try
     {
+        // source
+        if (!mooon::argument::src_redis->value().empty()) {
+            src_redis.reset(new r3c::CRedisClient (
+                    mooon::argument::src_redis->value(),
+                    mooon::argument::src_timeout->value(), mooon::argument::src_timeout->value(),
+                    mooon::argument::src_password->value()));
+        }
+        else {
+            const std::string src_file = mooon::utils::CStringUtils::format_string("%s.%d", mooon::argument::src_file->c_value(), thread_index);
+            src_fp = fopen(src_file.c_str(), "r");
+            if (src_fp == NULL)
+                THROW_SYSCALL_EXCEPTION(strerror(errno), errno, "open");
+        }
+        // destination
         if (!mooon::argument::dst_redis->value().empty()) {
             dst_redis.reset(new r3c::CRedisClient (
                     mooon::argument::dst_redis->value(),
@@ -290,7 +320,8 @@ void move_thread_proc(int i)
                     mooon::argument::dst_password->value()));
         }
         else {
-            dst_fd = open(mooon::argument::dst_file->c_value(), O_RDONLY);
+            const std::string dst_file = mooon::utils::CStringUtils::format_string("%s.%d", mooon::argument::dst_file->c_value(), thread_index);
+            dst_fd = open(dst_file.c_str(), O_RDONLY, FILE_DEFAULT_PERM);
             if (dst_fd == -1)
                 THROW_SYSCALL_EXCEPTION(strerror(errno), errno, "open");
         }
@@ -304,6 +335,8 @@ void move_thread_proc(int i)
     catch (r3c::CRedisException& ex)
     {
         MYLOG_ERROR("%s.\n", ex.str().c_str());
+        if (src_fp != NULL)
+            fclose(src_fp);
         if (dst_fd != -1)
             close(dst_fd);
         return;
@@ -318,25 +351,35 @@ void move_thread_proc(int i)
             {
                 std::string value;
 
-                if (!src_redis.rpop(src_key, &value))
-                {
-                    break;
+                errno = 0;
+                if (!mooon::argument::src_redis->value().empty()) {
+                    if (!src_redis->rpop(src_key, &value))
+                        break;
                 }
                 else
                 {
-                    if (!mooon::argument::dst_redis->value().empty()) {
-                        values.push_back(value);
+                    char line[mooon::SIZE_4K];
+                    if (fgets(line, sizeof(line)-1, src_fp)) {
+                        g_stop = true;
+                        if (errno != 0)
+                            MYLOG_ERROR("Reading file://%s error://%s.\n", mooon::argument::src_file->c_value(), strerror(errno));
+                        break;
                     }
-                    else {
-                        value.append("\n");
-                        if (write(dst_fd, value.data(), value.size()) == -1) {
-                            MYLOG_ERROR("Writed file://%s error://%s: %s.\n", mooon::argument::dst_file->c_value(), strerror(errno), value.c_str());
-                            g_stop = false;
-                            break;
-                        }
-                    }
-                    MYLOG_DEBUG("[%d] %s.\n", k, value.c_str());
+                    value = line;
                 }
+                if (!mooon::argument::dst_redis->value().empty()) {
+                    values.push_back(value);
+                }
+                else {
+                    if (value[value.size()-1] != '\n')
+                        value.append("\n");
+                    if (write(dst_fd, value.data(), value.size()) == -1) {
+                        MYLOG_ERROR("Writing file://%s error://%s: %s.\n", mooon::argument::dst_file->c_value(), strerror(errno), value.c_str());
+                        g_stop = true;
+                        break;
+                    }
+                }
+                MYLOG_DEBUG("[%d] %s.\n", k, value.c_str());
             }
             catch (r3c::CRedisException& ex)
             {
@@ -379,22 +422,27 @@ void move_thread_proc(int i)
         } // while (!values.empty())
     } // while (!g_stop)
 
-    close(dst_fd);
-    MYLOG_INFO("RedisQueueMover thread %d exit now.\n", i);
+    if (src_fp != NULL)
+        fclose(src_fp);
+    if (dst_fd != -1)
+        close(dst_fd);
+    MYLOG_INFO("RedisQueueMover thread(%d) exits now.\n", thread_index);
 }
 
-std::string get_src_key(int i)
+// queue_index 队列序号，从0开始的递增值，最大值为队列数减一
+std::string get_src_key(int queue_index)
 {
     if (1 == mooon::argument::src_only_prefix->value())
         return mooon::argument::src_prefix->value();
     else
-        return mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::src_prefix->c_value(), (int)i);
+        return mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::src_prefix->c_value(), (int)queue_index);
 }
 
-std::string get_dst_key(int i)
+// queue_index 队列序号，从0开始的递增值，最大值为队列数减一
+std::string get_dst_key(int queue_index)
 {
     if (1 == mooon::argument::dst_only_prefix->value())
         return mooon::argument::dst_prefix->value();
     else
-        return mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::dst_prefix->c_value(), (int)i);
+        return mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::dst_prefix->c_value(), (int)queue_index);
 }
