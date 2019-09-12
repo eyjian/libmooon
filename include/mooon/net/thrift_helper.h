@@ -278,13 +278,17 @@ private:
             uint8_t num_io_threads);
 
 private:
+    // Virtual interface class that can handle events from the server core.
     boost::shared_ptr<apache::thrift::server::TServerEventHandler> _server_event_handler;
     boost::shared_ptr<ThriftHandler> _handler;
     boost::shared_ptr<apache::thrift::TProcessor> _processor;
+    // Constructs input and output protocol objects given transports.
     boost::shared_ptr<apache::thrift::protocol::TProtocolFactory> _protocol_factory;
+    // This class manages a pool of threads.
     boost::shared_ptr<apache::thrift::server::ThreadManager> _thread_manager;
+    // A thread factory to create posix threads
     boost::shared_ptr<apache::thrift::concurrency::PosixThreadFactory> _thread_factory;
-    boost::shared_ptr<apache::thrift::server::TServer> _server;
+    boost::shared_ptr<apache::thrift::server::TServer> _server; // Thrift server.
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -461,7 +465,16 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
     // 这里也可直接调用serve()，但推荐run()
     // !!!注意调用run()的进程或线程会被阻塞
     _server->run();
-    _thread_manager->join();
+    // 从 thrift-0.9.3 开始已去掉 join
+    // join is the same as stop, except that it will
+    // block until all the workers have finished their work.
+    //_thread_manager->join();
+    // Stops the thread manager.
+    // Aborts all remaining unprocessed task,
+    // shuts down all created worker threads, and realeases all allocated resources.
+    // This method blocks for all worker threads to complete,
+    // thus it can potentially block forever if a worker thread is running a task that won't terminate.
+    _thread_manager->stop();
 }
 
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
@@ -481,7 +494,8 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
     // 这里也可直接调用serve()，但推荐run()
     // !!!注意调用run()的进程或线程会被阻塞
     _server->run();
-    _thread_manager->join();
+    _thread_manager->stop();
+    //_thread_manager->join();
 }
 
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
@@ -544,6 +558,9 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init
     _thread_factory.reset(new apache::thrift::concurrency::PosixThreadFactory());
 
     _thread_manager->threadFactory(_thread_factory);
+    // Starts the thread manager.
+    // Verifies all attributes have been properly initialized,
+    // then allocates necessary resources to begin operation.
     _thread_manager->start();
 
     apache::thrift::server::TNonblockingServer* server = new apache::thrift::server::TNonblockingServer(
