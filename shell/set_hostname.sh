@@ -19,6 +19,10 @@
 # 1）利用mooon_upload，批量将本脚本文件发布到所有目标机器（需要修改hostname的机器）上
 # 2）利用mooon_upload，批量将映射关系配置文件发布到所有目标机器上
 # 3）利用mooon_ssh，批量执行本脚本完成主机名设置
+#
+# 执行示例：
+# mooon_ssh -c='/tmp/set_hostname.sh /tmp/hosts.name'
+# 注意文件set_hostname.sh和hosts.name需事先发布到所有目标机器上。
 
 # 本机IP所在网卡
 ethX=eth0
