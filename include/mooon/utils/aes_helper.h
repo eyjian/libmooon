@@ -49,8 +49,8 @@ public:
     CAESHelper(const std::string& key);
     ~CAESHelper();
 
-    void encrypt(const std::string& in, std::string* out);
-    void decrypt(const std::string& in, std::string* out);
+    void encrypt(const std::string& in, std::string* out); // 注意out为二进制数据
+    void decrypt(const std::string& in, std::string* out); // in对应encrypt的out
 
 private:
     // flag 为true表示加密，为false表示解密
