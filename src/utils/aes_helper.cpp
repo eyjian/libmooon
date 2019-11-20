@@ -137,10 +137,16 @@ void CAESHelper::aes(bool flag, const std::string& in, std::string* out, void* a
     {
         char out_tmp[AES_BLOCK_SIZE];
 
-        if (flag)
+        if (flag) {
+            // 加密
+            //AES_ecb_encrypt((const unsigned char*)(in_p), (unsigned char*)(out_tmp), aes_key_, AES_ENCRYPT);
             AES_encrypt((const unsigned char*)(in_p), (unsigned char*)(out_tmp), aes_key_);
-        else
+        }
+        else {
+            // 解密
+            //AES_ecb_encrypt((const unsigned char*)(in_p), (unsigned char*)(out_tmp), aes_key_, AES_DECRYPT);
             AES_decrypt((const unsigned char*)(in_p), (unsigned char*)(out_tmp), aes_key_);
+        }
 
         in_p += AES_BLOCK_SIZE;
         memcpy(out_p+i, out_tmp, AES_BLOCK_SIZE);

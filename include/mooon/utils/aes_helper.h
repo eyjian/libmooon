@@ -39,7 +39,7 @@ public:
     static const int aes_block_size;
 
 public:
-    // key 密钥
+    // key 密钥，填充模式为zeropadding
     //
     // 因为AES要求key长度只能为128或192或256比特中的一种，即16字节或24字节或32字节中的一种，
     // 当key的长度不足16字节时，CAESHelper自动补0足16字节，
@@ -49,6 +49,7 @@ public:
     CAESHelper(const std::string& key);
     ~CAESHelper();
 
+    // encrypt和decrypt为ECB模式（电子密码本模式）的加解密
     void encrypt(const std::string& in, std::string* out); // 注意out为二进制数据
     void decrypt(const std::string& in, std::string* out); // in对应encrypt的out
 
