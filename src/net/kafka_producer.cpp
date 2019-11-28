@@ -102,6 +102,9 @@ bool CKafkaProducer::init(const std::string& brokers_str, const std::string& top
         _global_conf.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
         _topic_conf.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC));
 
+        // request.required.acks
+        //ret = _global_conf->set("request.required.acks", "1", errmsg_);
+
         // metadata.broker.list
         ret = _global_conf->set("metadata.broker.list", _brokers_str, errmsg_);
         if (ret != RdKafka::Conf::CONF_OK)

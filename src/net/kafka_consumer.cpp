@@ -168,7 +168,7 @@ bool CKafkaConsumer::init(const std::string& brokers, const std::string& topic, 
     return false;
 }
 
-bool CKafkaConsumer::consume(std::string* log, int timeout_ms)
+bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInfo* mi)
 {
     const RdKafka::Message* message = _consumer->consume(timeout_ms);
     const RdKafka::ErrorCode errcode = message->err();
@@ -177,6 +177,11 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms)
     {
         MYLOG_DEBUG("Consume topic://%s OK: %.*s.\n", _topic_str.c_str(), (int)message->len(), (char*)message->payload());
         log->assign(reinterpret_cast<char*>(message->payload()), message->len());
+        if (mi != NULL) {
+            mi->offset = message->offset();
+            mi->timestamp = message->timestamp().timestamp;
+            mi->topicname = message->topic_name();
+        }
         delete message;
         return true;
     }

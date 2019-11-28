@@ -53,7 +53,9 @@ int main(int argc, char* argv[])
     std::string errmsg;
     if (!mooon::utils::parse_arguments(argc, argv, &errmsg))
     {
-        fprintf(stderr, "%s\n", errmsg.c_str());
+        if (!errmsg.empty())
+            fprintf(stderr, "%s\n", errmsg.c_str());
+        fprintf(stderr, "%s\n", mooon::utils::g_help_string.c_str());
         exit(1);
     }
     mooon::sys::g_logger = mooon::sys::create_safe_logger(true);

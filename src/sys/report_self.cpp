@@ -197,8 +197,12 @@ void CReportSelf::run()
 
 bool CReportSelf::init_conf()
 {
+    sys::mmap_t* ptr = NULL;
+
     try
     {
+        _report_servers.clear();
+
         // 如果不指定配置文件，则认为不想启用
         if (_conffile.empty())
         {
@@ -214,7 +218,7 @@ bool CReportSelf::init_conf()
         }
 
         // 正常的配置文件不会很大，4K绰绰有余
-        sys::mmap_t* ptr = sys::CMMap::map_read(_conffile.c_str(), SIZE_4K);
+        ptr = sys::CMMap::map_read(_conffile.c_str(), SIZE_4K);
         do
         {
             const char* str = static_cast<char*>(ptr->addr);
@@ -281,6 +285,8 @@ bool CReportSelf::init_conf()
     catch (sys::CSyscallException& ex)
     {
         MYLOG_ERROR("[%s] init failed: %s\n", REPORT_SELF_MODULE_NAME, ex.str().c_str());
+        if (ptr != NULL)
+            sys::CMMap::unmap(ptr);
         return false;
     }
 }

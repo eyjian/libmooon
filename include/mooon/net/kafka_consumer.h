@@ -11,6 +11,13 @@ class DefEventImpl;
 class DefConsumeImpl;
 class DefRebalanceImpl;
 
+struct MessageInfo
+{
+    int64_t offset;
+    int64_t timestamp;
+    std::string topicname;
+};
+
 // 注：一个CKafkaConsumer实例只能消费一个topic，
 // 被消息的topic由init成员函数指定。
 class CKafkaConsumer
@@ -24,7 +31,7 @@ public:
     CKafkaConsumer(RdKafka::EventCb* event_cb=NULL, RdKafka::ConsumeCb* consume_cb=NULL, RdKafka::RebalanceCb* rebalance_cb=NULL);
     ~CKafkaConsumer();
     bool init(const std::string& brokers, const std::string& topic, const std::string& group, bool enable_rebalance=false);
-    bool consume(std::string* log, int timeout_ms=1000);
+    bool consume(std::string* log, int timeout_ms=1000, struct MessageInfo* mi=NULL);
 
 private:
     std::string _brokers_str;
