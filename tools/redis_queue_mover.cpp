@@ -113,13 +113,15 @@ INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move");
 // 以方便监控识别
 STRING_ARG_DEFINE(label, "", "Used to distinguish between different processes, e.g., --label='test'");
 
-static mooon::sys::CAtomic<bool> g_stop(false);
+static mooon::sys::CAtomic<bool> g_stop_myself(false); // 是否因为自身原因停止，比如因为参数错误
+static mooon::sys::CAtomic<bool> g_stop(false); // 是否停止工作
 #if __WORDSIZE==64
 static atomic8_t g_num_moved;
 #else
 static atomic_t g_num_moved;
 #endif
 
+static void stop_myself_if_need();
 static void on_terminated();
 static void signal_thread_proc(); // 信号线程
 static void stat_thread_proc(); // 统计线程
@@ -191,6 +193,7 @@ int main(int argc, char* argv[])
         MYLOG_INFO("Only prefix of source: %d.\n", mooon::argument::src_only_prefix->value());
         MYLOG_INFO("Only prefix of destination: %d.\n", mooon::argument::dst_only_prefix->value());
 
+        mooon::sys::CSignalHandler::block_signal(SIGTERM);
         mooon::sys::CThreadEngine* signal_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&signal_thread_proc));
         mooon::sys::CThreadEngine* stat_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&stat_thread_proc));
         const int num_queues = mooon::argument::queues->value();
@@ -209,6 +212,7 @@ int main(int argc, char* argv[])
         }
         delete []thread_engines;
 
+        stop_myself_if_need();
         stat_thread->join();
         delete stat_thread;
         signal_thread->join();
@@ -226,6 +230,20 @@ int main(int argc, char* argv[])
         MYLOG_ERROR("%s.\n", ex.str().c_str());
         exit(1);
     }
+}
+
+void stop_myself_if_need()
+{
+   if (g_stop) {
+       g_stop_myself = false;
+   }
+   else {
+       g_stop_myself = true;
+       g_stop = true;
+
+       // 不能使用raise(SIGTERM)，因为它是针对线程的
+       kill(getpid(), SIGTERM);
+   }
 }
 
 void on_terminated()
@@ -258,7 +276,12 @@ void stat_thread_proc()
         stat_logger->enable_raw_log(true, true);
         while (!g_stop)
         {
-            mooon::sys::CUtils::millisleep(seconds * 1000);
+            for (int i=0; i<seconds; ++i) {
+                if (g_stop)
+                    break;
+                mooon::sys::CUtils::millisleep(1000);
+            }
+
 #if __WORDSIZE==64
             last_num_moved = atomic8_read(&g_num_moved);
 #else
@@ -330,6 +353,7 @@ void move_thread_proc(int thread_index)
     catch (mooon::sys::CSyscallException& ex)
     {
         MYLOG_ERROR("%s.\n", ex.str().c_str());
+        MYLOG_INFO("RedisQueueMover thread(%d) exit now.\n", thread_index);
         return;
     }
     catch (r3c::CRedisException& ex)
@@ -339,6 +363,7 @@ void move_thread_proc(int thread_index)
             fclose(src_fp);
         if (dst_fd != -1)
             close(dst_fd);
+        MYLOG_INFO("RedisQueueMover thread(%d) exit now.\n", thread_index);
         return;
     }
     while (!g_stop)
@@ -426,7 +451,7 @@ void move_thread_proc(int thread_index)
         fclose(src_fp);
     if (dst_fd != -1)
         close(dst_fd);
-    MYLOG_INFO("RedisQueueMover thread(%d) exits now.\n", thread_index);
+    MYLOG_INFO("RedisQueueMover thread(%d) exit now.\n", thread_index);
 }
 
 // queue_index 队列序号，从0开始的递增值，最大值为队列数减一
