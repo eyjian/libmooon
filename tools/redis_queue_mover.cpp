@@ -261,12 +261,13 @@ void signal_thread_proc()
 
 void stat_thread_proc()
 {
+    mooon::sys::ILogger* stat_logger = NULL;
+
     try
     {
         const int seconds = mooon::argument::stat_interval->value();
         uint64_t old_num_moved = 0;
         uint64_t last_num_moved = 0;
-        mooon::sys::ILogger* stat_logger;
         if (mooon::argument::label->value().empty())
             stat_logger = mooon::sys::create_safe_logger(true, mooon::SIZE_64, "stat");
         else
@@ -296,11 +297,15 @@ void stat_thread_proc()
             }
 
             old_num_moved = last_num_moved;
+            delete stat_logger;
+            stat_logger = NULL;
         }
     }
     catch (mooon::sys::CSyscallException& ex)
     {
         MYLOG_ERROR("Created stat-logger failed: %s.\n", ex.str().c_str());
+        delete stat_logger;
+        stat_logger = NULL;
     }
 }
 
