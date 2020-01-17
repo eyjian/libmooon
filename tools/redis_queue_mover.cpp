@@ -371,6 +371,8 @@ void move_thread_proc(int thread_index)
         MYLOG_INFO("RedisQueueMover thread(%d) exit now.\n", thread_index);
         return;
     }
+
+    // 从源队列取出数据
     while (!g_stop)
     {
         values.clear();
@@ -398,9 +400,9 @@ void move_thread_proc(int thread_index)
                     value = line;
                 }
                 if (!mooon::argument::dst_redis->value().empty()) {
-                    values.push_back(value);
+                    values.push_back(value); // 待写入目标队列的数据
                 }
-                else {
+                else { // 数据不写入队列，而是落到文件中
                     if (value[value.size()-1] != '\n')
                         value.append("\n");
                     if (write(dst_fd, value.data(), value.size()) == -1) {
@@ -422,6 +424,7 @@ void move_thread_proc(int thread_index)
             continue;
         }
 
+        // 数据写入目标队列
         while (!values.empty())
         {
             try
