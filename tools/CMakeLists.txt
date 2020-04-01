@@ -52,17 +52,25 @@ endif ()
 
 # r3c_stress
 if (MOOON_HAVE_R3C)
+    # r3c_stress
     add_executable(r3c_stress r3c_stress.cpp)
     target_link_libraries(r3c_stress libmooon.a libr3c.a libhiredis.a)
     
+    # redis_queue_mover
     add_executable(redis_queue_mover redis_queue_mover.cpp)
     target_link_libraries(redis_queue_mover libmooon.a libr3c.a libhiredis.a)
-    
+
+    # redis2kafka
+    if (MOOON_HAVE_LIBRDKAFKA)
+        add_executable(redis2kafka redis2kafka.cpp)
+        target_link_libraries(redis2kafka libmooon.a libr3c.a libhiredis.a librdkafka++.a librdkafka.a libssl.a libcrypto.a)
+    endif ()
+
     # CMAKE_INSTALL_PREFIX
     install(
             TARGETS r3c_stress redis_queue_mover
             DESTINATION bin
-           )    
+           )
 endif ()
 
 # hbase_stress

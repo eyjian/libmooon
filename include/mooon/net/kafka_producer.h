@@ -24,6 +24,9 @@ public:
     // 如果partitioner_cb为空，则使用DefPartitionerImpl作为PartitionerCb。
     CKafkaProducer(RdKafka::DeliveryReportCb* dr_cb=NULL, RdKafka::EventCb* event_cb=NULL, RdKafka::PartitionerCb* partitioner_cb=NULL);
     bool init(const std::string& brokers_str, const std::string& topic_str, std::string* errmsg=NULL);
+
+    // 返回0表示超时，返回大于0的值表示成功
+    // 返回-1为出错，可通过errcode和errmsg得到出错信息
     int produce(const std::string& key, const std::string& log, int32_t partition=RdKafka::Topic::PARTITION_UA, int* errcode=NULL, std::string* errmsg=NULL);
 
     // librdkafka建议定时调用一次timed_poll，以触发数据的收发
