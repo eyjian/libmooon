@@ -56,6 +56,8 @@ int32_t DefPartitionerImpl::partitioner_cb (const RdKafka::Topic *topic, const s
     return static_cast<int>(hash % partition_cnt);
 }
 
+// CKafkaProducer
+
 CKafkaProducer::CKafkaProducer(RdKafka::DeliveryReportCb* dr_cb, RdKafka::EventCb* event_cb, RdKafka::PartitionerCb* partitioner_cb)
 {
     // dr_cb
@@ -165,9 +167,10 @@ bool CKafkaProducer::init(const std::string& brokers_str, const std::string& top
     return false;
 }
 
-int CKafkaProducer::produce(const std::string& key, const std::string& log, int32_t partition, int* errcode, std::string* errmsg)
+bool CKafkaProducer::produce(const std::string& key, const std::string& log, int32_t partition, int* errcode, std::string* errmsg)
 {
     const RdKafka::ErrorCode errcode_ = _producer->produce(_topic.get(), partition, RdKafka::Producer::RK_MSG_COPY,  (void*)log.data(), log.size(), &key, NULL);
+    timed_poll(0);
 
     // log可能是二进制数据，这里无法解析，所以并不适合记录到日志文件中
     if (RdKafka::ERR_NO_ERROR == errcode_)
@@ -176,7 +179,8 @@ int CKafkaProducer::produce(const std::string& key, const std::string& log, int3
             *errcode = 0;
         if (errmsg != NULL)
             *errmsg = "SUCCESS";
-        return timed_poll(0);
+
+        return true;
     }
     else
     {
@@ -184,13 +188,54 @@ int CKafkaProducer::produce(const std::string& key, const std::string& log, int3
             *errcode = errcode_;
         if (errmsg != NULL)
             *errmsg = err2str(errcode_);
-        return -1;
+        return false;
     }
+}
+
+int CKafkaProducer::produce_batch(const std::string& key, const std::vector<std::string>& logs, int32_t partition, int* errcode, std::string* errmsg)
+{
+    int num_logs = 0;
+
+    timed_poll(0);
+    for (int i=0; i<int(logs.size()); ++i)
+    {
+        const std::string& log = logs[i];
+        const RdKafka::ErrorCode errcode_ = _producer->produce(_topic.get(), partition, RdKafka::Producer::RK_MSG_COPY,  (void*)log.data(), log.size(), &key, NULL);
+
+        if (RdKafka::ERR_NO_ERROR == errcode_)
+        {
+            ++num_logs;
+            if (errcode != NULL)
+                *errcode = 0;
+            if (errmsg != NULL)
+                *errmsg = "SUCCESS";
+        }
+        else
+        {
+            if (errcode != NULL)
+                *errcode = errcode_;
+            if (errmsg != NULL)
+                *errmsg = err2str(errcode_);
+            if (errcode_ == RdKafka::ERR__QUEUE_FULL)
+                timed_poll(0);
+            break;
+        }
+    }
+
+
+    return num_logs;
 }
 
 int CKafkaProducer::timed_poll(int timeout_ms)
 {
+    // Polls the provided kafka handle for events
+    // poll returns the number of events served
     return _producer->poll(timeout_ms);
+}
+
+int CKafkaProducer::flush(int timeout_ms)
+{
+    return _producer->flush(timeout_ms);
 }
 
 NET_NAMESPACE_END

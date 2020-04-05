@@ -1,6 +1,8 @@
 // Writed by yijian on 2019/8/5
 #include "net/kafka_consumer.h"
+#include "sys/datetime_utils.h"
 #include "sys/log.h"
+#include <time.h>
 #if MOOON_HAVE_LIBRDKAFKA==1
 NET_NAMESPACE_BEGIN
 
@@ -48,7 +50,26 @@ private:
     }
 };
 
-CKafkaConsumer::CKafkaConsumer(RdKafka::EventCb* event_cb, RdKafka::ConsumeCb* consume_cb, RdKafka::RebalanceCb* rebalance_cb)
+class DefOffsetCommitImpl: public RdKafka::OffsetCommitCb
+{
+private:
+    // 由RdKafka::KafkaConsumer::consume()触发调用
+    virtual void offset_commit_cb(RdKafka::ErrorCode err, std::vector<RdKafka::TopicPartition*>& offsets)
+    {
+        if (MYLOG_DEBUG_ENABLE())
+        {
+            for (int i=0; i<int(offsets.size()); ++i)
+            {
+                MYLOG_DEBUG("topic://%s, partition:%d, offset:%" PRId64", errcode:%d/%d\n",
+                        offsets[i]->topic().c_str(), offsets[i]->partition(), offsets[i]->offset(), (int)offsets[i]->err(), err);
+            }
+        }
+    }
+};
+
+// CKafkaConsumer
+
+CKafkaConsumer::CKafkaConsumer(RdKafka::EventCb* event_cb, RdKafka::ConsumeCb* consume_cb, RdKafka::RebalanceCb* rebalance_cb, RdKafka::OffsetCommitCb* offset_commitcb)
 {
     // event_cb
     if (NULL == event_cb)
@@ -67,10 +88,19 @@ CKafkaConsumer::CKafkaConsumer(RdKafka::EventCb* event_cb, RdKafka::ConsumeCb* c
         _rebalance_cb.reset(new DefRebalanceImpl);
     else
         _rebalance_cb.reset(rebalance_cb);
+
+    // offset_commitcb
+    if (NULL == offset_commitcb)
+        _offset_commitcb.reset(new DefOffsetCommitImpl);
+    else
+        _offset_commitcb.reset(offset_commitcb);
 }
 
 CKafkaConsumer::~CKafkaConsumer()
 {
+    // Close and shut down the proper
+    // 最大阻塞时间由配置session.timeout.ms指定
+    // 过程中RdKafka::RebalanceCb和RdKafka::OffsetCommitCb可能被调用
     _consumer->close();
 }
 
@@ -170,6 +200,7 @@ bool CKafkaConsumer::init(const std::string& brokers, const std::string& topic, 
 
 bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInfo* mi)
 {
+    // 注意对于消费者，不能调用poll，请参见rdkafkacpp.h中对函数consume的说明
     const RdKafka::Message* message = _consumer->consume(timeout_ms);
     const RdKafka::ErrorCode errcode = message->err();
 
@@ -202,6 +233,70 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
         delete message;
         return false;
     }
+}
+
+int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms, struct MessageInfo* mi)
+{
+    const int64_t end = int64_t(sys::CDatetimeUtils::get_current_milliseconds() + timeout_ms);
+    int64_t remaining_timeout = timeout_ms;
+    int num_logs  = 0;
+    logs->reserve(batch_size);
+
+    for (int i=0; i<batch_size; ++i)
+    {
+        // 注意对于消费者，不能调用poll，请参见rdkafkacpp.h中对函数consume的说明
+        const RdKafka::Message* message = _consumer->consume(remaining_timeout);
+        const RdKafka::ErrorCode errcode = message->err();
+
+        if (RdKafka::ERR_NO_ERROR == errcode)
+        {
+            MYLOG_DEBUG("Consume topic://%s OK: %.*s.\n", _topic_str.c_str(), (int)message->len(), (char*)message->payload());
+
+            const std::string log(reinterpret_cast<char*>(message->payload()), message->len());
+            logs->push_back(log);
+            if (mi != NULL)
+            {
+                mi->offset = message->offset();
+                mi->timestamp = message->timestamp().timestamp;
+                mi->topicname = message->topic_name();
+            }
+
+            delete message;
+            ++num_logs;
+            remaining_timeout = end - int64_t(sys::CDatetimeUtils::get_current_milliseconds());
+            if (remaining_timeout <= 0)
+                break;
+        }
+        else
+        {
+            // (ERR__PARTITION_EOF, -191)Broker: No more messages
+            // (ERR__TIMED_OUT, -185)Local: Timed out
+            if ((RdKafka::ERR__TIMED_OUT == errcode) ||
+                (RdKafka::ERR__PARTITION_EOF == errcode))
+            {
+                MYLOG_DETAIL("Consume topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, message->errstr().c_str());
+            }
+            else
+            {
+                MYLOG_ERROR("Consume topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, message->errstr().c_str());
+            }
+
+            delete message;
+            break;
+        }
+    }
+
+    return num_logs;
+}
+
+int CKafkaConsumer::sync_commit()
+{
+    return int(_consumer->commitSync());
+}
+
+int CKafkaConsumer::async_commit()
+{
+    return int(_consumer->commitAsync());
 }
 
 NET_NAMESPACE_END

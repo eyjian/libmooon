@@ -25,12 +25,31 @@ public:
     CKafkaProducer(RdKafka::DeliveryReportCb* dr_cb=NULL, RdKafka::EventCb* event_cb=NULL, RdKafka::PartitionerCb* partitioner_cb=NULL);
     bool init(const std::string& brokers_str, const std::string& topic_str, std::string* errmsg=NULL);
 
-    // 返回0表示超时，返回大于0的值表示成功
-    // 返回-1为出错，可通过errcode和errmsg得到出错信息
-    int produce(const std::string& key, const std::string& log, int32_t partition=RdKafka::Topic::PARTITION_UA, int* errcode=NULL, std::string* errmsg=NULL);
+    // 调用produce并不一定立即发送消息，而是将消息放到发送队列中缓存，
+    // 发送队列大小由配置queue.buffering.max.message指定，如果队列满应调用poll去触发消息发送。
+    //
+    // 返回true表示成功
+    // 返回false为出错，可通过errcode和errmsg得到出错信息
+    //
+    // errcode取值：
+    // 1) RdKafka::ERR_MSG_SIZE_TOO_LARGE 消息字节数超过配置messages.max.bytes指定的值
+    // 2) RdKafka::ERR__QUEUE_FULL 发送队列满（达到配置queue.buffering.max.message指定的值）
+    // 3) RdKafka::ERR__UNKNOWN_PARTITION 未知分区
+    // 4) RdKafka::ERR__UNKNOWN_TOPIC 未知主题
+    bool produce(const std::string& key, const std::string& log, int32_t partition=RdKafka::Topic::PARTITION_UA, int* errcode=NULL, std::string* errmsg=NULL);
 
-    // librdkafka建议定时调用一次timed_poll，以触发数据的收发
+    // errcode和errmsg存储最近一次的出错信息
+    // 返回实际数，为0表示一个也没有
+    int produce_batch(const std::string& key, const std::vector<std::string>& logs, int32_t partition=RdKafka::Topic::PARTITION_UA, int* errcode=NULL, std::string* errmsg=NULL);
+
+    // librdkafka要求定时调用timed_poll，
+    // 否则事件不会被回调，消息会被积压。
+    // 返回服务的事件数（RdKafka::DeliveryCb、RdKafka::EventCb）
     int timed_poll(int timeout_ms=0);
+
+    // 通过调用timed_poll等待所有的发送完成，直到达到timeout_ms指定的超时时长
+    // 返回RdKafka::ERR__TIMED_OUT表示达到timeout_ms指定的超时时长
+    int flush(int timeout_ms);
 
 private:
     std::string _brokers_str;
