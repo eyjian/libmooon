@@ -71,6 +71,9 @@ private:
 
 CKafkaConsumer::CKafkaConsumer(RdKafka::EventCb* event_cb, RdKafka::ConsumeCb* consume_cb, RdKafka::RebalanceCb* rebalance_cb, RdKafka::OffsetCommitCb* offset_commitcb)
 {
+    // KafkaConsumer::create和Producer::create
+    // 调用HandleImpl::set_common_config注册下列回调。
+
     // event_cb
     if (NULL == event_cb)
         _event_cb.reset(new DefEventImpl);
@@ -104,7 +107,12 @@ CKafkaConsumer::~CKafkaConsumer()
     _consumer->close();
 }
 
-bool CKafkaConsumer::init(const std::string& brokers, const std::string& topic, const std::string& group, bool enable_rebalance)
+void CKafkaConsumer::set_auto_offset_reset(const std::string& str)
+{
+    _auto_offset_reset = str;
+}
+
+bool CKafkaConsumer::init(const std::string& brokers, const std::string& topic, const std::string& group, bool enable_rebalance, bool enable_auto_commit)
 {
     if (brokers.empty())
     {
@@ -172,7 +180,33 @@ bool CKafkaConsumer::init(const std::string& brokers, const std::string& topic, 
             }
         }
 
+        // enable.auto.commit
+        if (enable_auto_commit)
+        {
+            ret = _global_conf->set("enable.auto.commit", "true", errmsg);
+        }
+        else
+        {
+            ret = _global_conf->set("enable.auto.commit", "false", errmsg);
+        }
+        if (ret != RdKafka::Conf::CONF_OK)
+        {
+            MYLOG_ERROR("Set enable.auto.commit error: %s.\n", errmsg.c_str());
+            break;
+        }
+
+        if (!_auto_offset_reset.empty())
+        {
+            const int ret = _global_conf->set("auto.offset.reset", _auto_offset_reset, errmsg);
+            if (ret != RdKafka::Conf::CONF_OK)
+            {
+                MYLOG_ERROR("Set auto.offset.reset error: %s.\n", errmsg.c_str());
+                break;
+            }
+        }
+
         // Create consumer
+        // 在Producer::create中完成回调注册
         _consumer.reset(RdKafka::KafkaConsumer::create(_global_conf.get(), errmsg));
         if (_consumer.get() == NULL)
         {

@@ -10,6 +10,7 @@ NET_NAMESPACE_BEGIN
 class DefEventImpl;
 class DefConsumeImpl;
 class DefRebalanceImpl;
+class DefOffsetCommitImpl;
 
 struct MessageInfo
 {
@@ -23,14 +24,25 @@ struct MessageInfo
 class CKafkaConsumer
 {
 public:
-    // CKafkaProducer负责event_cb、consume_cb和rebalance_cb的销毁。
+    // CKafkaProducer负责event_cb、consume_cb、rebalance_cb和offset_commitcb的销毁。
     //
     // 如果event_cb为空，则使用DefEventImpl作为EventCb
     // 如果consume_cb为空，则使用DefConsumeImpl作为ConsumeImpl，
-    // 如果rebalance_cb为空，则使用DefRebalanceImpl作为RebalanceImpl
+    // 如果rebalance_cb为空，则使用DefRebalanceImpl作为RebalanceImpl，
+    // 如果offset_commitcb为空，则使用DefOffsetCommitImpl作为OffsetCommitImpl。
     CKafkaConsumer(RdKafka::EventCb* event_cb=NULL, RdKafka::ConsumeCb* consume_cb=NULL, RdKafka::RebalanceCb* rebalance_cb=NULL, RdKafka::OffsetCommitCb* offset_commitcb=NULL);
     ~CKafkaConsumer();
-    bool init(const std::string& brokers, const std::string& topic, const std::string& group, bool enable_rebalance=false);
+
+    // 设置配置auto.offset.reset的值，
+    // set_auto_offset_reset需在init之前调用。
+    //
+    // str可取值：
+    // 1) earliest 当各分区下有已提交的offset时从提交的offset开始消费，无提交的offset时则从头开始消费
+    // 2) latest 默认值，当各分区下有已提交的offset时从提交的offset开始消费，无提交的offset时则消费新产生的该分区下的数据
+    // 3) none Topic各分区都存在已提交的offset时从offset后开始消费，只要有一个分区不存在已提交的offset则抛出异常
+    void set_auto_offset_reset(const std::string& str);
+
+    bool init(const std::string& brokers, const std::string& topic, const std::string& group, bool enable_rebalance=false, bool enable_auto_commit=true);
     bool consume(std::string* log, int timeout_ms=1000, struct MessageInfo* mi=NULL);
     int consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms=1000, struct MessageInfo* mi=NULL);
 
@@ -38,7 +50,7 @@ public:
     // 返回RdKafka::ERR_NO_ERROR表示成功，其它出错
     int sync_commit();
 
-    // 异步非阻塞调用
+    // 异步非阻塞提交
     // 返回RdKafka::ERR_NO_ERROR表示成功，其它出错
     int async_commit();
 
@@ -58,6 +70,9 @@ private:
     mooon::utils::ScopedPtr<RdKafka::ConsumeCb> _consume_cb;
     mooon::utils::ScopedPtr<RdKafka::RebalanceCb> _rebalance_cb;
     mooon::utils::ScopedPtr<RdKafka::OffsetCommitCb> _offset_commitcb;
+
+private:
+    std::string _auto_offset_reset;
 };
 
 NET_NAMESPACE_END

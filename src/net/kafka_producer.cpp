@@ -60,6 +60,9 @@ int32_t DefPartitionerImpl::partitioner_cb (const RdKafka::Topic *topic, const s
 
 CKafkaProducer::CKafkaProducer(RdKafka::DeliveryReportCb* dr_cb, RdKafka::EventCb* event_cb, RdKafka::PartitionerCb* partitioner_cb)
 {
+    // KafkaConsumer::create和Producer::create
+    // 调用HandleImpl::set_common_config注册下列回调。
+
     // dr_cb
     if (NULL == dr_cb)
         _dr_cb.reset(new DefDeliveryReportImpl);
@@ -144,6 +147,7 @@ bool CKafkaProducer::init(const std::string& brokers_str, const std::string& top
         }
 
         // producer
+        // 在Producer::create中完成回调注册
         _producer.reset(RdKafka::Producer::create(_global_conf.get(), errmsg_));
         if (NULL == _producer.get())
         {
@@ -226,17 +230,77 @@ int CKafkaProducer::produce_batch(const std::string& key, const std::vector<std:
     return num_logs;
 }
 
+// rd_kafka_poll_cb:
+// int rd_kafka_poll (rd_kafka_t *rk, int timeout_ms) {
+//        return rd_kafka_q_serve(rk->rk_rep, timeout_ms, 0,
+//                                RD_KAFKA_Q_CB_CALLBACK, rd_kafka_poll_cb, NULL);
+// }
+//
+// rd_kafka_op_handle/rdkafka_op.c
+// {
+//   if (callback)
+//   {
+//     rd_kafka_op_res_t res = callback(rk, rkq, rko, cb_type, opaque);
+//   }
+// }
 int CKafkaProducer::timed_poll(int timeout_ms)
 {
     // Polls the provided kafka handle for events
     // poll returns the number of events served
+    // poll只针对生产者：
+    // （rk->rk_type != RD_KAFKA_PRODUCER => RD_KAFKA_RESP_ERR__NOT_IMPLEMENTED）
+    //
+    // HandleImpl::poll/rdkafkacpp_int.h -> rd_kafka_poll/rdkafka.c
+    //
+    // 这里的timeout实际是一个pthread_cond_timedwait或pthread_cond_wait操作，
+    // 相关数据结构为rd_kafka_q_s::rkq_cond，谁cnd_signal（唤醒）它了？
+    //
+    // 实际是检测队列rd_kafka_q_s::rkq_q，如果没有数据则等待timeout_ms时。
+    //
+    // rko: rd_kafka_op_t
+    // rkq: rd_kafka_q_t
+    //
+    // rd_kafka_q_enq1:
+    // 将rko压入rkq的队首或队尾。
+    //
+    // rd_kafka_q_enq: 将rko放入队尾
+    // rd_kafka_q_reenq: 将rko重新放到
+    //
+    // rd_kafka_q_enq/rdkafka_queue.h
+    // -> rd_kafka_q_enq1/rdkafka_queue.h(Enqueue rko either at head or tail of rkq)
+    // -> rd_kafka_q_enq0(Low-level unprotected enqueue)
     return _producer->poll(timeout_ms);
 }
 
 int CKafkaProducer::flush(int timeout_ms)
 {
+    // Producer::poll/rdkafkacpp.h
+    // -> ProducerImpl::rd_kafka_poll/rdkafkacpp_int.h
+    // -> rd_kafka_flush -> rd_kafka_poll/rdkafka.c
+    // -> rd_kafka_q_serve/rdkafka_queue.c -> rd_kafka_op_handle/rdkafka_op.c
+    // -> callback(rd_kafka_q_serve_cb_t)/rdkafka_op.h
     return _producer->flush(timeout_ms);
 }
+
+// kafka_transport.c:
+// 生产者和消费者网络IO，独立网络线程，和工作线程间以队列交互。
+// 进程启动时创建broker网络线程：thrd_create(&rkb->rkb_thread, rd_kafka_broker_thread_main, rkb)
+// -> rd_kafka_broker_thread_main
+// -> [*此处循环poll*]rd_kafka_broker_producer_serve[rd_kafka_broker_consumer_serve]
+// -> rd_kafka_broker_serve
+// -> rd_kafka_transport_io_serve (先-> rd_kafka_transport_poll -> poll)
+// -> 后rd_kafka_transport_io_event
+// -> rd_kafka_recv
+// -> rd_kafka_transport_recv
+// -> rd_kafka_transport_socket_recv
+// -> rd_kafka_transport_socket_recv0
+// -> recv/最底层的系统调用（接收缓冲区：rktrans_s）
+//
+// librdkafka并没有使用epoll，而是使用poll，见rd_kafka_transport_poll的实现。
+// 实际上一个线程只poll了两个fd，所以用不上epoll，直接用poll足够了。
+//
+// 这些线程（rd_kafka_broker_thread_main）是在调用KafkaConsumer::create和Producer::create时创建，
+// 会为每个broker均创建一个rd_kafka_broker_thread_main线程。
 
 NET_NAMESPACE_END
 #endif // MOOON_HAVE_LIBRDKAFKA

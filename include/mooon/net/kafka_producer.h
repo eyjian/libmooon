@@ -43,12 +43,13 @@ public:
     int produce_batch(const std::string& key, const std::vector<std::string>& logs, int32_t partition=RdKafka::Topic::PARTITION_UA, int* errcode=NULL, std::string* errmsg=NULL);
 
     // librdkafka要求定时调用timed_poll，
-    // 否则事件不会被回调，消息会被积压。
-    // 返回服务的事件数（RdKafka::DeliveryCb、RdKafka::EventCb）
+    // 否则事件不会被回调，消息会被积压（发送队列满，但因为没调用poll，即使数据已发送出去，然而发送队列的状态值没有改变）。
+    // 返回回调的次数（RdKafka::DeliveryCb、RdKafka::EventCb）。
     int timed_poll(int timeout_ms=0);
 
     // 通过调用timed_poll等待所有的发送完成，直到达到timeout_ms指定的超时时长
     // 返回RdKafka::ERR__TIMED_OUT表示达到timeout_ms指定的超时时长
+    // 会触发回调
     int flush(int timeout_ms);
 
 private:
