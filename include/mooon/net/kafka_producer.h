@@ -36,6 +36,10 @@ public:
     // 2) RdKafka::ERR__QUEUE_FULL 发送队列满（达到配置queue.buffering.max.message指定的值）
     // 3) RdKafka::ERR__UNKNOWN_PARTITION 未知分区
     // 4) RdKafka::ERR__UNKNOWN_TOPIC 未知主题
+    //
+    // 入队有两种方式：
+    // 1) 非阻塞方式，如果队列满返回错误代码RD_KAFKA_RESP_ERR__QUEUE_FULL
+    // 2) 阻塞方式
     bool produce(const std::string& key, const std::string& log, int32_t partition=RdKafka::Topic::PARTITION_UA, int* errcode=NULL, std::string* errmsg=NULL);
 
     // errcode和errmsg存储最近一次的出错信息

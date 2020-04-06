@@ -204,6 +204,9 @@ int CKafkaProducer::produce_batch(const std::string& key, const std::vector<std:
     for (int i=0; i<int(logs.size()); ++i)
     {
         const std::string& log = logs[i];
+        // 入队（发送队列）有两种方式：
+        // 1) 非阻塞方式，如果队列满返回错误代码RD_KAFKA_RESP_ERR__QUEUE_FULL
+        // 2) 阻塞方式，需指定RdKafka::RK_MSG_BLOCK
         const RdKafka::ErrorCode errcode_ = _producer->produce(_topic.get(), partition, RdKafka::Producer::RK_MSG_COPY,  (void*)log.data(), log.size(), &key, NULL);
 
         if (RdKafka::ERR_NO_ERROR == errcode_)
