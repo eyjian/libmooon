@@ -6,11 +6,15 @@
 #include <sys/time.h>
 SYS_NAMESPACE_BEGIN
 
+class CStopWatch;
+typedef void (*StopWatchTick)(CStopWatch*);
+
 // 计时器
 class CStopWatch
 {
 public:
-    CStopWatch()
+    CStopWatch(StopWatchTick tick=NULL)
+        : _tick(tick)
     {
         restart();
 
@@ -18,6 +22,12 @@ public:
         _stop_time.tv_usec = 0;
         _total_time.tv_sec = _start_time.tv_sec;
         _total_time.tv_usec = _start_time.tv_usec;
+    }
+
+    ~CStopWatch()
+    {
+        if (_tick != NULL)
+            (*_tick)(this);
     }
 
     // 重新开始计时
@@ -58,6 +68,7 @@ public:
     }
 
 private:
+    StopWatchTick _tick;
     struct timeval _total_time;
     struct timeval _start_time;
     struct timeval _stop_time;
