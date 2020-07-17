@@ -297,9 +297,9 @@ void stat_thread_proc()
             }
 
             old_num_moved = last_num_moved;
-            delete stat_logger;
-            stat_logger = NULL;
-        }
+        } // while
+        delete stat_logger;
+        stat_logger = NULL;
     }
     catch (mooon::sys::CSyscallException& ex)
     {
