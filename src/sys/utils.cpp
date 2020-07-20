@@ -367,17 +367,16 @@ std::string CUtils::get_program_full_cmdline(char separator, uint32_t pid)
 
 std::string CUtils::get_filename(int fd)
 {
-	char* path_buf = new char[PATH_MAX];
-	char* filename_buf = new char[FILENAME_MAX];
-	*filename_buf = '\0';
-	
-	snprintf(path_buf, PATH_MAX-1, "/proc/%d/fd/%d", getpid(), fd);
-	if (-1 == readlink(path_buf, filename_buf, FILENAME_MAX-1)) filename_buf[0] = '\0';
-    
-	const std::string filename = filename_buf;
-	delete []filename_buf;
-	delete []path_buf;
-	return filename;
+    std::string path_buf(PATH_MAX+1, '\0');
+    std::string filepath_buf(FILENAME_MAX+1, '\0');
+
+    snprintf(const_cast<char*>(path_buf.data()), PATH_MAX, "/proc/%d/fd/%d", getpid(), fd);
+    const ssize_t n = readlink(path_buf.c_str(), const_cast<char*>(filepath_buf.data()), FILENAME_MAX);
+    if (n == -1)
+        filepath_buf.clear();
+    else
+        filepath_buf.resize(n);
+    return filepath_buf;
 }
 
 // 库函数：char *realpath(const char *path, char *resolved_path);
