@@ -460,21 +460,20 @@ bool CUtils::get_backtrace(std::string& call_stack)
     return true;
 }
 
-static off_t dirsize; // 目录大小
-int _du_fn(const char *fpath, const struct stat *sb, int typeflag)
+static __thread off_t dirsize; // 目录大小
+static int _du_fn(const char *fpath, const struct stat *sb, int typeflag)
 {   
     if (FTW_F == typeflag)
         dirsize += sb->st_size;
-
     return 0;
 }
 
+// 获取指定目录大小函数（线程安全，但仅适用Linux）
+// 遍历方式实现，低性能
 off_t CUtils::du(const char* dirpath)
 {
     dirsize = 0;
-    if (ftw(dirpath, _du_fn, 0) != 0) return -1;
-
-    return dirsize;
+    return (ftw(dirpath, _du_fn, 0) != 0)? : dirsize;
 }
 
 int CUtils::get_page_size()
