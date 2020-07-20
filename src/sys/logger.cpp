@@ -23,6 +23,7 @@
 #include "utils/string_utils.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <strings.h>
 #include <unistd.h>
 
 #if HAVE_UIO_H==1 // 需要使用sys_config.h中定义的HAVE_UIO_H宏
@@ -123,8 +124,11 @@ void enable_screen_log_by_env(ILogger* logger)
 {
     const char* c_log_screen = getenv("MOOON_LOG_SCREEN");
 
-    if ((c_log_screen != NULL) && (0 == strcmp(c_log_screen, "1")))
-        logger->enable_screen(true);
+    if (c_log_screen != NULL)
+    {
+        if (strcmp(c_log_screen, "1") == 0 || strcasecmp(c_log_screen, "true") == 0)
+            logger->enable_screen(true);
+    }
 }
 
 void enable_trace_log_by_env(ILogger* logger)
