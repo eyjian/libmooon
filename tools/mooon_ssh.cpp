@@ -37,6 +37,7 @@
 #include "mooon/utils/print_color.h"
 #include "mooon/utils/string_utils.h"
 #include "mooon/utils/tokener.h"
+#include <strings.h>
 #include <iostream>
 #include <sstream>
 
@@ -62,6 +63,9 @@ INTEGER_ARG_DEFINE(uint8_t, v, 1, 0, 2, "Verbosity, how much troubleshooting inf
 
 // 线程数（parallel），多线程并行执行
 INTEGER_ARG_DEFINE(int, thr, 1, 0, 2018, "The number of threads to parallel execute (0: number of hosts), can be replaced by environment variable 'THR'");
+
+// 输出内容是否包含IP
+BOOL_STRING_ARG_DEFINE(with_host, "false", "Use remote host as an identifier for output, can be replaced by environment variable 'WITH_HOST'");
 
 // 结果信息
 struct ResultInfo
@@ -100,6 +104,9 @@ static void mooon_ssh(bool thread, struct ResultInfo& result, const std::string&
 
 // 隐藏密码
 static void hide_password(int argc, char* argv[]);
+
+// 输出是否带上host标识
+static bool with_host();
 
 struct SshTask
 {
@@ -404,10 +411,19 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
         mooon::net::CLibssh2 libssh2(remote_host_ip, port, user, password, mooon::argument::t->value());
 
         libssh2.remotely_execute(commands, out, &exitcode, &exitsignal, &errmsg, &num_bytes);
-        str = PRINT_COLOR_NONE;
+        str = PRINT_COLOR_NONE; // 3个字符“\033[m”
         screen += str;
         if (!thread)
-            fprintf(stdout, "%s", str.c_str());
+        {
+            if (str.size()==3 || !with_host())
+            {
+                fprintf(stdout, "%s", str.c_str());
+            }
+            else if (with_host())
+            {
+                fprintf(stdout, "%s => %s", remote_host_ip.c_str(), str.c_str());
+            }
+        }
         color = false; // color = true;
 
         result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
@@ -416,9 +432,16 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
             result.success = true;
 
             if (!thread)
-                fprintf(stdout, "%s", out.str().c_str());
+            {
+                if (with_host())
+                    fprintf(stdout, "%s => %s", remote_host_ip.c_str(), out.str().c_str());
+                else
+                    fprintf(stdout, "%s", out.str().c_str());
+            }
             else
+            {
                 screen += out.str();
+            }
             if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
             {
                 str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_YELLOW"%s" PRINT_COLOR_NONE"] SUCCESS (%u seconds)\n", remote_host_ip.c_str(), result.seconds);
@@ -442,35 +465,60 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
                     str = mooon::utils::CStringUtils::format_string("command return %d\n", exitcode);
                     screen += str;
                     if (!thread)
-                        fprintf(stderr, "%s", str.c_str());
+                    {
+                        if (with_host())
+                            fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
+                        else
+                            fprintf(stderr, "%s", str.c_str());
+                    }
                 }
                 else if (126 == exitcode)
                 {
                     str = mooon::utils::CStringUtils::format_string("%d: command not executable\n", exitcode);
                     screen += str;
                     if (!thread)
-                        fprintf(stderr, "%s", str.c_str());
+                    {
+                        if (with_host())
+                            fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
+                        else
+                            fprintf(stderr, "%s", str.c_str());
+                    }
                 }
                 else if (127 == exitcode)
                 {
                     str = mooon::utils::CStringUtils::format_string("%d: command not found\n", exitcode);
                     screen += str;
                     if (!thread)
-                        fprintf(stderr, "%s", str.c_str());
+                    {
+                        if (with_host())
+                            fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
+                        else
+                            fprintf(stderr, "%s", str.c_str());
+                    }
                 }
                 else if (255 == exitcode)
                 {
                     str = mooon::utils::CStringUtils::format_string("%d: command not found\n", 127);
                     screen += str;
                     if (!thread)
-                        fprintf(stderr, "%s", str.c_str());
+                    {
+                        if (with_host())
+                            fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
+                        else
+                            fprintf(stderr, "%s", str.c_str());
+                    }
                 }
                 else
                 {
                     str = mooon::utils::CStringUtils::format_string("%d: %s\n", exitcode, mooon::sys::Error::to_string(exitcode).c_str());
                     screen += str;
                     if (!thread)
-                        fprintf(stderr, "%s", str.c_str());
+                    {
+                        if (with_host())
+                            fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
+                        else
+                            fprintf(stderr, "%s", str.c_str());
+                    }
                 }
             }
             else if (!exitsignal.empty())
@@ -478,7 +526,12 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
                 str = mooon::utils::CStringUtils::format_string("%s: %s\n", exitsignal.c_str(), errmsg.c_str());
                 screen += str;
                 if (!thread)
-                    fprintf(stderr, "%s", str.c_str());
+                {
+                    if (with_host())
+                        fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
+                    else
+                        fprintf(stderr, "%s", str.c_str());
+                }
             }
         }
     }
@@ -549,6 +602,19 @@ void hide_password(int argc, char* argv[])
             }
             break;
         }
+    }
+}
+
+bool with_host()
+{
+    const char* str = getenv("WITH_HOST");
+    if (str == NULL)
+    {
+        return mooon::argument::with_host->is_true();
+    }
+    else
+    {
+        return strcasecmp(str, "1") == 0 || strcasecmp(str, "true") == 0;
     }
 }
 
