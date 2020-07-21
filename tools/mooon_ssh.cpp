@@ -392,7 +392,8 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
     int exitcode = 0;
     std::string exitsignal;
     std::string errmsg;
-    std::string screen, str;
+    std::string screen; // 多线程并发模式下得一次性输出
+    std::string str;
 
     result.ip = remote_host_ip;
     if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
@@ -412,18 +413,10 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
 
         libssh2.remotely_execute(commands, out, &exitcode, &exitsignal, &errmsg, &num_bytes);
         str = PRINT_COLOR_NONE; // 3个字符“\033[m”
-        screen += str;
-        if (!thread)
-        {
-            if (str.size()==3 || !with_host())
-            {
-                fprintf(stdout, "%s", str.c_str());
-            }
-            else if (with_host())
-            {
-                fprintf(stdout, "%s => %s", remote_host_ip.c_str(), str.c_str());
-            }
-        }
+        if (thread)
+            screen += str;
+        else
+            fprintf(stdout, "%s", str.c_str());
         color = false; // color = true;
 
         result.seconds = stop_watch.get_elapsed_microseconds() / 1000000;
@@ -431,16 +424,19 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
         {
             result.success = true;
 
-            if (!thread)
+            if (thread)
+            {
+                if (!with_host())
+                    screen += out.str();
+                else
+                    screen += remote_host_ip + std::string(" => ") + out.str();
+            }
+            else
             {
                 if (with_host())
                     fprintf(stdout, "%s => %s", remote_host_ip.c_str(), out.str().c_str());
                 else
                     fprintf(stdout, "%s", out.str().c_str());
-            }
-            else
-            {
-                screen += out.str();
             }
             if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
             {
@@ -463,8 +459,14 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
                 if (1 == exitcode)
                 {
                     str = mooon::utils::CStringUtils::format_string("command return %d\n", exitcode);
-                    screen += str;
-                    if (!thread)
+                    if (thread)
+                    {
+                        if (with_host())
+                            screen += remote_host_ip + std::string(" => ") + str;
+                        else
+                            screen += str;
+                    }
+                    else
                     {
                         if (with_host())
                             fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
@@ -475,8 +477,14 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
                 else if (126 == exitcode)
                 {
                     str = mooon::utils::CStringUtils::format_string("%d: command not executable\n", exitcode);
-                    screen += str;
-                    if (!thread)
+                    if (thread)
+                    {
+                        if (with_host())
+                            screen += remote_host_ip + std::string(" => ") + str;
+                        else
+                            screen += str;
+                    }
+                    else
                     {
                         if (with_host())
                             fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
@@ -487,8 +495,14 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
                 else if (127 == exitcode)
                 {
                     str = mooon::utils::CStringUtils::format_string("%d: command not found\n", exitcode);
-                    screen += str;
-                    if (!thread)
+                    if (thread)
+                    {
+                        if (with_host())
+                            screen += remote_host_ip + std::string(" => ") + str;
+                        else
+                            screen += str;
+                    }
+                    else
                     {
                         if (with_host())
                             fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
@@ -499,8 +513,14 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
                 else if (255 == exitcode)
                 {
                     str = mooon::utils::CStringUtils::format_string("%d: command not found\n", 127);
-                    screen += str;
-                    if (!thread)
+                    if (thread)
+                    {
+                        if (with_host())
+                            screen += remote_host_ip + std::string(" => ") + str;
+                        else
+                            screen += str;
+                    }
+                    else
                     {
                         if (with_host())
                             fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
@@ -511,8 +531,14 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
                 else
                 {
                     str = mooon::utils::CStringUtils::format_string("%d: %s\n", exitcode, mooon::sys::Error::to_string(exitcode).c_str());
-                    screen += str;
-                    if (!thread)
+                    if (thread)
+                    {
+                        if (with_host())
+                            screen += remote_host_ip + std::string(" => ") + str;
+                        else
+                            screen += str;
+                    }
+                    else
                     {
                         if (with_host())
                             fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
@@ -524,8 +550,14 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
             else if (!exitsignal.empty())
             {
                 str = mooon::utils::CStringUtils::format_string("%s: %s\n", exitsignal.c_str(), errmsg.c_str());
-                screen += str;
-                if (!thread)
+                if (thread)
+                {
+                    if (with_host())
+                        screen += str;
+                    else
+                        screen += str;
+                }
+                else
                 {
                     if (with_host())
                         fprintf(stderr, "%s => %s", remote_host_ip.c_str(), str.c_str());
@@ -544,14 +576,16 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
             if (color)
             {
                 screen += PRINT_COLOR_NONE; // color = true;
-                screen += str;
-                if (!thread)
+                if (thread)
+                    screen += str;
+                else
                     fprintf(stdout, "%s", str.c_str());
             }
 
             str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
-            screen += str;
-            if (!thread)
+            if (thread)
+                screen += str;
+            else
                 fprintf(stderr, "%s", str.c_str());
         }
     }
@@ -564,14 +598,16 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
             if (color)
             {
                 str = PRINT_COLOR_NONE; // color = true;
-                screen += str;
-                if (!thread)
+                if (thread)
+                    screen += str;
+                else
                     fprintf(stdout, "%s", str.c_str());
             }
 
             str = mooon::utils::CStringUtils::format_string("[" PRINT_COLOR_RED"%s" PRINT_COLOR_NONE"] failed: %s\n", remote_host_ip.c_str(), ex.str().c_str());
-            screen += str;
-            if (!thread)
+            if (thread)
+                screen += str;
+            else
                 fprintf(stderr, "%s", str.c_str());
         }
     }
@@ -579,8 +615,9 @@ void mooon_ssh(bool thread, struct ResultInfo& result, const std::string& remote
     if ((mooon::argument::v->value() >= 1) && (mooon::argument::v->value() <= 1))
     {
         str = "\n";
-        screen += str;
-        if (!thread)
+        if (thread)
+            screen += str;
+        else
             fprintf(stdout, "%s", str.c_str());
     }
     if (thread)
