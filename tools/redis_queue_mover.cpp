@@ -84,10 +84,10 @@ INTEGER_ARG_DEFINE(int, src_only_prefix, 0, 0, 1, "Prefix is the key of source")
 INTEGER_ARG_DEFINE(int, dst_only_prefix, 0, 0, 1, "Prefix is the key of destination");
 
 // 源 redis 读写超时时长（单位：毫秒）
-INTEGER_ARG_DEFINE(int, src_timeout, 10000, 1, 3600, "Source redis timeout in seconds");
+INTEGER_ARG_DEFINE(int, src_timeout, 60000, 1, 3600000, "Source redis timeout in milliseconds");
 
 // 目标 redis 读写超时时长（单位：毫秒）
-INTEGER_ARG_DEFINE(int, dst_timeout, 10000, 1, 3600, "Destination redis timeout in seconds");
+INTEGER_ARG_DEFINE(int, dst_timeout, 60000, 1, 3600000, "Destination redis timeout in milliseconds");
 
 // 源 redis 连接密码
 STRING_ARG_DEFINE(src_password, "", "Password for source redis");
@@ -411,7 +411,7 @@ void move_thread_proc(int thread_index)
                         break;
                     }
                 }
-                MYLOG_DEBUG("[%d] %s.\n", k, value.c_str());
+                MYLOG_DEBUG("[%d] %.*s.\n", k, static_cast<int>(value.size()), value.c_str());
             }
             catch (r3c::CRedisException& ex)
             {
