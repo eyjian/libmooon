@@ -286,11 +286,11 @@ while true; do
         fi
     else
         if test $process_filetype -eq 0; then # 可执行脚本文件
-            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && match($0, process_match) && ($3==process_full_filepath)) ++num; } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath process_match="$process_match"`
+            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && ($3==process_full_filepath)) { for (i=3;i<=NF;++i) if (match($i, process_match)) { ++num; break; } } } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath process_match="$process_match"`
         elif test $process_filetype -eq 1; then # 可执行程序文件
-            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && match($0, process_match) && ($2==process_full_filepath)) ++num; } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath process_match="$process_match"`
+            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && ($2==process_full_filepath)) { for (i=3;i<=NF;++i) if (match($i, process_match)) { ++num; break; } } } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath process_match="$process_match"`
         else # 未知类型文件
-            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && match($0, process_match)) ++num; } END { printf("%d",num); }' uid=$uid process_match="$process_match"`
+            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if ($1==uid) { for (i=3;i<=NF;++i) if (match($i, process_match)) { ++num; break; } } } END { printf("%d",num); }' uid=$uid process_match="$process_match"`
         fi
     fi
 
