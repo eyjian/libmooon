@@ -39,8 +39,21 @@
 # 均要求使用绝对路径，即必须以“/”打头的路径。
 
 # 需要指定个数的命令行参数
-# 参数1：被监控的进程名（可以包含命令行参数，而且必须包含绝对路径方式）
+# 参数1：被监控的进程名（ps命令看到的进程名）
 # 参数2：重启被监控进程的脚本（进程不能以相对路径的方式启动）
+#
+# 以重启 redis 为例，假设 redis-server 所在路径为 /usr/local/redis/bin，则 crontab 可设置成如下：
+# PMONITOR=/usr/local/bin/process_monitor.sh
+# REDIS_HOME=/usr/local/redis
+# * * * * * $PMONITOR "$REDIS_HOME/bin/redis-server" "$REDIS_HOME/bin/redis-server $REDIS_HOME/conf/redis.conf"
+#
+# 如果同一用户下启动了多个 redis-server 进程，则需要设置成如下：
+# PORT1=6379
+# PORT2=6380
+# * * * * * $PMONITOR "$REDIS_HOME/bin/redis-server $PORT1" "$REDIS_HOME/bin/redis-server $REDIS_HOME/conf/redis-$PORT1.conf"
+# * * * * * $PMONITOR "$REDIS_HOME/bin/redis-server $PORT2" "$REDIS_HOME/bin/redis-server $REDIS_HOME/conf/redis-$PORT2.conf"
+# 在确定对应的 redis-server 进程是否存在时，除了严格对比 $REDIS_HOME/bin/redis-server 外，
+# 还会进一步对比是否有匹配 PORT1 或 PORT2 的参数。
 if test $# -ne 2; then
     printf "\033[1;33musage: $0 process_cmdline restart_script\033[m\n"
     printf "\033[1;33mexample: /usr/local/bin/process_monitor.sh \"/usr/sbin/rinetd\" \"/usr/sbin/rinetd\"\033[m\n"
