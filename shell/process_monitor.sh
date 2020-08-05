@@ -53,7 +53,7 @@
 # * * * * * $PMONITOR "$REDIS_HOME/bin/redis-server $PORT1" "$REDIS_HOME/bin/redis-server $REDIS_HOME/conf/redis-$PORT1.conf"
 # * * * * * $PMONITOR "$REDIS_HOME/bin/redis-server $PORT2" "$REDIS_HOME/bin/redis-server $REDIS_HOME/conf/redis-$PORT2.conf"
 # 在确定对应的 redis-server 进程是否存在时，除了严格对比 $REDIS_HOME/bin/redis-server 外，
-# 还会进一步对比是否有匹配 PORT1 或 PORT2 的参数。
+# 还会进一步对比是否有匹配（部分匹配即可） PORT1 或 PORT2 的参数。
 if test $# -ne 2; then
     printf "\033[1;33musage: $0 process_cmdline restart_script\033[m\n"
     printf "\033[1;33mexample: /usr/local/bin/process_monitor.sh \"/usr/sbin/rinetd\" \"/usr/sbin/rinetd\"\033[m\n"
