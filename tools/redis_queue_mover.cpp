@@ -194,6 +194,7 @@ int main(int argc, char* argv[])
         MYLOG_INFO("Only prefix of destination: %d.\n", mooon::argument::dst_only_prefix->value());
 
         mooon::sys::CSignalHandler::block_signal(SIGTERM);
+        mooon::sys::CSignalHandler::block_signal(SIGUSR2);
         mooon::sys::CThreadEngine* signal_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&signal_thread_proc));
         mooon::sys::CThreadEngine* stat_thread = new mooon::sys::CThreadEngine(mooon::sys::bind(&stat_thread_proc));
         const int num_queues = mooon::argument::queues->value();
@@ -251,11 +252,23 @@ void on_terminated()
     g_stop = true;
 }
 
+void on_signal_handler(int signo)
+{
+    if (signo == SIGUSR2 && mooon::sys::g_logger != NULL)
+    {
+        const int ll = mooon::sys::g_logger->get_log_level();
+        if (ll == mooon::sys::LOG_LEVEL_DEBUG)
+            mooon::sys::g_logger->set_log_level(mooon::sys::LOG_LEVEL_INFO);
+        else if (ll == mooon::sys::LOG_LEVEL_INFO)
+            mooon::sys::g_logger->set_log_level(mooon::sys::LOG_LEVEL_DEBUG);
+    }
+}
+
 void signal_thread_proc()
 {
     while (!g_stop)
     {
-        mooon::sys::CSignalHandler::handle(&on_terminated, NULL, NULL, NULL);
+        mooon::sys::CSignalHandler::handle(&on_terminated, NULL, &on_signal_handler, NULL);
     }
 }
 
