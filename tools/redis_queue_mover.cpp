@@ -102,7 +102,7 @@ INTEGER_ARG_DEFINE(int, tick, 10000, 1, 10000000, "Times to tick");
 INTEGER_ARG_DEFINE(int, stat_interval, 2, 1, 86400, "Interval to stat in seconds");
 
 // 轮询队列和重试操作的间隔（单位为毫秒）
-INTEGER_ARG_DEFINE(int, retry_interval, 100, 1, 1000000, "Interval in milliseconds to poll or retry");
+INTEGER_ARG_DEFINE(int, retry_interval, 1000, 1, 3600000, "Interval in milliseconds to poll or retry");
 
 // 批量数，即一次批量移动多少
 INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move");
@@ -325,6 +325,7 @@ void stat_thread_proc()
 // thread_index 线程序号，从0开始递增的值，最大值为线程数减一
 void move_thread_proc(int thread_index)
 {
+    const int num_retries = 1;
     const int batch = mooon::argument::batch->value();
     const int num_queues = mooon::argument::queues->value();
     const int retry_interval = mooon::argument::retry_interval->value();
@@ -337,6 +338,8 @@ void move_thread_proc(int thread_index)
     uint32_t num_moved = 0; // 已移动的数目
     uint32_t old_num_moved = 0; // 上一次移动的数目
     std::vector<std::string> values;
+    std::string value;
+    r3c::Node node;
 
     try
     {
@@ -388,53 +391,64 @@ void move_thread_proc(int thread_index)
     // 从源队列取出数据
     while (!g_stop)
     {
+        value.clear();
         values.clear();
 
-        for (int k=0; !g_stop&&k<batch; ++k)
+        if (!mooon::argument::src_redis->value().empty())
         {
+            // 来源于 redis
             try
             {
-                std::string value;
-
-                errno = 0;
-                if (!mooon::argument::src_redis->value().empty()) {
-                    if (!src_redis->rpop(src_key, &value))
-                        break;
+                if (batch > 1)
+                {
+                    src_redis->rpop(src_key, &values, batch, &node, num_retries);
                 }
                 else
                 {
-                    char line[mooon::SIZE_4K];
-                    if (fgets(line, sizeof(line)-1, src_fp)) {
-                        g_stop = true;
-                        if (errno != 0)
-                            MYLOG_ERROR("Reading file://%s error://%s.\n", mooon::argument::src_file->c_value(), strerror(errno));
-                        break;
-                    }
-                    value = line;
+                    if (src_redis->rpop(src_key, &value, &node, num_retries))
+                        values.push_back(value);
                 }
-                if (!mooon::argument::dst_redis->value().empty()) {
-                    values.push_back(value); // 待写入目标队列的数据
-                }
-                else { // 数据不写入队列，而是落到文件中
-                    if (value[value.size()-1] != '\n')
-                        value.append("\n");
-                    if (write(dst_fd, value.data(), value.size()) == -1) {
-                        MYLOG_ERROR("Writing file://%s error://%s: %s.\n", mooon::argument::dst_file->c_value(), strerror(errno), value.c_str());
-                        g_stop = true;
-                        break;
-                    }
-                }
-                MYLOG_DEBUG("[%d] %.*s.\n", k, static_cast<int>(value.size()), value.c_str());
             }
             catch (r3c::CRedisException& ex)
             {
-                MYLOG_ERROR("[%s]: %s.\n", src_key.c_str(), ex.str().c_str());
+                MYLOG_ERROR("[node://%s][srckey://%s]: %s.\n", r3c::node2string(node).c_str(), src_key.c_str(), ex.str().c_str());
             }
-        } // for
+        }
+        else
+        {
+            // 来源于文件
+            for (int k=0; !g_stop&&k<batch; ++k)
+            {
+                char line[mooon::SIZE_4K];
+
+                errno = 0;
+                if (fgets(line, sizeof(line)-1, src_fp))
+                {
+                    g_stop = true;
+                    if (errno != 0)
+                        MYLOG_ERROR("Reading file://%s error://%s.\n", mooon::argument::src_file->c_value(), strerror(errno));
+                    break;
+                }
+
+                value = line;
+                if (value[value.size()-1] != '\n')
+                    value.append("\n");
+                if (write(dst_fd, value.data(), value.size()) == -1) {
+                    MYLOG_ERROR("Writing file://%s error://%s: %s.\n", mooon::argument::dst_file->c_value(), strerror(errno), value.c_str());
+                    g_stop = true;
+                    break;
+                }
+            } // for
+        }
         if (values.empty())
         {
             mooon::sys::CUtils::millisleep(retry_interval);
             continue;
+        }
+        else if (MYLOG_DEBUG_ENABLE())
+        {
+            for (std::vector<std::string>::size_type i=0; i<values.size(); ++i)
+                MYLOG_DEBUG("[%zd] %.*s.\n", i, static_cast<int>(values[i].size()), values[i].c_str());
         }
 
         // 数据写入目标队列
@@ -443,7 +457,7 @@ void move_thread_proc(int thread_index)
             try
             {
                 if (dst_redis != NULL)
-                    dst_redis->lpush(dst_key, values);
+                    dst_redis->lpush(dst_key, values, &node, num_retries);
 
                 const uint32_t num_moved_ = static_cast<uint32_t>(values.size());
 #if __WORDSIZE==64
@@ -456,13 +470,13 @@ void move_thread_proc(int thread_index)
                 if (num_moved - old_num_moved >= static_cast<uint32_t>(mooon::argument::tick->value()))
                 {
                     old_num_moved = num_moved;
-                    MYLOG_INFO("[%s]=>[%s]: %u.\n", src_key.c_str(), dst_key.c_str(), num_moved);
+                    MYLOG_INFO("[srckey://%s]=>[dstkey://%s]: %u.\n", src_key.c_str(), dst_key.c_str(), num_moved);
                 }
                 break;
             }
             catch (r3c::CRedisException& ex)
             {
-                MYLOG_ERROR("[%s]=>[%s]: %s.\n", src_key.c_str(), dst_key.c_str(), ex.str().c_str());
+                MYLOG_ERROR("[node://%s][srckey://%s]=>[dstkey://%s]: %s.\n",r3c::node2string(node).c_str(), src_key.c_str(), dst_key.c_str(), ex.str().c_str());
                 mooon::sys::CUtils::millisleep(retry_interval);
             }
         } // while (!values.empty())
