@@ -2,6 +2,7 @@
 #include "net/kafka_consumer.h"
 #include "sys/datetime_utils.h"
 #include "sys/log.h"
+#include "utils/string_utils.h"
 #include <time.h>
 #if MOOON_HAVE_LIBRDKAFKA==1
 NET_NAMESPACE_BEGIN
@@ -104,7 +105,8 @@ CKafkaConsumer::~CKafkaConsumer()
     // Close and shut down the proper
     // 最大阻塞时间由配置session.timeout.ms指定
     // 过程中RdKafka::RebalanceCb和RdKafka::OffsetCommitCb可能被调用
-    _consumer->close();
+    if (_consumer != NULL)
+        _consumer->close();
 }
 
 void CKafkaConsumer::set_auto_offset_reset(const std::string& str)
@@ -331,6 +333,68 @@ int CKafkaConsumer::sync_commit()
 int CKafkaConsumer::async_commit()
 {
     return int(_consumer->commitAsync());
+}
+
+// 参考：rdkafka_example.cpp
+int CKafkaConsumer::get_num_partitions(std::string* errmsg) const
+{
+    const int timeout_ms = 2000;
+    RdKafka::Topic *topic = NULL;
+    class RdKafka::Metadata *metadata;
+    int num_partitions = -1;
+
+    RdKafka::ErrorCode err = _consumer->metadata(false, topic, &metadata, timeout_ms);
+    if (err != RdKafka::ERR_NO_ERROR)
+    {
+        num_partitions = -1;
+        if (errmsg != NULL)
+            *errmsg = RdKafka::err2str(err);
+    }
+    else
+    {
+        // 遍历所有 topics
+        for (RdKafka::Metadata::TopicMetadataIterator it = metadata->topics()->begin(); it != metadata->topics()->end(); ++it)
+        {
+            // 目标 topic
+            if ((*it)->topic() == _topic_str)
+            {
+                num_partitions = (*it)->partitions()->size();
+                break;
+            }
+        }
+    }
+
+    return num_partitions;
+}
+
+// 参考：rdkafka_example.cpp:metadata_print()
+std::string CKafkaConsumer::get_broker_list(std::string* errmsg) const
+{
+    const int timeout_ms = 2000;
+    RdKafka::Topic *topic = NULL;
+    class RdKafka::Metadata *metadata;
+    std::string broker_list;
+
+    RdKafka::ErrorCode err = _consumer->metadata(false, topic, &metadata, timeout_ms);
+    if (err != RdKafka::ERR_NO_ERROR)
+    {
+        if (errmsg != NULL)
+            *errmsg = RdKafka::err2str(err);
+    }
+    else
+    {
+        // brokers 个数：metadata->brokers()->size()
+        for (RdKafka::Metadata::BrokerMetadataIterator ib=metadata->brokers()->begin(); ib != metadata->brokers()->end(); ++ib)
+        {
+            // (*ib)->id()
+            if (broker_list.empty())
+                broker_list = mooon::utils::CStringUtils::format_string("%s:%d", (*ib)->host().c_str(), (*ib)->port());
+            else
+                broker_list = mooon::utils::CStringUtils::format_string("%s:%d,%s", (*ib)->host().c_str(), (*ib)->port(), broker_list.c_str());
+        }
+    }
+
+    return broker_list;
 }
 
 NET_NAMESPACE_END

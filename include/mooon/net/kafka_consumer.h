@@ -54,6 +54,12 @@ public:
     // 返回RdKafka::ERR_NO_ERROR表示成功，其它出错
     int async_commit();
 
+    // 取得分区数
+    int get_num_partitions(std::string* errmsg=NULL) const;
+
+    // 取得 brokers 列表
+    std::string get_broker_list(std::string* errmsg=NULL) const;
+
 private:
     std::string _brokers_str;
     std::string _topic_str;
