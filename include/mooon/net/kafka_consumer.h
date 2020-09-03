@@ -42,6 +42,7 @@ public:
     // 3) none Topic各分区都存在已提交的offset时从offset后开始消费，只要有一个分区不存在已提交的offset则抛出异常
     void set_auto_offset_reset(const std::string& str);
 
+    void close(); // 这个调用最长会阻塞 session.timeout.ms 指定的时长（毫秒）
     bool init(const std::string& brokers, const std::string& topic, const std::string& group, bool enable_rebalance=false, bool enable_auto_commit=true);
     bool consume(std::string* log, int timeout_ms=1000, struct MessageInfo* mi=NULL);
     int consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms=1000, struct MessageInfo* mi=NULL);

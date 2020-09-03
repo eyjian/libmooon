@@ -102,16 +102,25 @@ CKafkaConsumer::CKafkaConsumer(RdKafka::EventCb* event_cb, RdKafka::ConsumeCb* c
 
 CKafkaConsumer::~CKafkaConsumer()
 {
-    // Close and shut down the proper
-    // 最大阻塞时间由配置session.timeout.ms指定
-    // 过程中RdKafka::RebalanceCb和RdKafka::OffsetCommitCb可能被调用
-    if (_consumer.get() != NULL)
-        _consumer->close();
+    close();
 }
 
 void CKafkaConsumer::set_auto_offset_reset(const std::string& str)
 {
     _auto_offset_reset = str;
+}
+
+void CKafkaConsumer::close()
+{
+    // Close and shut down the proper
+    // 最大阻塞时间由配置 session.timeout.ms 指定
+    // 过程中 RdKafka::RebalanceCb 和 RdKafka::OffsetCommitCb 可能被调用
+    if (_consumer.get() != NULL)
+    {
+        // The consumer object must later be freed with delete
+        _consumer->close();
+        _consumer.reset(NULL);
+    }
 }
 
 bool CKafkaConsumer::init(const std::string& brokers, const std::string& topic, const std::string& group, bool enable_rebalance, bool enable_auto_commit)
