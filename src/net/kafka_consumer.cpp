@@ -118,8 +118,15 @@ void CKafkaConsumer::close()
     if (_consumer.get() != NULL)
     {
         // The consumer object must later be freed with delete
-        _consumer->close();
-        _consumer.reset(NULL);
+        const RdKafka::ErrorCode errcode = _consumer->close();
+        if (errcode != RdKafka::ERR_NO_ERROR)
+        {
+            MYLOG_ERROR("Close topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
+        }
+        else
+        {
+            _consumer.reset(NULL);
+        }
     }
 }
 
