@@ -7,6 +7,14 @@
 #if MOOON_HAVE_LIBRDKAFKA==1
 NET_NAMESPACE_BEGIN
 
+// 消息模式
+enum ConsumedMode
+{
+    CM_NONE, // 未指定消费模式
+    CM_SUBSCRIBE, // 订阅消费模式
+    CM_ASSIGN // 绑定分区消费模式
+};
+
 class DefEventImpl: public RdKafka::EventCb
 {
 private:
@@ -72,6 +80,8 @@ private:
 
 CKafkaConsumer::CKafkaConsumer(RdKafka::EventCb* event_cb, RdKafka::ConsumeCb* consume_cb, RdKafka::RebalanceCb* rebalance_cb, RdKafka::OffsetCommitCb* offset_commitcb)
 {
+    _consumed_mode = CM_NONE;
+
     // KafkaConsumer::create和Producer::create
     // 调用HandleImpl::set_common_config注册下列回调。
 
@@ -102,7 +112,15 @@ CKafkaConsumer::CKafkaConsumer(RdKafka::EventCb* event_cb, RdKafka::ConsumeCb* c
 
 CKafkaConsumer::~CKafkaConsumer()
 {
-    close();
+    bool success = true;
+    if (_consumed_mode == CM_SUBSCRIBE)
+        success = unsubscribe_topic();
+    else if (_consumed_mode == CM_ASSIGN)
+        success = unassign_partitions();
+    else
+        success = true;
+    if (success)
+        close();
 }
 
 void CKafkaConsumer::set_auto_offset_reset(const std::string& str)
@@ -117,25 +135,15 @@ void CKafkaConsumer::close()
     // 过程中 RdKafka::RebalanceCb 和 RdKafka::OffsetCommitCb 可能被调用
     if (_consumer.get() != NULL)
     {
-        RdKafka::ErrorCode errcode;
-
-        errcode = _consumer->unsubscribe();
+        // The consumer object must later be freed with delete
+        const RdKafka::ErrorCode errcode = _consumer->close();
         if (errcode != RdKafka::ERR_NO_ERROR)
         {
-            MYLOG_ERROR("Unsubscribe topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
+            MYLOG_ERROR("Close topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
         }
         else
         {
-            // The consumer object must later be freed with delete
-            errcode = _consumer->close();
-            if (errcode != RdKafka::ERR_NO_ERROR)
-            {
-                MYLOG_ERROR("Close topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
-            }
-            else
-            {
-                _consumer.reset(NULL);
-            }
+            _consumer.reset(NULL);
         }
     }
 }
@@ -160,8 +168,6 @@ bool CKafkaConsumer::init(const std::string& brokers, const std::string& topic, 
     do
     {
         std::string errmsg;
-        std::vector<std::string> topics;
-        topics.push_back(topic);
         _global_conf.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
         _topic_conf.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC));
 
@@ -242,15 +248,7 @@ bool CKafkaConsumer::init(const std::string& brokers, const std::string& topic, 
             break;
         }
 
-        // Subscribe topics
-        const RdKafka::ErrorCode errcode = _consumer->subscribe(topics);
-        if (errcode != RdKafka::ERR_NO_ERROR)
-        {
-            MYLOG_ERROR("Subscribe topic://%s error: (%d)%s.\n", topic.c_str(), (int)errcode, err2str(errcode).c_str());
-            break;
-        }
-
-        MYLOG_INFO("Subscribe topic://%s OK.\n", topic.c_str());
+        MYLOG_INFO("Create consumer for topic://%s successfully.\n", topic.c_str());
         _brokers_str = brokers;
         _topic_str = topic;
         _group_str = group;
@@ -258,6 +256,115 @@ bool CKafkaConsumer::init(const std::string& brokers, const std::string& topic, 
     } while (false);
 
     return false;
+}
+
+bool CKafkaConsumer::subscribe_topic()
+{
+    std::vector<std::string> topics;
+    topics.push_back(_topic_str);
+
+    // Subscribe topics
+    const RdKafka::ErrorCode errcode = _consumer->subscribe(topics);
+    if (errcode == RdKafka::ERR_NO_ERROR)
+    {
+        _consumed_mode = CM_SUBSCRIBE;
+        return true;
+    }
+    else
+    {
+        MYLOG_ERROR("Subscribe topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
+        return false;
+    }
+}
+
+bool CKafkaConsumer::unsubscribe_topic()
+{
+    const RdKafka::ErrorCode errcode = _consumer->unsubscribe();
+    if (errcode == RdKafka::ERR_NO_ERROR)
+    {
+        _consumed_mode = CM_NONE;
+        return true;
+    }
+    else
+    {
+        MYLOG_ERROR("Unsubscribe topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
+        return false;
+    }
+}
+
+bool CKafkaConsumer::assign_partitions(const std::vector<int>& partitions)
+{
+    std::vector<RdKafka::TopicPartition*> topic_partitions;
+    for (std::vector<int>::size_type i=0; i<partitions.size(); ++i)
+    {
+        const int partition = partitions[i];
+        RdKafka::TopicPartition* topic_partition = RdKafka::TopicPartition::create(_topic_str, partition);
+        topic_partitions.push_back(topic_partition);
+    }
+    const RdKafka::ErrorCode errcode = _consumer->assign(topic_partitions);
+    if (errcode == RdKafka::ERR_NO_ERROR)
+    {
+        _consumed_mode = CM_ASSIGN;
+        return true;
+    }
+    else
+    {
+        MYLOG_ERROR("Assign topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
+        return false;
+    }
+}
+
+bool CKafkaConsumer::assign_partitions(int partition)
+{
+    std::vector<int> partitions(1);
+    partitions[0] = partition;
+    return assign_partitions(partitions);
+}
+
+bool CKafkaConsumer::assign_partitions(const std::vector<std::pair<int, int64_t> >& partitions)
+{
+    std::vector<RdKafka::TopicPartition*> topic_partitions;
+    for (std::vector<int>::size_type i=0; i<partitions.size(); ++i)
+    {
+        const int partition = partitions[i].first;
+        const int64_t offset = partitions[i].second;
+        RdKafka::TopicPartition* topic_partition = RdKafka::TopicPartition::create(_topic_str, partition, offset);
+        topic_partitions.push_back(topic_partition);
+    }
+    const RdKafka::ErrorCode errcode = _consumer->assign(topic_partitions);
+    if (errcode == RdKafka::ERR_NO_ERROR)
+    {
+        _consumed_mode = CM_ASSIGN;
+        return true;
+    }
+    else
+    {
+        MYLOG_ERROR("Assign topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
+        return false;
+    }
+}
+
+bool CKafkaConsumer::assign_partitions(int partition, int64_t offset)
+{
+    std::vector<std::pair<int, int64_t> > partitions(1);
+    partitions[0].first = partition;
+    partitions[0].second = offset;
+    return assign_partitions(partitions);
+}
+
+bool CKafkaConsumer::unassign_partitions()
+{
+    const RdKafka::ErrorCode errcode = _consumer->unassign();
+    if (errcode == RdKafka::ERR_NO_ERROR)
+    {
+        _consumed_mode = CM_NONE;
+        return true;
+    }
+    else
+    {
+        MYLOG_ERROR("Unassign topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
+        return false;
+    }
 }
 
 bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInfo* mi)
