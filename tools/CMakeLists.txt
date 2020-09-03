@@ -7,7 +7,7 @@ link_directories(../src)
 link_libraries(dl pthread rt z)
 
 if (MOOON_HAVE_OPENSSL)
-    # 计算md5工具
+   	 # 计算md5工具
     add_executable(md5 md5.cpp)
     target_link_libraries(md5 libmooon.a libcrypto.a)
     
@@ -47,7 +47,7 @@ if (MOOON_HAVE_LIBSSH2)
 	install(
 	        TARGETS mooon_ssh mooon_upload mooon_download
 	        DESTINATION bin
-	       )
+	)
 endif ()
 
 # r3c_stress
@@ -64,7 +64,7 @@ if (MOOON_HAVE_R3C)
     install(
             TARGETS r3c_stress redis_queue_mover
             DESTINATION bin
-           )
+	)
 endif ()
 
 # hbase_stress
@@ -82,7 +82,7 @@ if (MOOON_HAVE_THRIFT)
     install(
             TARGETS hbase_stress hbase_scan
             DESTINATION bin
-           )      
+	)      
 endif ()
 
 # mysql_escape_test
@@ -115,7 +115,7 @@ if (MOOON_HAVE_ZOOKEEPER)
     install(
             TARGETS zkupload zkdownload
             DESTINATION bin
-           ) 
+	) 
 endif ()
 
 if (MOOON_HAVE_CURL)
@@ -128,4 +128,15 @@ endif ()
 install(
         TARGETS disk_benchmark
         DESTINATION bin
-       )
+)
+
+if (MOOON_HAVE_LIBRDKAFKA)
+	add_executable(kafka_consumer kafka_consumer.cpp)
+    target_link_libraries(kafka_consumer libmooon.a librdkafka++.a librdkafka.a libssl.a libcrypto.a)
+    
+	# CMAKE_INSTALL_PREFIX
+    install(
+            TARGETS kafka_consumer
+            DESTINATION bin
+	) 
+endif ()
