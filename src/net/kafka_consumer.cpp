@@ -117,15 +117,25 @@ void CKafkaConsumer::close()
     // 过程中 RdKafka::RebalanceCb 和 RdKafka::OffsetCommitCb 可能被调用
     if (_consumer.get() != NULL)
     {
-        // The consumer object must later be freed with delete
-        const RdKafka::ErrorCode errcode = _consumer->close();
+        RdKafka::ErrorCode errcode;
+
+        errcode = _consumer->unsubscribe();
         if (errcode != RdKafka::ERR_NO_ERROR)
         {
-            MYLOG_ERROR("Close topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
+            MYLOG_ERROR("Unsubscribe topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
         }
         else
         {
-            _consumer.reset(NULL);
+            // The consumer object must later be freed with delete
+            errcode = _consumer->close();
+            if (errcode != RdKafka::ERR_NO_ERROR)
+            {
+                MYLOG_ERROR("Close topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, err2str(errcode).c_str());
+            }
+            else
+            {
+                _consumer.reset(NULL);
+            }
         }
     }
 }
