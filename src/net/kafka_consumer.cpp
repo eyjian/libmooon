@@ -105,7 +105,7 @@ CKafkaConsumer::~CKafkaConsumer()
     // Close and shut down the proper
     // 最大阻塞时间由配置session.timeout.ms指定
     // 过程中RdKafka::RebalanceCb和RdKafka::OffsetCommitCb可能被调用
-    if (_consumer != NULL)
+    if (_consumer.get() != NULL)
         _consumer->close();
 }
 
