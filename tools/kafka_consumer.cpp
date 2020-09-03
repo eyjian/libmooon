@@ -25,8 +25,8 @@ INTEGER_ARG_DEFINE(int, num, 1, 1, 100000000, "Number of messages consumed.");
 // 每次消费多少笔
 INTEGER_ARG_DEFINE(int, batch, 1, 1, 2020, "Batch to consume.");
 
-// Kafka 消费超时时长
-INTEGER_ARG_DEFINE(int, timeout, 1000, 1, 3600000, "Timeout in millisecond to consume messages.");
+// Kafka 消费超时时长（单位：毫秒）
+INTEGER_ARG_DEFINE(int, timeout, 2000, 1, 3600000, "Timeout in millisecond to consume messages.");
 
 #if MOOON_HAVE_LIBRDKAFKA==1 // 宏MOOON_HAVE_LIBRDKAFKA的值须为1
 
@@ -35,7 +35,7 @@ static int get_num_threads(int num_partitions);
 static int get_num_partitions();
 static bool start_consumer_threads();
 static void wait_consumer_threads();
-static void consumer_thread_proc(int index, int num);
+static void consumer_thread_proc(int partition, int num);
 static void summarize(mooon::sys::CStopWatch* sw);
 
 static std::vector<mooon::sys::CThreadEngine*> consumer_threads;
@@ -137,8 +137,6 @@ int get_num_partitions()
             MYLOG_INFO("Number of partitions of topic://%s: %d\n", mooon::argument::topic->c_value(), n);
             num_partitions = n;
         }
-
-        kafka_consumer.close();
     }
 
     return num_partitions;
@@ -190,7 +188,7 @@ void wait_consumer_threads()
     consumer_threads.clear();
 }
 
-void consumer_thread_proc(int index, int num)
+void consumer_thread_proc(int partition, int num)
 {
     const std::string offset_str = get_offset_str();
     mooon::net::CKafkaConsumer kafka_consumer;
@@ -205,23 +203,26 @@ void consumer_thread_proc(int index, int num)
     }
     else
     {
-        const int timeout_ms = mooon::argument::timeout->value();
-        const int batch = mooon::argument::batch->value();
-
-        for (int i=0; i<num; ++i)
+        if (kafka_consumer.assign_partitions(partition))
         {
-            struct mooon::net::MessageInfo mi;
-            std::vector<std::string> logs;
-            std::string log;
+            const int timeout_ms = mooon::argument::timeout->value();
+            const int batch = mooon::argument::batch->value();
 
-            if (batch == 1)
+            for (int i=0; i<num; ++i)
             {
-                if (kafka_consumer.consume(&log, timeout_ms, &mi))
-                    ++num_logs_consumed;
-            }
-            else
-            {
-                num_logs_consumed += kafka_consumer.consume_batch(batch, &logs, timeout_ms, &mi);
+                struct mooon::net::MessageInfo mi;
+                std::vector<std::string> logs;
+                std::string log;
+
+                if (batch == 1)
+                {
+                    if (kafka_consumer.consume(&log, timeout_ms, &mi))
+                        ++num_logs_consumed;
+                }
+                else
+                {
+                    num_logs_consumed += kafka_consumer.consume_batch(batch, &logs, timeout_ms, &mi);
+                }
             }
         }
     }
