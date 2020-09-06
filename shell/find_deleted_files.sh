@@ -15,5 +15,5 @@ do
   fi
 
   pid=$dir
-  lsof -p $pid 2>/dev/null | grep "deleted"
+  lsof -p $pid 2>/dev/null | grep "deleted" | grep -v "$0"
 done
