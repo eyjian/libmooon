@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # https://github.com/eyjian/libmooon/blob/master/shell/process_monitor.sh
 # Created by yijian on 2012/7/23
 #
