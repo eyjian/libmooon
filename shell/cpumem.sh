@@ -29,12 +29,15 @@ interval=2
 if test $# -eq 2; then
     interval=$2
 fi
-printf "[StatTime] %%CPU %%MEM RSS VSZ\n"
+printf "[StatTime] THREADS %%CPU %%MEM RSS VSZ\n"
 while (true)
 do
     rss=0
     vsz=0
     stattime="`date +'%Y-%m-%d %H:%M:%S'`"
+
+    # 取得进程的线程数
+    threads=`awk -F[\ :]. '{if (match($1,"Threads")) print $2}' /proc/$pid/status`
 
     # rss和vsz的单位均为kb
     eval $(ps h -p $pid -o pcpu,pmem,rss,vsz | awk '{printf("cpu=%s\nmem=%s\nrss=%s\nvsz=%s\n",$1,$2,$3,$4);}')
@@ -66,6 +69,6 @@ do
 
     # \033[1;33m 黄色
     # \033[1;32m 亮绿色
-    printf "[%s] \033[1;33m%s\033[m %s \033[1;32m%s\033[m %s\n" "$stattime" "$cpu" "$mem" "$rssize" "$vsize";
+    printf "[%s] \033[0;32;31m%s\033[m \033[1;33m%s\033[m %s \033[1;32m%s\033[m %s\n" "$stattime" "$threads" "$cpu" "$mem" "$rssize" "$vsize";
     sleep $interval
 done
