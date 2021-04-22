@@ -161,6 +161,12 @@ public:
         return utils::CStringUtils::format_string("thrift://%s:%u", get_host().c_str(), get_port());
     }
 
+    // 返回最近一次成功建议连接的时间
+    time_t get_last_success_connect_time() const
+    {
+        return _last_success_connect_time;
+    }
+
 private:
     void init();
 
@@ -168,6 +174,7 @@ private:
     int _connect_timeout_milliseconds;
     int _receive_timeout_milliseconds;
     int _send_timeout_milliseconds;
+    time_t _last_success_connect_time; // 最近一次成功连接时间
 
 private:
     // TSocket只支持一个server，而TSocketPool是TSocket的子类支持指定多个server，运行时随机选择一个
@@ -377,6 +384,8 @@ CThriftClientHelper<ThriftClient, Protocol, Transport>::CThriftClientHelper(
 template <class ThriftClient, class Protocol, class Transport>
 void CThriftClientHelper<ThriftClient, Protocol, Transport>::init()
 {
+    _last_success_connect_time = 0;
+
     _socket->setConnTimeout(_connect_timeout_milliseconds);
     _socket->setRecvTimeout(_receive_timeout_milliseconds);
     _socket->setSendTimeout(_send_timeout_milliseconds);
@@ -402,6 +411,7 @@ void CThriftClientHelper<ThriftClient, Protocol, Transport>::connect()
     {
         // 如果Transport为TFramedTransport，则实际调用：TFramedTransport::open -> TSocketPool::open
         _transport->open();
+        _last_success_connect_time = time(NULL);
         // 当"TSocketPool::open: all connections failed"时，
         // TSocketPool::open就抛出异常TTransportException，异常类型为TTransportException::NOT_OPEN
     }
