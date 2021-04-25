@@ -70,8 +70,8 @@ public:
     // 如果为绑定消费模式，则在 close 之前应调用
     bool unassign_partitions();
 
-    bool consume(std::string* log, int timeout_ms=1000, struct MessageInfo* mi=NULL);
-    int consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms=1000, struct MessageInfo* mi=NULL);
+    bool consume(std::string* log, int timeout_ms=1000, struct MessageInfo* mi=NULL, bool* timeout=NULL);
+    int consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms=1000, struct MessageInfo* mi=NULL, bool* timeout=NULL);
 
     // 同步阻塞提交
     // 返回RdKafka::ERR_NO_ERROR表示成功，其它出错

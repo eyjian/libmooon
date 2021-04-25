@@ -367,12 +367,13 @@ bool CKafkaConsumer::unassign_partitions()
     }
 }
 
-bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInfo* mi)
+bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInfo* mi, bool* timeout)
 {
     // 注意对于消费者，不能调用poll，请参见rdkafkacpp.h中对函数consume的说明
     const RdKafka::Message* message = _consumer->consume(timeout_ms);
     const RdKafka::ErrorCode errcode = message->err();
 
+    *timeout = false;
     if (RdKafka::ERR_NO_ERROR == errcode)
     {
         MYLOG_DEBUG("Consume topic://%s OK: %.*s.\n", _topic_str.c_str(), (int)message->len(), (char*)message->payload());
@@ -398,19 +399,24 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
         {
             MYLOG_ERROR("Consume topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, message->errstr().c_str());
         }
+        if (RdKafka::ERR__TIMED_OUT == errcode)
+        {
+            *timeout = true;
+        }
 
         delete message;
         return false;
     }
 }
 
-int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms, struct MessageInfo* mi)
+int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms, struct MessageInfo* mi, bool* timeout)
 {
     const int64_t end = int64_t(sys::CDatetimeUtils::get_current_milliseconds() + timeout_ms);
     int64_t remaining_timeout = timeout_ms;
     int num_logs  = 0;
     logs->reserve(batch_size);
 
+    *timeout = false;
     for (int i=0; i<batch_size; ++i)
     {
         // 注意对于消费者，不能调用poll，请参见rdkafkacpp.h中对函数consume的说明
@@ -451,6 +457,8 @@ int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs
             }
 
             delete message;
+            if (RdKafka::ERR__TIMED_OUT == errcode && num_logs == 0)
+                *timeout = true;
             break;
         }
     }
