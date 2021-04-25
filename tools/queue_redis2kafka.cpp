@@ -343,6 +343,7 @@ void CRedis2kafkaMover::kafka_produce(const std::vector<std::string>& logs)
 {
     metric.pop_number += logs.size();
 
+    MYLOG_DEBUG("%.*s\n", (int)logs[0].size(), logs[0].c_str());
     while (true)
     {
         std::string errmsg;

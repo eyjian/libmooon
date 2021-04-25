@@ -82,7 +82,7 @@ private:
 
 private:
     bool rpop_logs(int batch, std::vector<std::string>* logs);
-    void lpush_logs(const std::vector<std::string>& logs);
+    bool lpush_logs(const std::vector<std::string>& logs);
     std::string get_target_redis_key();
 
 private:
@@ -320,10 +320,21 @@ void CRedis2redisMover::run()
     while (!_stop)
     {
         std::vector<std::string> logs(batch);
-        if (rpop_logs(batch, &logs))
-            lpush_logs(logs);
-        else
+        if (!rpop_logs(batch, &logs))
+        {
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        }
+        else
+        {
+            MYLOG_DEBUG("%.*s\n", (int)logs[0].size(), logs[0].c_str());
+
+            while (!_stop) // 重试直到成功
+            {
+                if (lpush_logs(logs))
+                    break;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            }
+        }
     }
     {
         // 线程退出时记录日志
@@ -358,7 +369,7 @@ bool CRedis2redisMover::rpop_logs(int batch, std::vector<std::string>* logs)
     }
 }
 
-void CRedis2redisMover::lpush_logs(const std::vector<std::string>& logs)
+bool CRedis2redisMover::lpush_logs(const std::vector<std::string>& logs)
 {
     const std::string target_redis_key = get_target_redis_key();
     r3c::Node node;
@@ -368,11 +379,13 @@ void CRedis2redisMover::lpush_logs(const std::vector<std::string>& logs)
         // 左进右出
         _target_redis->lpush(target_redis_key, logs, &node);
         metric.push_number += logs.size();
+        return true;
     }
     catch (r3c::CRedisException& ex)
     {
         MYLOG_ERROR("Redis lpush by %s failed: %s.\n", r3c::node2string(node).c_str(), ex.str().c_str());
         ++metric.target_redis_exception_number;
+        return false;
     }
 }
 

@@ -81,6 +81,9 @@ private:
     void run();
 
 private:
+    bool lpush_logs(const std::vector<std::string>& logs);
+
+private:
     int _index;
     CKafka2redis* _kafka2redis;
     std::atomic<bool> _stop;
@@ -340,9 +343,15 @@ void CKafka2redisConsumer::run()
             }
             if (!logs.empty())
             {
+                MYLOG_DEBUG("%.*s\n", (int)logs[0].size(), logs[0].c_str());
                 metric.consume_number += logs.size();
-                _redis->lpush(redis_key, logs, &node);
-                metric.push_number += logs.size();
+
+                while (!_stop) // 重试直到成功
+                {
+                    if (lpush_logs(logs))
+                        break;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                }
             }
             else
             {
@@ -365,5 +374,24 @@ void CKafka2redisConsumer::run()
             MYLOG_INFO("Kafka2redisConsumer[%d:%s] is exited now\n", _index, ss.str().c_str());
         else
             MYLOG_DEBUG("Kafka2redisConsumer[%d:%s] is exited now\n", _index, ss.str().c_str());
+    }
+}
+
+bool CKafka2redisConsumer::lpush_logs(const std::vector<std::string>& logs)
+{
+    r3c::Node node;
+
+    try
+    {
+        // 左进右出
+        _redis->lpush(_redis_key, logs, &node);
+        metric.push_number += logs.size();
+        return true;
+    }
+    catch (r3c::CRedisException& ex)
+    {
+        MYLOG_ERROR("Redis lpush by %s failed: %s.\n", r3c::node2string(node).c_str(), ex.str().c_str());
+        ++metric.redis_exception_number;
+        return false;
     }
 }
