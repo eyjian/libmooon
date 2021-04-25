@@ -28,12 +28,12 @@ STRING_ARG_DEFINE(kafka_group, "", "Consumer group of kakfa.");
 INTEGER_ARG_DEFINE(int, kafka_timeout, 60000, 0, 86400000, "Timeout to consume kafka in millisecond.");
 INTEGER_ARG_DEFINE(int, kafka_offset, 1, 1, 3, "Kafka offset: 1 for earliest, 2 for latest, 3 for none."); // 设置从Kafka哪儿开始消费
 
-// Redis (destination)
+// Redis (target)
 STRING_ARG_DEFINE(redis_nodes, "", "Nodes list of redi.");
 STRING_ARG_DEFINE(redis_password, "", "Password of redis.");
 STRING_ARG_DEFINE(redis_key_prefix, "", "Key prefix of redis list.");
 INTEGER_ARG_DEFINE(int, redis_key_count, 1, 1, 2020, "Number of redis list keys with the given prefix.");
-INTEGER_ARG_DEFINE(int, redis_timeout, 60000, 0, 86400000, "Timeout to consume redis in millisecond.");
+INTEGER_ARG_DEFINE(int, redis_timeout, 60000, 0, 86400000, "Timeout to lpush redis in millisecond.");
 
 // 批量数，即一次批量移动多少
 INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to consume from kafka, and lpush to redis.");

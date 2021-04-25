@@ -26,12 +26,12 @@ STRING_ARG_DEFINE(redis_nodes, "", "Nodes list of redis");
 STRING_ARG_DEFINE(redis_password, "", "Password of redis.");
 STRING_ARG_DEFINE(redis_key_prefix, "", "Key prefix of redis list.");
 INTEGER_ARG_DEFINE(int, redis_key_count, 1, 1, 2020, "Number of redis list keys with the given prefix.");
-INTEGER_ARG_DEFINE(int, redis_timeout, 60000, 0, 86400000, "Timeout to consume redis in millisecond.");
+INTEGER_ARG_DEFINE(int, redis_timeout, 60000, 0, 86400000, "Timeout to rpop redis in millisecond.");
 
-// Kafka (destination)
+// Kafka (target)
 STRING_ARG_DEFINE(kafka_brokers, "", "Brokers list of kafka, e.g., --kafka_brokers=127.0.0.1:9092,127.0.0.2:9092/kafka.");
 STRING_ARG_DEFINE(kafka_topic, "", "Topic of kafka.");
-INTEGER_ARG_DEFINE(int, kafka_timeout, 60000, 0, 86400000, "Timeout to consume kafka in millisecond.");
+INTEGER_ARG_DEFINE(int, kafka_timeout, 60000, 0, 86400000, "Timeout to produce kafka in millisecond.");
 
 // 批量数，即一次批量移动多少
 INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move from redis to kafka.");
