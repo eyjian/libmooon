@@ -18,22 +18,25 @@
 #include <thread>
 #include <vector>
 
+// 可选的用来标识进程的字符串
+STRING_ARG_DEFINE(label, "", "Optional string used to identify process.");
+
 // Kafka (source)
-STRING_ARG_DEFINE(kafkabrokers, "", "Brokers list of kafka, e.g., --kafkabrokers=127.0.0.1:9092,127.0.0.2:9092/kafka.");
-STRING_ARG_DEFINE(kafkatopic, "", "Topic of kafka.");
-STRING_ARG_DEFINE(kafkagroup, "", "Consumer group of kakfa.");
-INTEGER_ARG_DEFINE(int, kafkatimeout, 60000, 0, 86400000, "Timeout to consume kafka in millisecond.");
-INTEGER_ARG_DEFINE(int, kafkaoffset, 1, 1, 3, "Kafka offset: 1 for earliest, 2 for latest, 3 for none."); // 设置从Kafka哪儿开始消费
+STRING_ARG_DEFINE(kafka_brokers, "", "Brokers list of kafka, e.g., --kafka_brokers=127.0.0.1:9092,127.0.0.2:9092/kafka.");
+STRING_ARG_DEFINE(kafka_topic, "", "Topic of kafka.");
+STRING_ARG_DEFINE(kafka_group, "", "Consumer group of kakfa.");
+INTEGER_ARG_DEFINE(int, kafka_timeout, 60000, 0, 86400000, "Timeout to consume kafka in millisecond.");
+INTEGER_ARG_DEFINE(int, kafka_offset, 1, 1, 3, "Kafka offset: 1 for earliest, 2 for latest, 3 for none."); // 设置从Kafka哪儿开始消费
 
 // Redis (destination)
-STRING_ARG_DEFINE(redis, "", "Nodes list of redi.");
-STRING_ARG_DEFINE(redispassword, "", "Password of redis.");
-STRING_ARG_DEFINE(prefix, "", "Key prefix of redis list.");
-INTEGER_ARG_DEFINE(int, keys, 1, 1, 2020, "Number of redis list keys with the given prefix.");
-INTEGER_ARG_DEFINE(int, redistimeout, 60000, 0, 86400000, "Timeout to consume redis in millisecond.");
+STRING_ARG_DEFINE(redis_nodes, "", "Nodes list of redi.");
+STRING_ARG_DEFINE(redis_password, "", "Password of redis.");
+STRING_ARG_DEFINE(redis_key_prefix, "", "Key prefix of redis list.");
+INTEGER_ARG_DEFINE(int, redis_key_count, 1, 1, 2020, "Number of redis list keys with the given prefix.");
+INTEGER_ARG_DEFINE(int, redis_timeout, 60000, 0, 86400000, "Timeout to consume redis in millisecond.");
 
 // 批量数，即一次批量移动多少
-INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move from redis to kafka.");
+INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to consume from kafka, and lpush to redis.");
 
 class CKafka2redisConsumer;
 
@@ -100,38 +103,40 @@ int main(int argc, char* argv[])
 
 bool CKafka2redis::on_check_parameter()
 {
-    // --redis
-    if (mooon::argument::redis->value().empty())
+    // --redis_nodes
+    if (mooon::argument::redis_nodes->value().empty())
     {
-        fprintf(stderr, "Parameter[--redis] is not set\n");
+        fprintf(stderr, "Parameter[--redis_nodes] is not set\n");
         return false;
     }
-    // --prefix
-    if (mooon::argument::prefix->value().empty())
+    // --redis_key_prefix
+    if (mooon::argument::redis_key_prefix->value().empty())
     {
-        fprintf(stderr, "Parameter[--prefix] is not set\n");
+        fprintf(stderr, "Parameter[--redis_key_prefix] is not set\n");
         return false;
     }
-
-    // --kafkabrokers
-    if (mooon::argument::kafkabrokers->value().empty())
+    // --kafka_brokers
+    if (mooon::argument::kafka_brokers->value().empty())
     {
-        fprintf(stderr, "Parameter[--kafkabrokers] is not set\n");
+        fprintf(stderr, "Parameter[--kafka_brokers] is not set\n");
         return false;
     }
-    // --kafkatopic
-    if (mooon::argument::kafkatopic->value().empty())
+    // --kafka_topic
+    if (mooon::argument::kafka_topic->value().empty())
     {
-        fprintf(stderr, "Parameter[--kafkatopic] is not set\n");
+        fprintf(stderr, "Parameter[--kafka_topic] is not set\n");
         return false;
     }
-    // --kafkagroup
-    if (mooon::argument::kafkagroup->value().empty())
+    // --kafka_group
+    if (mooon::argument::kafka_group->value().empty())
     {
-        fprintf(stderr, "Parameter[--kafkagroup] is not set\n");
+        fprintf(stderr, "Parameter[--kafka_group] is not set\n");
         return false;
     }
-
+    if (!mooon::argument::label->value().empty())
+    {
+        this->set_logger(mooon::argument::label->value());
+    }
     return true;
 }
 
@@ -192,7 +197,7 @@ bool CKafka2redis::init_metric_logger()
 
 bool CKafka2redis::start_kafka2redis_consumers()
 {
-    for (int i=0; i<mooon::argument::keys->value(); ++i)
+    for (int i=0; i<mooon::argument::redis_key_count->value(); ++i)
     {
         std::shared_ptr<CKafka2redisConsumer> kafka2redis_consumer(new CKafka2redisConsumer(this));
         if (kafka2redis_consumer->start(i))
@@ -235,7 +240,7 @@ bool CKafka2redisConsumer::start(int index)
     try
     {
         _index = index;
-        _redis_key = mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::prefix->c_value(), index);
+        _redis_key = mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::redis_key_prefix->c_value(), index);
 
         if (!init_redis() || !init_kafka_consumer())
         {
@@ -274,15 +279,15 @@ bool CKafka2redisConsumer::init_redis()
     {
         _redis.reset(
                 new r3c::CRedisClient(
-                        mooon::argument::redis->value(),
-                        mooon::argument::redispassword->value(),
-                        mooon::argument::redistimeout->value(),
-                        mooon::argument::redistimeout->value()));
+                        mooon::argument::redis_nodes->value(),
+                        mooon::argument::redis_password->value(),
+                        mooon::argument::redis_timeout->value(),
+                        mooon::argument::redis_timeout->value()));
         return true;
     }
     catch (r3c::CRedisException& ex)
     {
-        MYLOG_ERROR("Create RedisClient by %s failed: %s.\n", mooon::argument::redis->c_value(), ex.str().c_str());
+        MYLOG_ERROR("Create RedisClient by %s failed: %s.\n", mooon::argument::redis_nodes->c_value(), ex.str().c_str());
         return false;
     }
 }
@@ -290,18 +295,18 @@ bool CKafka2redisConsumer::init_redis()
 bool CKafka2redisConsumer::init_kafka_consumer()
 {
     std::string str;
-    if (mooon::argument::kafkaoffset->value() == 1)
+    if (mooon::argument::kafka_offset->value() == 1)
         str = "earliest";
-    else if (mooon::argument::kafkaoffset->value() == 2)
+    else if (mooon::argument::kafka_offset->value() == 2)
         str = "latest";
     else
         str = "none";
     _kafka_consumer.reset(new mooon::net::CKafkaConsumer);
     _kafka_consumer->set_auto_offset_reset(str);
     return _kafka_consumer->init(
-            mooon::argument::kafkabrokers->value(),
-            mooon::argument::kafkatopic->value(),
-            mooon::argument::kafkagroup->value())
+            mooon::argument::kafka_brokers->value(),
+            mooon::argument::kafka_topic->value(),
+            mooon::argument::kafka_group->value())
         && _kafka_consumer->subscribe_topic();
 }
 
@@ -311,8 +316,8 @@ void CKafka2redisConsumer::run()
 
     for (uint32_t i=0;!_stop;++i)
     {
-        const int n = i % mooon::argument::keys->value();
-        const std::string redis_key = mooon::utils::CStringUtils::format_string("%s:%d", mooon::argument::prefix->c_value(), n);
+        const int n = i % mooon::argument::redis_key_count->value();
+        const std::string redis_key = mooon::utils::CStringUtils::format_string("%s:%d", mooon::argument::redis_key_prefix->c_value(), n);
         std::vector<std::string> logs;
         r3c::Node node;
 
@@ -322,12 +327,12 @@ void CKafka2redisConsumer::run()
 
             if (batch > 1)
             {
-                _kafka_consumer->consume_batch(batch, &logs, mooon::argument::kafkatimeout->value(), NULL, &timeout);
+                _kafka_consumer->consume_batch(batch, &logs, mooon::argument::kafka_timeout->value(), NULL, &timeout);
             }
             else
             {
                 logs.resize(1);
-                if (!_kafka_consumer->consume(&logs[0], mooon::argument::kafkatimeout->value(), NULL, &timeout))
+                if (!_kafka_consumer->consume(&logs[0], mooon::argument::kafka_timeout->value(), NULL, &timeout))
                 {
                     logs.clear();
                     ++metric.kafka_error_number;
@@ -339,9 +344,11 @@ void CKafka2redisConsumer::run()
                 _redis->lpush(redis_key, logs, &node);
                 metric.push_number += logs.size();
             }
-            else if (!timeout)
+            else
             {
-                ++metric.kafka_error_number;
+                if (!timeout)
+                    ++metric.kafka_error_number;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
         }
         catch (r3c::CRedisException& ex)

@@ -18,17 +18,20 @@
 #include <thread>
 #include <vector>
 
+// 可选的用来标识进程的字符串
+STRING_ARG_DEFINE(label, "", "Optional string used to identify process.");
+
 // Redis (source)
-STRING_ARG_DEFINE(redis, "", "Nodes list of redis");
-STRING_ARG_DEFINE(redispassword, "", "Password of redis.");
-STRING_ARG_DEFINE(prefix, "", "Key prefix of redis list.");
-INTEGER_ARG_DEFINE(int, keys, 1, 1, 2020, "Number of redis list keys with the given prefix.");
-INTEGER_ARG_DEFINE(int, redistimeout, 60000, 0, 86400000, "Timeout to consume redis in millisecond.");
+STRING_ARG_DEFINE(redis_nodes, "", "Nodes list of redis");
+STRING_ARG_DEFINE(redis_password, "", "Password of redis.");
+STRING_ARG_DEFINE(redis_key_prefix, "", "Key prefix of redis list.");
+INTEGER_ARG_DEFINE(int, redis_key_count, 1, 1, 2020, "Number of redis list keys with the given prefix.");
+INTEGER_ARG_DEFINE(int, redis_timeout, 60000, 0, 86400000, "Timeout to consume redis in millisecond.");
 
 // Kafka (destination)
-STRING_ARG_DEFINE(kafkabrokers, "", "Brokers list of kafka, e.g., --kafkabrokers=127.0.0.1:9092,127.0.0.2:9092/kafka.");
-STRING_ARG_DEFINE(kafkatopic, "", "Topic of kafka.");
-INTEGER_ARG_DEFINE(int, kafkatimeout, 60000, 0, 86400000, "Timeout to consume kafka in millisecond.");
+STRING_ARG_DEFINE(kafka_brokers, "", "Brokers list of kafka, e.g., --kafka_brokers=127.0.0.1:9092,127.0.0.2:9092/kafka.");
+STRING_ARG_DEFINE(kafka_topic, "", "Topic of kafka.");
+INTEGER_ARG_DEFINE(int, kafka_timeout, 60000, 0, 86400000, "Timeout to consume kafka in millisecond.");
 
 // 批量数，即一次批量移动多少
 INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move from redis to kafka.");
@@ -99,32 +102,34 @@ int main(int argc, char* argv[])
 
 bool CRedis2kafka::on_check_parameter()
 {
-    // --redis
-    if (mooon::argument::redis->value().empty())
+    // --redis_nodes
+    if (mooon::argument::redis_nodes->value().empty())
     {
-        fprintf(stderr, "Parameter[--redis] is not set\n");
+        fprintf(stderr, "Parameter[--redis_nodes] is not set\n");
         return false;
     }
-    // --prefix
-    if (mooon::argument::prefix->value().empty())
+    // --redis_key_prefix
+    if (mooon::argument::redis_key_prefix->value().empty())
     {
-        fprintf(stderr, "Parameter[--prefix] is not set\n");
+        fprintf(stderr, "Parameter[--redis_key_prefix] is not set\n");
         return false;
     }
-
-    // --kafkabrokers
-    if (mooon::argument::kafkabrokers->value().empty())
+    // --kafka_brokers
+    if (mooon::argument::kafka_brokers->value().empty())
     {
-        fprintf(stderr, "Parameter[--kafkabrokers] is not set\n");
+        fprintf(stderr, "Parameter[--kafka_brokers] is not set\n");
         return false;
     }
-    // --kafkatopic
-    if (mooon::argument::kafkatopic->value().empty())
+    // --kafka_topic
+    if (mooon::argument::kafka_topic->value().empty())
     {
-        fprintf(stderr, "Parameter[--kafkatopic] is not set\n");
+        fprintf(stderr, "Parameter[--kafka_topic] is not set\n");
         return false;
     }
-
+    if (!mooon::argument::label->value().empty())
+    {
+        this->set_logger(mooon::argument::label->value());
+    }
     return true;
 }
 
@@ -185,7 +190,7 @@ bool CRedis2kafka::init_metric_logger()
 
 bool CRedis2kafka::start_redis2kafka_movers()
 {
-    for (int i=0; i<mooon::argument::keys->value(); ++i)
+    for (int i=0; i<mooon::argument::redis_key_count->value(); ++i)
     {
         std::shared_ptr<CRedis2kafkaMover> redis2kafka_mover(new CRedis2kafkaMover(this));
         if (redis2kafka_mover->start(i))
@@ -228,7 +233,7 @@ bool CRedis2kafkaMover::start(int index)
     try
     {
         _index = index;
-        _redis_key = mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::prefix->c_value(), index);
+        _redis_key = mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::redis_key_prefix->c_value(), index);
 
         if (!init_redis() || !init_kafka_producer())
         {
@@ -267,15 +272,15 @@ bool CRedis2kafkaMover::init_redis()
     {
         _redis.reset(
                 new r3c::CRedisClient(
-                        mooon::argument::redis->value(),
-                        mooon::argument::redispassword->value(),
-                        mooon::argument::redistimeout->value(),
-                        mooon::argument::redistimeout->value()));
+                        mooon::argument::redis_nodes->value(),
+                        mooon::argument::redis_password->value(),
+                        mooon::argument::redis_timeout->value(),
+                        mooon::argument::redis_timeout->value()));
         return true;
     }
     catch (r3c::CRedisException& ex)
     {
-        MYLOG_ERROR("Create RedisClient by %s failed: %s.\n", mooon::argument::redis->c_value(), ex.str().c_str());
+        MYLOG_ERROR("Create RedisClient by %s failed: %s.\n", mooon::argument::redis_nodes->c_value(), ex.str().c_str());
         return false;
     }
 }
@@ -284,7 +289,7 @@ bool CRedis2kafkaMover::init_kafka_producer()
 {
     std::string errmsg;
     _kafka_producer.reset(new mooon::net::CKafkaProducer);
-    if (_kafka_producer->init(mooon::argument::kafkabrokers->value(), mooon::argument::kafkatopic->value(), &errmsg))
+    if (_kafka_producer->init(mooon::argument::kafka_brokers->value(), mooon::argument::kafka_topic->value(), &errmsg))
     {
         return true;
     }
@@ -320,6 +325,7 @@ void CRedis2kafkaMover::run()
         {
             MYLOG_ERROR("Redis rpop by %s failed: %s.\n", r3c::node2string(node).c_str(), ex.str().c_str());
             ++metric.redis_exception_number;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
     {
