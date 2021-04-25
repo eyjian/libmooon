@@ -60,9 +60,13 @@ if (MOOON_HAVE_R3C)
     add_executable(redis_queue_mover redis_queue_mover.cpp)
     target_link_libraries(redis_queue_mover libmooon.a libr3c.a libhiredis.a)
 
+	# queue_redis2redis
+	add_executable(queue_redis2redis queue_redis2redis.cpp)
+	target_link_libraries(queue_redis2redis libmooon.a libr3c.a libhiredis.a libssl.a libcrypto.a)
+	
     # CMAKE_INSTALL_PREFIX
     install(
-            TARGETS r3c_stress redis_queue_mover
+            TARGETS r3c_stress redis_queue_mover queue_redis2redis
             DESTINATION bin
 	)
 endif ()
@@ -149,7 +153,7 @@ if (MOOON_HAVE_R3C AND MOOON_HAVE_LIBRDKAFKA)
 	# queue_kafka2redis
 	add_executable(queue_kafka2redis queue_kafka2redis.cpp)
 	target_link_libraries(queue_kafka2redis libmooon.a libr3c.a libhiredis.a librdkafka++.a librdkafka.a libssl.a libcrypto.a)
-
+	
 	# CMAKE_INSTALL_PREFIX
 	install(
 		TARGETS queue_redis2kafka queue_kafka2redis
