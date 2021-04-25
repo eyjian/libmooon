@@ -39,7 +39,7 @@ if (MOOON_HAVE_LIBSSH2)
 	add_executable(mooon_upload mooon_upload.cpp)
 	target_link_libraries(mooon_upload libmooon.a libssh2.a libcrypto.a)
 
-    # 下载工具
+   	 # 下载工具
     add_executable(mooon_download mooon_download.cpp)
     target_link_libraries(mooon_download libmooon.a libssh2.a libcrypto.a)
     
@@ -138,5 +138,21 @@ if (MOOON_HAVE_LIBRDKAFKA)
     install(
             TARGETS kafka_consumer
             DESTINATION bin
+	) 
+endif ()
+
+if (MOOON_HAVE_R3C AND MOOON_HAVE_LIBRDKAFKA)
+	# redis2kafka
+	add_executable(redis2kafka redis2kafka.cpp)
+	target_link_libraries(redis2kafka libmooon.a libr3c.a libhiredis.a librdkafka++.a librdkafka.a libssl.a libcrypto.a)
+	
+	# kafka2redis
+	add_executable(kafka2redis kafka2redis.cpp)
+	target_link_libraries(kafka2redis libmooon.a libr3c.a libhiredis.a librdkafka++.a librdkafka.a libssl.a libcrypto.a)
+	
+	# CMAKE_INSTALL_PREFIX
+	install(
+		TARGETS redis2kafka kafka2redis
+		DESTINATION bin
 	) 
 endif ()
