@@ -187,7 +187,12 @@ bool CKafka2redis::init_metric_logger()
 {
     try
     {
-        _metric_logger.reset(mooon::sys::create_safe_logger(true, mooon::SIZE_1K, "metric"));
+        std::string suffix;
+        if (mooon::argument::label->value().empty())
+            suffix = "metric";
+        else
+            suffix = mooon::argument::label->value() + std::string("_metric");
+        _metric_logger.reset(mooon::sys::create_safe_logger(true, mooon::SIZE_1K, suffix));
         _metric_logger->enable_raw_log(true, true);
         return true;
     }
