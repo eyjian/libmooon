@@ -81,6 +81,7 @@ private:
 
 private:
     int _index;
+    uint32_t _kafka_key;
     CRedis2kafka* _redis2kafka;
     std::atomic<bool> _stop;
     std::string _redis_key;
@@ -229,7 +230,8 @@ void CRedis2kafka::stop_redis2kafka_movers()
 //
 
 CRedis2kafkaMover::CRedis2kafkaMover(CRedis2kafka* redis2kafka)
-    : _index(-1), _redis2kafka(redis2kafka), _stop(false)
+    : _index(-1), _kafka_key(0),
+      _redis2kafka(redis2kafka), _stop(false)
 {
 }
 
@@ -346,6 +348,7 @@ void CRedis2kafkaMover::run()
 
 void CRedis2kafkaMover::kafka_produce(const std::vector<std::string>& logs)
 {
+    const std::string kafka_key = mooon::utils::CStringUtils::format_string("%u", _kafka_key++);
     metric.pop_number += logs.size();
 
     MYLOG_DEBUG("%.*s\n", (int)logs[0].size(), logs[0].c_str());
@@ -355,9 +358,9 @@ void CRedis2kafkaMover::kafka_produce(const std::vector<std::string>& logs)
         int errcode = 0;
 
         if (logs.size() == 1)
-            _kafka_producer->produce("", logs[0], RdKafka::Topic::PARTITION_UA, &errcode, &errmsg);
+            _kafka_producer->produce(kafka_key, logs[0], RdKafka::Topic::PARTITION_UA, &errcode, &errmsg);
         else if (logs.size() > 1)
-            _kafka_producer->produce_batch("", logs, RdKafka::Topic::PARTITION_UA, &errcode, &errmsg);
+            _kafka_producer->produce_batch(kafka_key, logs, RdKafka::Topic::PARTITION_UA, &errcode, &errmsg);
         if (errcode == 0)
         {
             metric.produce_number += logs.size();
