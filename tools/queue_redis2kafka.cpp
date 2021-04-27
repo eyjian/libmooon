@@ -36,6 +36,9 @@ INTEGER_ARG_DEFINE(int, kafka_timeout, 60000, 0, 86400000, "Timeout to produce k
 // 批量数，即一次批量移动多少
 INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move from redis to kafka.");
 
+// metric 统计间隔（单位：秒）
+INTEGER_ARG_DEFINE(int, interval, 10, 0, 3600, "Interval to count metric in seconds.");
+
 class CRedis2kafkaMover;
 
 struct Metric
@@ -59,6 +62,7 @@ private:
     bool init_metric_logger();
     bool start_redis2kafka_movers();
     void stop_redis2kafka_movers();
+    void wait_redis2kafka_movers();
 
 private:
     std::shared_ptr<mooon::sys::CSafeLogger> _metric_logger;
@@ -148,17 +152,29 @@ bool CRedis2kafka::on_init(int argc, char* argv[])
 
 bool CRedis2kafka::on_run()
 {
-    while (!this->to_stop())
+    const int interval = mooon::argument::interval->value();
+    if (interval <= 0)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        if (metric.pop_number > 0)
+        wait_redis2kafka_movers();
+    }
+    else
+    {
+        while (!this->to_stop())
         {
-            const uint32_t pop_number = metric.pop_number.exchange(0);
-            const uint32_t produce_number = metric.produce_number.exchange(0);
-            const uint32_t redis_exception_number = metric.redis_exception_number.exchange(0);
-            const uint32_t kafka_error_number = metric.kafka_error_number.exchange(0);
-            _metric_logger->log_raw("pop:%u,produce:%u,redis:%u,kafka:%u\n", pop_number, produce_number, redis_exception_number, kafka_error_number);
+            for (int i=0; i<interval&&!this->to_stop(); ++i)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            }
+            if (metric.pop_number > 0)
+            {
+                const uint32_t pop_number = metric.pop_number.exchange(0);
+                const uint32_t produce_number = metric.produce_number.exchange(0);
+                const uint32_t redis_exception_number = metric.redis_exception_number.exchange(0);
+                const uint32_t kafka_error_number = metric.kafka_error_number.exchange(0);
+                _metric_logger->log_raw("pop:%u,produce:%u,redis:%u,kafka:%u\n", pop_number, produce_number, redis_exception_number, kafka_error_number);
+            }
         }
+        wait_redis2kafka_movers();
     }
     return true;
 }
@@ -166,6 +182,7 @@ bool CRedis2kafka::on_run()
 void CRedis2kafka::on_fini()
 {
     stop_redis2kafka_movers();
+    wait_redis2kafka_movers();
 }
 
 void CRedis2kafka::on_terminated()
@@ -217,10 +234,16 @@ void CRedis2kafka::stop_redis2kafka_movers()
     for (auto redis2kafka_mover: _redis2kafka_movers)
     {
         if (redis2kafka_mover.get() != nullptr)
-        {
             redis2kafka_mover->stop();
+    }
+}
+
+void CRedis2kafka::wait_redis2kafka_movers()
+{
+    for (auto redis2kafka_mover: _redis2kafka_movers)
+    {
+        if (redis2kafka_mover.get() != nullptr)
             redis2kafka_mover->wait();
-        }
     }
     _redis2kafka_movers.clear();
 }

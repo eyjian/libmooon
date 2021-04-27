@@ -38,6 +38,9 @@ INTEGER_ARG_DEFINE(int, target_redis_timeout, 60000, 0, 86400000, "Timeout to lp
 // 批量数，即一次批量移动多少
 INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move from redis to kafka.");
 
+// metric 统计间隔（单位：秒）
+INTEGER_ARG_DEFINE(int, interval, 10, 0, 3600, "Interval to count metric in seconds.");
+
 class CRedis2redisMover;
 
 struct Metric
@@ -61,6 +64,7 @@ private:
     bool init_metric_logger();
     bool start_redis2redis_movers();
     void stop_redis2redis_movers();
+    void wait_redis2redis_movers();
 
 private:
     std::shared_ptr<mooon::sys::CSafeLogger> _metric_logger;
@@ -154,17 +158,29 @@ bool CRedis2redis::on_init(int argc, char* argv[])
 
 bool CRedis2redis::on_run()
 {
-    while (!this->to_stop())
+    const int interval = mooon::argument::interval->value();
+    if (interval <= 0)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        if (metric.pop_number > 0)
+        wait_redis2redis_movers();
+    }
+    else
+    {
+        while (!this->to_stop())
         {
-            const uint32_t pop_number = metric.pop_number.exchange(0);
-            const uint32_t push_number = metric.push_number.exchange(0);
-            const uint32_t source_redis_exception_number = metric.source_redis_exception_number.exchange(0);
-            const uint32_t target_redis_exception_number = metric.target_redis_exception_number.exchange(0);
-            _metric_logger->log_raw("pop:%u,push:%u,source:%u,target:%u\n", pop_number, push_number, source_redis_exception_number, target_redis_exception_number);
+            for (int i=0; i<interval&&!this->to_stop(); ++i)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            }
+            if (metric.pop_number > 0)
+            {
+                const uint32_t pop_number = metric.pop_number.exchange(0);
+                const uint32_t push_number = metric.push_number.exchange(0);
+                const uint32_t source_redis_exception_number = metric.source_redis_exception_number.exchange(0);
+                const uint32_t target_redis_exception_number = metric.target_redis_exception_number.exchange(0);
+                _metric_logger->log_raw("pop:%u,push:%u,source:%u,target:%u\n", pop_number, push_number, source_redis_exception_number, target_redis_exception_number);
+            }
         }
+        wait_redis2redis_movers();
     }
     return true;
 }
@@ -172,6 +188,7 @@ bool CRedis2redis::on_run()
 void CRedis2redis::on_fini()
 {
     stop_redis2redis_movers();
+    wait_redis2redis_movers();
 }
 
 void CRedis2redis::on_terminated()
@@ -224,10 +241,16 @@ void CRedis2redis::stop_redis2redis_movers()
     for (auto redis2redis_mover: _redis2redis_movers)
     {
         if (redis2redis_mover.get() != nullptr)
-        {
             redis2redis_mover->stop();
+    }
+}
+
+void CRedis2redis::wait_redis2redis_movers()
+{
+    for (auto redis2redis_mover: _redis2redis_movers)
+    {
+        if (redis2redis_mover.get() != nullptr)
             redis2redis_mover->wait();
-        }
     }
     _redis2redis_movers.clear();
 }
