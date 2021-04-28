@@ -341,12 +341,19 @@ void CRedis2kafkaMover::run()
 
         try
         {
+            int n = 0;
+
             // 左进右出
-            if (batch == 1)
-                _redis->rpop(_redis_key, &logs[0], &node);
+            if (batch > 1)
+            {
+                n = _redis->rpop(_redis_key, &logs, batch, &node);
+            }
             else
-                _redis->rpop(_redis_key, &logs, batch, &node);
-            if (!logs.empty())
+            {
+                if (_redis->rpop(_redis_key, &logs[0], &node) > 0)
+                    n = 1;
+            }
+            if (n > 0)
                 kafka_produce(logs);
             else
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));

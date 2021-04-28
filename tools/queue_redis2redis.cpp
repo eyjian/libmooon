@@ -381,13 +381,20 @@ bool CRedis2redisMover::rpop_logs(int batch, std::vector<std::string>* logs)
 
     try
     {
+        int n = 0;
+
         // 左进右出
-        if (batch == 1)
-            _source_redis->rpop(_source_redis_key, &(*logs)[0], &node);
+        if (batch > 1)
+        {
+            n = _source_redis->rpop(_source_redis_key, logs, batch, &node);
+        }
         else
-            _source_redis->rpop(_source_redis_key, logs, batch, &node);
-        metric.pop_number += logs->size();
-        return !logs->empty();
+        {
+            if (_source_redis->rpop(_source_redis_key, &(*logs)[0], &node))
+                n = 1;
+        }
+        metric.pop_number += n;
+        return n > 0;
     }
     catch (r3c::CRedisException& ex)
     {
