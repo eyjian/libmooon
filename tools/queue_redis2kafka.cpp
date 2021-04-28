@@ -383,7 +383,7 @@ void CRedis2kafkaMover::kafka_produce(const std::vector<std::string>& logs)
     const std::string kafka_key = mooon::utils::CStringUtils::format_string("%u", _kafka_key++);
     metric.pop_number += logs.size();
 
-    MYLOG_DEBUG("%.*s\n", (int)logs[0].size(), logs[0].c_str());
+    MYLOG_DEBUG("[%s %.*s\n", kafka_key.c_str(), (int)logs[0].size(), logs[0].c_str());
     while (true)
     {
         std::string errmsg;
