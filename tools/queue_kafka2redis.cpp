@@ -162,6 +162,8 @@ bool CKafka2redis::on_init(int argc, char* argv[])
 bool CKafka2redis::on_run()
 {
     const int interval = mooon::argument::interval->value();
+
+    MYLOG_INFO("Kafka2redis is started now\n");
     if (interval <= 0)
     {
         wait_kafka2redis_consumers();

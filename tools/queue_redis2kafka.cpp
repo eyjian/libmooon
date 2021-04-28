@@ -153,6 +153,8 @@ bool CRedis2kafka::on_init(int argc, char* argv[])
 bool CRedis2kafka::on_run()
 {
     const int interval = mooon::argument::interval->value();
+
+    MYLOG_INFO("Redis2kafka is started now\n");
     if (interval <= 0)
     {
         wait_redis2kafka_movers();

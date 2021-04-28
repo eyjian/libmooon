@@ -159,6 +159,8 @@ bool CRedis2redis::on_init(int argc, char* argv[])
 bool CRedis2redis::on_run()
 {
     const int interval = mooon::argument::interval->value();
+
+    MYLOG_INFO("Redis2redis is started now\n");
     if (interval <= 0)
     {
         wait_redis2redis_movers();
