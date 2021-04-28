@@ -428,7 +428,7 @@ bool CRedis2redisMover::lpush_logs(const std::vector<std::string>& logs)
 
 std::string CRedis2redisMover::get_target_redis_key()
 {
-    std::uniform_int_distribution<int> u(0, mooon::argument::target_redis_key_count->value());
+    std::uniform_int_distribution<int> u(0, mooon::argument::target_redis_key_count->value()-1);
     const int n = u(_random_engine) % mooon::argument::target_redis_key_count->value();
     return mooon::utils::CStringUtils::format_string("%s%d", mooon::argument::target_redis_key_prefix->c_value(), n);
 }
