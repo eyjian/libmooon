@@ -373,7 +373,10 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
     const RdKafka::Message* message = _consumer->consume(timeout_ms);
     const RdKafka::ErrorCode errcode = message->err();
 
-    *timeout = false;
+    if (timeout != NULL)
+    {
+        *timeout = false;
+    }
     if (RdKafka::ERR_NO_ERROR == errcode)
     {
         MYLOG_DEBUG("Consume topic://%s OK: %.*s.\n", _topic_str.c_str(), (int)message->len(), (char*)message->payload());
@@ -399,7 +402,7 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
         {
             MYLOG_ERROR("Consume topic://%s error: (%d)%s.\n", _topic_str.c_str(), (int)errcode, message->errstr().c_str());
         }
-        if (RdKafka::ERR__TIMED_OUT == errcode)
+        if (RdKafka::ERR__TIMED_OUT == errcode && timeout != NULL)
         {
             *timeout = true;
         }
