@@ -25,7 +25,7 @@ namespace mooon {
 //     return ()
 // endif ()
 inline std::shared_ptr<rapidjson::Document>
-str2rapidjson(const const std::string& json_str, const std::string& schema_str, std::string* errmsg)
+str2rapidjson(const std::string& json_str, const std::string& schema_str, std::string* errmsg)
 {
     std::shared_ptr<rapidjson::Document> doc(new rapidjson::Document);
 
