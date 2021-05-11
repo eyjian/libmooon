@@ -41,7 +41,7 @@ public:
     uint64_t get_elapsed_microseconds(bool restart=true)
     {
         (void)gettimeofday(&_stop_time, NULL);
-        const uint64_t elapsed_microseconds = static_cast<uint64_t>((_stop_time.tv_sec - _start_time.tv_sec) * (__UINT64_C(1000000)) + (_stop_time.tv_usec - _start_time.tv_usec));
+        const int64_t elapsed_microseconds = static_cast<int64_t>((_stop_time.tv_sec - _start_time.tv_sec) * (__UINT64_C(1000000)) + (_stop_time.tv_usec - _start_time.tv_usec));
 
         // 重计时
         if (restart)
@@ -49,8 +49,10 @@ public:
             _start_time.tv_sec = _stop_time.tv_sec;
             _start_time.tv_usec = _stop_time.tv_usec;
         }
-
-        return elapsed_microseconds;
+        if (elapsed_microseconds < 0)
+            return 0;
+        else
+            return static_cast<uint64_t>(elapsed_microseconds);
     }
 
     uint64_t get_total_elapsed_microseconds()
