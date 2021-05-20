@@ -33,7 +33,7 @@ INTEGER_ARG_DEFINE(int, redis_key_count, 1, 1, 2020, "Number of redis list keys 
 INTEGER_ARG_DEFINE(int, redis_timeout, 60000, 0, 86400000, "Timeout to lpush redis in millisecond.");
 
 // 批量数，即一次批量加载多少
-INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move from redis to kafka.");
+INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to load from file to redis.");
 
 // metric 统计间隔（单位：秒）
 INTEGER_ARG_DEFINE(int, interval, 10, 0, 3600, "Interval to count metric in seconds.");
