@@ -68,9 +68,13 @@ if (MOOON_HAVE_R3C)
 	add_executable(queue_file2redis queue_file2redis.cpp)
 	target_link_libraries(queue_file2redis libmooon.a libr3c.a libhiredis.a libssl.a libcrypto.a)
 	
+	# queue_redis2file
+	add_executable(queue_redis2file queue_redis2file.cpp)
+	target_link_libraries(queue_redis2file libmooon.a libr3c.a libhiredis.a libssl.a libcrypto.a)
+	
     # CMAKE_INSTALL_PREFIX
     install(
-            TARGETS r3c_stress redis_queue_mover queue_redis2redis queue_file2redis
+            TARGETS r3c_stress redis_queue_mover queue_redis2redis queue_file2redis queue_redis2file
             DESTINATION bin
 	)
 endif ()
