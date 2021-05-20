@@ -38,6 +38,9 @@ INTEGER_ARG_DEFINE(int, batch, 1, 1, 100000, "Batch to move from redis to kafka.
 // metric 统计间隔（单位：秒）
 INTEGER_ARG_DEFINE(int, interval, 10, 0, 3600, "Interval to count metric in seconds.");
 
+// 分割符合
+STRING_ARG_DEFINE(delimiter, "\n", "Single character separator of logs.");
+
 class CFile2redisLoader;
 
 struct Metric
@@ -125,6 +128,17 @@ bool CFile2redis::on_check_parameter()
     if (mooon::argument::redis_key_prefix->value().empty())
     {
         fprintf(stderr, "Parameter[--redis_key_prefix] is not set\n");
+        return false;
+    }
+    // --delimiter
+    if (mooon::argument::delimiter->value().empty())
+    {
+        fprintf(stderr, "Parameter[--delimiter] is not set\n");
+        return false;
+    }
+    if (mooon::argument::delimiter->value().size() != 1)
+    {
+        fprintf(stderr, "Parameter[--delimiter] with a invalid value\n");
         return false;
     }
     if (!mooon::argument::label->value().empty())
@@ -372,6 +386,8 @@ void CFile2redisLoader::run()
 
 bool CFile2redisLoader::get_logs(int batch, std::vector<std::string>* logs)
 {
+    const char delimiter = mooon::argument::delimiter->value()[0];
+
     if (_file_offset >= _file_ptr->len)
     {
         return false;
@@ -379,7 +395,7 @@ bool CFile2redisLoader::get_logs(int batch, std::vector<std::string>* logs)
     for (int i=0; i<mooon::argument::batch->value(); ++i)
     {
         const char* start_addr = (const char*)_file_ptr->addr + _file_offset;
-        const char* next = strchr(start_addr, '\n');
+        const char* next = strchr(start_addr, delimiter);
         size_t len = 0;
         if (next == NULL)
             len = strlen(start_addr);
