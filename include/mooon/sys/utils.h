@@ -122,7 +122,7 @@ public:
 
     /** 得到指定目录字节数大小，非线程安全函数，同一时刻只能被一个线程调用
       * @dirpath: 目录路径
-      * @return: 目录字节数大小
+      * @return: 目录字节数大小，如果为 -1  表示出错，可以通过 errno 得到出错原因
       */
     static off_t du(const char* dirpath);
 

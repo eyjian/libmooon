@@ -36,7 +36,7 @@ static int get_num_partitions();
 static bool start_consumer_threads();
 static void wait_consumer_threads();
 static void consumer_thread_proc(int partition, int num);
-static void summarize(mooon::sys::CStopWatch* sw);
+static void summarize(mooon::sys::CStopWatch* sw, void*);
 
 static std::vector<mooon::sys::CThreadEngine*> consumer_threads;
 static mooon::sys::CAtomic<int> num_logs_consumed;
@@ -228,7 +228,7 @@ void consumer_thread_proc(int partition, int num)
     }
 }
 
-void summarize(mooon::sys::CStopWatch* sw)
+void summarize(mooon::sys::CStopWatch* sw, void*)
 {
     const int n = num_logs_consumed.get_value();
     const uint64_t us = sw->get_elapsed_microseconds();

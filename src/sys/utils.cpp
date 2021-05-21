@@ -473,7 +473,7 @@ static int _du_fn(const char *fpath, const struct stat *sb, int typeflag)
 off_t CUtils::du(const char* dirpath)
 {
     dirsize = 0;
-    return (ftw(dirpath, _du_fn, 0) != 0)? : dirsize;
+    return (ftw(dirpath, _du_fn, 0) != 0)? -1: dirsize;
 }
 
 int CUtils::get_page_size()

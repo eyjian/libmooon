@@ -7,14 +7,14 @@
 SYS_NAMESPACE_BEGIN
 
 class CStopWatch;
-typedef void (*StopWatchTick)(CStopWatch*);
+typedef void (*StopWatchTick)(CStopWatch*, void*);
 
 // 计时器
 class CStopWatch
 {
 public:
-    CStopWatch(StopWatchTick tick=NULL)
-        : _tick(tick)
+    CStopWatch(StopWatchTick tick=NULL, void* tick_data=NULL)
+        : _tick(tick), _tick_data(tick_data)
     {
         restart();
 
@@ -27,7 +27,7 @@ public:
     ~CStopWatch()
     {
         if (_tick != NULL)
-            (*_tick)(this);
+            (*_tick)(this, _tick_data);
     }
 
     // 重新开始计时
@@ -71,6 +71,7 @@ public:
 
 private:
     StopWatchTick _tick;
+    void* _tick_data;
     struct timeval _total_time;
     struct timeval _start_time;
     struct timeval _stop_time;
