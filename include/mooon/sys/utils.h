@@ -256,6 +256,9 @@ public:
     // 杀死进程
     // 返回操作成功的个数
     static int killall(const std::vector<int64_t>& pid_array, int signo);
+
+    // 全局唯一ID
+    static std::string get_guid(const std::string& tag);
 };
 
 SYS_NAMESPACE_END

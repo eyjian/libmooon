@@ -20,6 +20,7 @@
 #include "sys/atomic.h"
 #include "sys/close_helper.h"
 #include "sys/dir_utils.h"
+#include "utils/md5_helper.h"
 #include "utils/string_utils.h"
 
 #if __cplusplus >= 201103L
@@ -28,18 +29,26 @@
 #include <thread>
 #endif // __cplusplus >= 201103L
 
+#include <arpa/inet.h>
 #include <dirent.h>
 #include <execinfo.h> // backtrace和backtrace_symbols函数
 #include <features.h> // feature_test_macros
 #include <ftw.h> // ftw
 #include <libgen.h> // dirname&basename
+#include <netdb.h>
+#include <net/if.h>
+#include <net/if_arp.h>
 #include <poll.h>
 #include <pwd.h> // getpwuid
 #include <regex.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/prctl.h> // prctl
 #include <sys/resource.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <time.h>
 
@@ -857,6 +866,55 @@ int CUtils::killall(const std::vector<int64_t>& pid_array, int signo)
     }
 
     return success;
+}
+
+std::string CUtils::get_guid(const std::string& tag)
+{
+    utils::CMd5Helper md5;
+    struct timeval tv;
+
+    const int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd != -1)
+    {
+        sys::CloseHelper<int> ch(fd);
+        struct ifconf ifc;
+        struct ifreq ifr[10]; // 最多10个IP
+
+        if (ioctl(fd, SIOCGIFCONF, (char*)&ifc) != -1)
+        {
+            for (size_t i=0; i<ifc.ifc_len/sizeof(struct ifreq); ++i)
+            {
+                // 获取指定网卡上的IP地址
+                if (-1 == ioctl(fd, SIOCGIFADDR, (char *)&ifr[i])) continue; // getifaddrs/freeifaddrs
+                if (NULL == ifr[i].ifr_name) continue;
+                if (strcasecmp(ifr[i].ifr_name, "eth0") == 0 ||
+                    strcasecmp(ifr[i].ifr_name, "eth1") == 0 ||
+                    strcasecmp(ifr[i].ifr_name, "eth2") == 0)
+                {
+                    md5.update(ifr[i].ifr_hwaddr.sa_data, sizeof(ifr[i].ifr_hwaddr.sa_data));
+                    break;
+                }
+            }
+        }
+    }
+
+    gettimeofday(&tv, NULL);
+    md5.update(reinterpret_cast<const char*>(&tv), sizeof(tv));
+    srandom(tv.tv_sec);
+    const long n1 = random();
+    const long n2 = random();
+    const long n3 = random();
+    const long n4 = random();
+    const long n5 = random();
+    md5.update(reinterpret_cast<const char*>(&n1), sizeof(n1));
+    md5.update(reinterpret_cast<const char*>(&n2), sizeof(n2));
+    md5.update(reinterpret_cast<const char*>(&n3), sizeof(n3));
+    md5.update(reinterpret_cast<const char*>(&n4), sizeof(n4));
+    md5.update(reinterpret_cast<const char*>(&n5), sizeof(n5));
+    if (!tag.empty())
+        md5.update(tag);
+
+    return md5.to_string();
 }
 
 SYS_NAMESPACE_END
