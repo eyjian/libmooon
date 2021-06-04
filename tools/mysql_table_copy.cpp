@@ -8,6 +8,7 @@
 // 失败信息标识为“FAILED”，成功信息标识为“SUCCESS”。
 // 如果数据不为空，则在成功标识“SUCCESS”后紧跟第一个字段的最新值，
 // 如果这是一个自增字段值，则可借助这个值实现增量复制。
+#include <mooon/sys/datetime_utils.h>
 #include <mooon/sys/mysql_db.h>
 #include <mooon/sys/signal_handler.h>
 #include <mooon/sys/stop_watch.h>
@@ -213,7 +214,7 @@ int CTableCopyer::copy()
         _source_mysql.query(dbtable, "%s", querysql.c_str());
         if (dbtable.empty())
         {
-            fprintf(stderr, "NODATA\n");
+            fprintf(stderr, "[%s] NODATA\n", mooon::sys::CDatetimeUtils::get_current_datetime().c_str());
             return 2; // 方便调用者区分错误结束循环
         }
         for (mooon::sys::DBTable::size_type row=0; row<dbtable.size(); ++row)
@@ -282,7 +283,9 @@ int CTableCopyer::copy()
         {
             print_cost(stdout, stopwatch);
             fprintf(stdout, "ROW: %zu\n", dbtable.size());
-            fprintf(stdout, "SUCCESS: %s (The latest value of the first field)\n", first_field.c_str());
+            // 如果 first_field 是自增 ID 字段，则增量扫描可以从该值（不包含）开始
+            fprintf(stdout, "SUCCESS: %s (The latest value of the first field, %s)\n",
+                    first_field.c_str(), mooon::sys::CDatetimeUtils::get_current_datetime().c_str());
         }
         return 0;
     }
