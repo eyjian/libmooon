@@ -70,8 +70,11 @@ public:
     // 如果为绑定消费模式，则在 close 之前应调用
     bool unassign_partitions();
 
-    bool consume(std::string* log, int timeout_ms=1000, struct MessageInfo* mi=NULL, bool* timeout=NULL);
-    int consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms=1000, struct MessageInfo* mi=NULL, bool* timeout=NULL);
+    // 函数返回 false 是，还会设置下列输出参数：
+    // 1）timeout 如果返回值为 true，则表示消费超时
+    // 2）empty 如果返回值为 true，则表示队列空无数据
+    bool consume(std::string* log, int timeout_ms=1000, struct MessageInfo* mi=NULL, bool* timeout=NULL, bool* empty=NULL);
+    int consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms=1000, struct MessageInfo* mi=NULL, bool* timeout=NULL, bool* empty=NULL);
 
     // 同步阻塞提交
     // 返回RdKafka::ERR_NO_ERROR表示成功，其它出错

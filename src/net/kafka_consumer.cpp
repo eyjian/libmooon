@@ -367,7 +367,7 @@ bool CKafkaConsumer::unassign_partitions()
     }
 }
 
-bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInfo* mi, bool* timeout)
+bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInfo* mi, bool* timeout, bool* empty)
 {
     // 注意对于消费者，不能调用poll，请参见rdkafkacpp.h中对函数consume的说明
     const RdKafka::Message* message = _consumer->consume(timeout_ms);
@@ -376,6 +376,10 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
     if (timeout != NULL)
     {
         *timeout = false;
+    }
+    if (empty != NULL)
+    {
+        *empty = false;
     }
     if (RdKafka::ERR_NO_ERROR == errcode)
     {
@@ -406,20 +410,31 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
         {
             *timeout = true;
         }
+        if (RdKafka::ERR__PARTITION_EOF == errcode && empty != NULL)
+        {
+            *empty = true;
+        }
 
         delete message;
         return false;
     }
 }
 
-int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms, struct MessageInfo* mi, bool* timeout)
+int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs, int timeout_ms, struct MessageInfo* mi, bool* timeout, bool* empty)
 {
     const int64_t end = int64_t(sys::CDatetimeUtils::get_current_milliseconds() + timeout_ms);
     int64_t remaining_timeout = timeout_ms;
     int num_logs  = 0;
     logs->reserve(batch_size);
 
-    *timeout = false;
+    if (timeout != NULL)
+    {
+        *timeout = false;
+    }
+    if (empty != NULL)
+    {
+        *empty = false;
+    }
     for (int i=0; i<batch_size; ++i)
     {
         // 注意对于消费者，不能调用poll，请参见rdkafkacpp.h中对函数consume的说明
@@ -460,8 +475,10 @@ int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs
             }
 
             delete message;
-            if (RdKafka::ERR__TIMED_OUT == errcode && num_logs == 0)
+            if (RdKafka::ERR__TIMED_OUT == errcode && num_logs == 0 && timeout != NULL)
                 *timeout = true;
+            if (RdKafka::ERR__PARTITION_EOF == errcode && num_logs == 0 && empty != NULL)
+                *empty = true;
             break;
         }
     }
