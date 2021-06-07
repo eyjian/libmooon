@@ -383,12 +383,13 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
     }
     if (RdKafka::ERR_NO_ERROR == errcode)
     {
-        MYLOG_DEBUG("Consume topic://%s OK: %.*s.\n", _topic_str.c_str(), (int)message->len(), (char*)message->payload());
+        MYLOG_DEBUG("Consume topic://%s OK (key:%.*s): %.*s.\n", _topic_str.c_str(), (int)message->key_len(), message->key()->c_str(), (int)message->len(), (char*)message->payload());
         log->assign(reinterpret_cast<char*>(message->payload()), message->len());
         if (mi != NULL) {
             mi->offset = message->offset();
             mi->timestamp = message->timestamp().timestamp;
             mi->topicname = message->topic_name();
+            mi->key = *(message->key());
         }
         delete message;
         return true;
@@ -443,7 +444,7 @@ int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs
 
         if (RdKafka::ERR_NO_ERROR == errcode)
         {
-            MYLOG_DEBUG("Consume topic://%s OK: %.*s.\n", _topic_str.c_str(), (int)message->len(), (char*)message->payload());
+            MYLOG_DEBUG("Consume topic://%s OK (key:%.*s): %.*s.\n", _topic_str.c_str(), (int)message->key_len(), message->key()->c_str(), (int)message->len(), (char*)message->payload());
 
             const std::string log(reinterpret_cast<char*>(message->payload()), message->len());
             logs->push_back(log);
@@ -452,6 +453,7 @@ int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs
                 mi->offset = message->offset();
                 mi->timestamp = message->timestamp().timestamp;
                 mi->topicname = message->topic_name();
+                mi->key = *(message->key());
             }
 
             delete message;
