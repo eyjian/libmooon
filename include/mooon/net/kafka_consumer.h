@@ -22,6 +22,7 @@ struct MessageInfo
     std::string key;
 
     MessageInfo();
+    ~MessageInfo();
 };
 
 // 注：一个CKafkaConsumer实例只能消费一个topic，
