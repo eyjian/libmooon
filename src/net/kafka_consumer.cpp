@@ -456,6 +456,7 @@ int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs
             logs->push_back(log);
             if (mi != NULL)
             {
+                mi->partition = message->partition();
                 mi->offset = message->offset();
                 mi->timestamp = message->timestamp().timestamp;
                 mi->topicname = message->topic_name();
