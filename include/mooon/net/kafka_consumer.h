@@ -14,6 +14,7 @@ class DefOffsetCommitImpl;
 
 struct MessageInfo
 {
+    void* message;
     int32_t partition;
     int64_t offset;
     int64_t timestamp;
@@ -83,10 +84,12 @@ public:
     // 同步阻塞提交
     // 返回RdKafka::ERR_NO_ERROR表示成功，其它出错
     int sync_commit();
+    int sync_commit(void* message);
 
     // 异步非阻塞提交
     // 返回RdKafka::ERR_NO_ERROR表示成功，其它出错
     int async_commit();
+    int async_commit(void* message);
 
     // 取得分区数
     int get_num_partitions(std::string* errmsg=NULL) const;

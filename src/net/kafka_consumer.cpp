@@ -16,7 +16,8 @@ enum ConsumedMode
 };
 
 MessageInfo::MessageInfo()
-    : partition(-1), offset(-1), timestamp(0)
+    : message(NULL),
+      partition(-1), offset(-1), timestamp(0)
 {
 }
 
@@ -391,6 +392,7 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
         MYLOG_DEBUG("Consume topic://%s OK (key:%.*s): %.*s.\n", _topic_str.c_str(), (int)message->key_len(), message->key()->c_str(), (int)message->len(), (char*)message->payload());
         log->assign(reinterpret_cast<char*>(message->payload()), (std::string::size_type)message->len());
         if (mi != NULL) {
+            mi->message = const_cast<RdKafka::Message*>(message);
             mi->partition = message->partition();
             mi->offset = message->offset();
             mi->timestamp = message->timestamp().timestamp;
@@ -456,6 +458,7 @@ int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs
             logs->push_back(log);
             if (mi != NULL)
             {
+                mi->message = const_cast<RdKafka::Message*>(message);
                 mi->partition = message->partition();
                 mi->offset = message->offset();
                 mi->timestamp = message->timestamp().timestamp;
@@ -500,9 +503,19 @@ int CKafkaConsumer::sync_commit()
     return int(_consumer->commitSync());
 }
 
+int CKafkaConsumer::sync_commit(void* message)
+{
+    return int(_consumer->commitSync((RdKafka::Message*)message));
+}
+
 int CKafkaConsumer::async_commit()
 {
     return int(_consumer->commitAsync());
+}
+
+int CKafkaConsumer::async_commit(void* message)
+{
+    return int(_consumer->commitAsync((RdKafka::Message*)message));
 }
 
 // 参考：rdkafka_example.cpp
