@@ -14,7 +14,7 @@ class DefOffsetCommitImpl;
 
 struct MessageInfo
 {
-    void* message;
+    RdKafka::Message* message;
     int32_t partition;
     int64_t offset;
     int64_t timestamp;
@@ -85,12 +85,26 @@ public:
     // 同步阻塞提交
     // 返回RdKafka::ERR_NO_ERROR表示成功，其它出错
     int sync_commit();
-    int sync_commit(void* message);
+    int sync_commit(RdKafka::Message* message);
+    int sync_commit(const std::vector<RdKafka::TopicPartition*>& offsets);
 
     // 异步非阻塞提交
     // 返回RdKafka::ERR_NO_ERROR表示成功，其它出错
     int async_commit();
-    int async_commit(void* message);
+    int async_commit(RdKafka::Message* message);
+    int async_commit(const std::vector<RdKafka::TopicPartition*>& offsets);
+
+    // 取得所有关联的分区，成功返回值为 0
+    int assignment(std::vector<RdKafka::TopicPartition*>* partitions);
+
+    // 取得订阅的所有主题，成功返回值为 0
+    int subscription(std::vector<std::string>* topics);
+
+    // 取得所有关联的分区的最新 offset，成功返回值为 0
+    int position(std::vector<RdKafka::TopicPartition*>* partitions);
+
+    // 取得已提交的，成功返回 0
+    int committed(std::vector<RdKafka::TopicPartition*>* partitions, int timeout_ms);
 
     // 取得分区数
     int get_num_partitions(std::string* errmsg=NULL) const;

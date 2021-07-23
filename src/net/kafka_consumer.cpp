@@ -24,7 +24,7 @@ MessageInfo::MessageInfo()
 MessageInfo::~MessageInfo()
 {
     if (message != NULL)
-        delete (RdKafka::Message*)message;
+        delete message;
 }
 
 class DefEventImpl: public RdKafka::EventCb
@@ -513,9 +513,14 @@ int CKafkaConsumer::sync_commit()
     return int(_consumer->commitSync());
 }
 
-int CKafkaConsumer::sync_commit(void* message)
+int CKafkaConsumer::sync_commit(RdKafka::Message* message)
 {
-    return int(_consumer->commitSync((RdKafka::Message*)message));
+    return int(_consumer->commitSync(message));
+}
+
+int CKafkaConsumer::sync_commit(const std::vector<RdKafka::TopicPartition*>& offsets)
+{
+    return int(_consumer->commitSync(const_cast<std::vector<RdKafka::TopicPartition*>&>(offsets)));
 }
 
 int CKafkaConsumer::async_commit()
@@ -523,9 +528,34 @@ int CKafkaConsumer::async_commit()
     return int(_consumer->commitAsync());
 }
 
-int CKafkaConsumer::async_commit(void* message)
+int CKafkaConsumer::async_commit(RdKafka::Message* message)
 {
-    return int(_consumer->commitAsync((RdKafka::Message*)message));
+    return int(_consumer->commitAsync(message));
+}
+
+int CKafkaConsumer::async_commit(const std::vector<RdKafka::TopicPartition*>& offsets)
+{
+    return int(_consumer->commitAsync(offsets));
+}
+
+int CKafkaConsumer::assignment(std::vector<RdKafka::TopicPartition*>* partitions)
+{
+    return _consumer->assignment(*partitions);
+}
+
+int CKafkaConsumer::subscription(std::vector<std::string>* topics)
+{
+    return _consumer->subscription(*topics);
+}
+
+int CKafkaConsumer::position(std::vector<RdKafka::TopicPartition*>* partitions)
+{
+    return _consumer->position(*partitions);
+}
+
+int CKafkaConsumer::committed (std::vector<RdKafka::TopicPartition*>* partitions, int timeout_ms)
+{
+    return _consumer->committed(*partitions, timeout_ms);
 }
 
 // 参考：rdkafka_example.cpp
