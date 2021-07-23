@@ -14,10 +14,13 @@ class DefOffsetCommitImpl;
 
 struct MessageInfo
 {
+    int32_t partition;
     int64_t offset;
     int64_t timestamp;
     std::string topicname;
     std::string key;
+
+    MessageInfo();
 };
 
 // 注：一个CKafkaConsumer实例只能消费一个topic，

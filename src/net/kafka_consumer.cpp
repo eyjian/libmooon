@@ -15,6 +15,11 @@ enum ConsumedMode
     CM_ASSIGN // 绑定分区消费模式
 };
 
+MessageInfo::MessageInfo()
+    : partition(-1), offset(-1), timestamp(0)
+{
+}
+
 class DefEventImpl: public RdKafka::EventCb
 {
 private:
@@ -384,8 +389,9 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
     if (RdKafka::ERR_NO_ERROR == errcode)
     {
         MYLOG_DEBUG("Consume topic://%s OK (key:%.*s): %.*s.\n", _topic_str.c_str(), (int)message->key_len(), message->key()->c_str(), (int)message->len(), (char*)message->payload());
-        log->assign(reinterpret_cast<char*>(message->payload()), message->len());
+        log->assign(reinterpret_cast<char*>(message->payload()), (std::string::size_type)message->len());
         if (mi != NULL) {
+            mi->partition = message->partition();
             mi->offset = message->offset();
             mi->timestamp = message->timestamp().timestamp;
             mi->topicname = message->topic_name();
