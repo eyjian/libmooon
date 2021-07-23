@@ -533,7 +533,7 @@ int CKafkaConsumer::get_num_partitions(std::string* errmsg) const
 {
     const int timeout_ms = 2000;
     RdKafka::Topic *topic = NULL;
-    class RdKafka::Metadata *metadata;
+    RdKafka::Metadata *metadata = NULL;
     int num_partitions = -1;
 
     RdKafka::ErrorCode err = _consumer->metadata(false, topic, &metadata, timeout_ms);
@@ -556,7 +556,10 @@ int CKafkaConsumer::get_num_partitions(std::string* errmsg) const
             }
         }
     }
-
+    if (metadata != NULL)
+    {
+        delete metadata;
+    }
     return num_partitions;
 }
 
