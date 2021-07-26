@@ -815,7 +815,7 @@ const char* CStringUtils::extract_filename(const char* filepath)
 // int asprintf(char **strp, const char *fmt, ...);
 std::string CStringUtils::format_string(const char* format, ...)
 {
-    size_t size = 4096;
+    std::string::size_type size = mooon::SIZE_4K;
     std::string buffer(size, '\0');
     char* buffer_p = const_cast<char*>(buffer.data());
     int expected = 0;
@@ -827,7 +827,7 @@ std::string CStringUtils::format_string(const char* format, ...)
         expected = vsnprintf(buffer_p, size, format, ap);
 
         va_end(ap);
-        if (expected>-1 && expected<=static_cast<int>(size))
+        if (expected>-1 && expected<static_cast<int>(size))
         {
             break;
         }
