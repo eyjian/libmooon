@@ -97,7 +97,7 @@ static void* signal_thread_proc(void* param)
   *     return main_template(argc, argv);
   * }
   */
-int main_template(IMainHelper* main_helper, int argc, char* argv[], void* p)
+int main_template(IMainHelper* main_helper, int argc, char* argv[], void* unused)
 {
     // 方便后续调用CUtils::set_process_title
     CUtils::init_process_title(argc, argv);

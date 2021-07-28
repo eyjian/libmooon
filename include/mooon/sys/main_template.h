@@ -135,7 +135,7 @@ private:
   *     return main_template(main_helper, argc, argv);
   * }
   */
-extern int main_template(IMainHelper* main_helper, int argc, char* argv[], void* p=NULL);
+extern int main_template(IMainHelper* main_helper, int argc, char* argv[], void* unused=NULL);
 
 // CMainHelper内置了优雅退出
 //
