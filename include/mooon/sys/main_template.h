@@ -134,10 +134,8 @@ private:
   *     IMainHelper* main_helper = new CMainHelper();
   *     return main_template(main_helper, argc, argv);
   * }
-  *
-    *  注意：对传入的report_self，main_template会负责delete
   */
-extern int main_template(IMainHelper* main_helper, int argc, char* argv[], IReportSelf* report_self=NULL);
+extern int main_template(IMainHelper* main_helper, int argc, char* argv[], void* p=NULL);
 
 // CMainHelper内置了优雅退出
 //

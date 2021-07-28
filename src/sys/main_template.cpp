@@ -45,7 +45,7 @@ static bool self_restart(IMainHelper* main_helper);
 /***
   * 子进程处理逻辑
   */
-static void child_process(IMainHelper* main_helper, int argc, char* argv[], IReportSelf* report_self);
+static void child_process(IMainHelper* main_helper, int argc, char* argv[]);
 
 /***
   * 父进程处理逻辑
@@ -97,14 +97,14 @@ static void* signal_thread_proc(void* param)
   *     return main_template(argc, argv);
   * }
   */
-int main_template(IMainHelper* main_helper, int argc, char* argv[], IReportSelf* report_self)
+int main_template(IMainHelper* main_helper, int argc, char* argv[], void* p)
 {
     // 方便后续调用CUtils::set_process_title
     CUtils::init_process_title(argc, argv);
 
     // 退出代码，由子进程决定
     int exit_code = 1;
-    utils::ScopedPtr<IReportSelf> report_self_((report_self != NULL)? report_self: new CNullReportSelf);
+    //utils::ScopedPtr<IReportSelf> report_self_((report_self != NULL)? report_self: new CNullReportSelf);
 
     // 忽略掉PIPE信号
     if (main_helper->ignore_pipe_signal())
@@ -127,7 +127,7 @@ int main_template(IMainHelper* main_helper, int argc, char* argv[], IReportSelf*
         }
         else if (0 == pid)
         {
-            child_process(main_helper, argc, argv, report_self_.get());
+            child_process(main_helper, argc, argv);
         }
         else if (!parent_process(main_helper, pid, exit_code))
         {
@@ -151,7 +151,7 @@ bool self_restart(IMainHelper* main_helper)
     return (restart != NULL) && (0 == strcasecmp(restart, "true"));
 }
 
-void child_process(IMainHelper* main_helper, int argc, char* argv[], IReportSelf* report_self)
+void child_process(IMainHelper* main_helper, int argc, char* argv[])
 {
     int errcode = 0;
     //sigset_t sigset;
@@ -202,13 +202,13 @@ void child_process(IMainHelper* main_helper, int argc, char* argv[], IReportSelf
     }
 
     // 启动上报
-    report_self->start_report_self();
+    //report_self->start_report_self();
 
     // 正式运行
     if (!main_helper->run())
 	{
 		//fprintf(stderr, "Main helper run failed.\n");
-        report_self->stop_report_self();
+        //report_self->stop_report_self();
 		main_helper->fini();
 		exit(1);
 	}
@@ -229,7 +229,7 @@ void child_process(IMainHelper* main_helper, int argc, char* argv[], IReportSelf
         }
     }
 
-    report_self->stop_report_self();
+    //report_self->stop_report_self();
     main_helper->fini();
     exit(errcode);
 }
