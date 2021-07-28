@@ -14,7 +14,7 @@ class DefOffsetCommitImpl;
 
 struct MessageInfo
 {
-    RdKafka::Message* message;
+    //RdKafka::Message* message;
     int32_t partition;
     int64_t offset;
     int64_t timestamp;

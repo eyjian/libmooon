@@ -16,15 +16,14 @@ enum ConsumedMode
 };
 
 MessageInfo::MessageInfo()
-    : message(NULL),
-      partition(-1), offset(-1), timestamp(0)
+    : partition(-1), offset(-1), timestamp(0)
 {
 }
 
 MessageInfo::~MessageInfo()
 {
-    if (message != NULL)
-        delete message;
+    //if (message != NULL)
+    //    delete message;
 }
 
 class DefEventImpl: public RdKafka::EventCb
@@ -397,17 +396,13 @@ bool CKafkaConsumer::consume(std::string* log, int timeout_ms, struct MessageInf
     {
         MYLOG_DEBUG("Consume topic://%s OK (key:%.*s): %.*s.\n", _topic_str.c_str(), (int)message->key_len(), message->key()->c_str(), (int)message->len(), (char*)message->payload());
         log->assign(reinterpret_cast<char*>(message->payload()), (std::string::size_type)message->len());
-        if (mi == NULL) {
-            delete message;
-        }
-        else {
-            mi->message = const_cast<RdKafka::Message*>(message);
-            mi->partition = message->partition();
-            mi->offset = message->offset();
-            mi->timestamp = message->timestamp().timestamp;
-            mi->topicname = message->topic_name();
-            mi->key = *(message->key());
-        }
+        delete message;
+        //mi->message = const_cast<RdKafka::Message*>(message);
+        mi->partition = message->partition();
+        mi->offset = message->offset();
+        mi->timestamp = message->timestamp().timestamp;
+        mi->topicname = message->topic_name();
+        mi->key = *(message->key());
         return true;
     }
     else
@@ -464,19 +459,14 @@ int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs
 
             const std::string log(reinterpret_cast<char*>(message->payload()), (std::string::size_type)message->len());
             logs->push_back(log);
-            if (mi == NULL)
-            {
-                delete message;
-            }
-            else {
-                mi->message = const_cast<RdKafka::Message*>(message);
-                mi->partition = message->partition();
-                mi->offset = message->offset();
-                mi->timestamp = message->timestamp().timestamp;
-                mi->topicname = message->topic_name();
-                mi->key = *(message->key());
-            }
+            delete message;
 
+            //mi->message = const_cast<RdKafka::Message*>(message);
+            mi->partition = message->partition();
+            mi->offset = message->offset();
+            mi->timestamp = message->timestamp().timestamp;
+            mi->topicname = message->topic_name();
+            mi->key = *(message->key());
             ++num_logs;
             remaining_timeout = end - int64_t(sys::CDatetimeUtils::get_current_milliseconds());
             if (remaining_timeout <= 0)
