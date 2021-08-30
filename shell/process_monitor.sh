@@ -123,7 +123,7 @@ fi
 process_cmdline="$1" # 需要监控的进程名，或完整的命令行，也可以为部分命令行
 restart_script="$2"  # 用来重启进程的脚本，要求具有可执行权限
 monitor_interval=2   # 定时检测时间间隔，单位为秒
-start_seconds=5      # 被监控进程启动需要花费多少秒
+start_seconds=5      # 被监控进程启动需要花费多少秒（延迟启动）
 cur_user=`whoami`    # 执行本监控脚本的用户名
 # 取指定网卡上的IP地址
 #eth=1&&netstat -ie|awk -F'[: ]' 'begin{found=0;} { if (match($0,"eth'"$eth"'")) found=1; else if ((1==found) && match($0,"eth")) found=0; if ((1==found) && match($0,"inet addr:") && match($0,"Bcast:")) print $13; }'
@@ -139,6 +139,10 @@ process_dirpath=$(dirname "$process_cmdline")
 process_full_filepath=$process_dirpath/$process_name
 process_match="${process_cmdline#* }" # 只保留用来匹配的参数部分
 process_match=$(echo $process_match) # 去掉前后的空格
+if test "X$process_match" = "X$process_cmdline"; then
+  # 没有参数部分
+  process_match=""
+fi
 
 # 用来做互斥，
 # 以保证只有最先启动的能运行，
@@ -234,7 +238,7 @@ fi
 s1=${self_full_filepath:0:1}
 p1=${process_full_filepath:0:1}
 if test $s1 != "/"; then
-    log "illegal, is not an absolute path: $self_cmdline"
+    log "[LINE:$LINENO] illegal, is not an absolute path: $self_cmdline"
     exit 1
 fi
 #if test $p1 != "/"; then
@@ -257,7 +261,7 @@ else
         if test $? -eq 0; then
             process_filetype=0
         else
-            echo "unknown file type: process_raw_filepath\n"
+            echo "[LINE:$LINENO] unknown file type: process_raw_filepath\n"
             exit 1
         fi
     fi
@@ -274,11 +278,11 @@ fi
 while true; do
     self_count=`ps -C $self_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && ($3==self_full_filepath) && match($0, self_cmdline)) {++num;}} END { printf("%d",num); }' uid=$uid self_full_filepath=$self_full_filepath self_cmdline="$self_cmdline"`
     if test $ONLY_TEST -eq 1; then
-        log "process_name: $process_name, self_name: $self_name, self_count: $self_count\n"
+        log "[LINE:$LINENO] process_name: $process_name, self_name: $self_name, self_count: $self_count\n"
     fi
     if test ! -z "$self_count"; then
         if test $self_count -gt 2; then
-            log "$0 is running[$self_count/active:$active], current user is $cur_user\n"
+            log "[LINE:$LINENO] $0 is running[$self_count/active:$active], current user is $cur_user\n"
             # 经测试，正常情况下一般为2，
             # 但运行一段时间后，会出现值为3，因此放在crontab中非常必要
             # 如果监控脚本已经运行，则退出不重复运行
@@ -291,33 +295,37 @@ while true; do
     # 检查被监控的进程是否存在，如果不存在则重启
     if test -z "$process_match"; then
         if test $process_filetype -eq 0; then # 可执行脚本文件
-            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if ($1==uid) && ($3==process_full_filepath)) ++num; } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath`
+            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && ($3==process_full_filepath)) ++num; } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath`
         elif test $process_filetype -eq 1; then # 可执行程序文件
-            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if ($1==uid) && ($2==process_full_filepath)) ++num; } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath`
+            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && ($2==process_full_filepath)) ++num; } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath`
         else # 未知类型文件
             process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if ($1==uid) ++num; } END { printf("%d",num); }' uid=$uid`
         fi
     else
+        # 下列 awk 中的 for 从 2 还是 3开始，
+        # 取决于被监控对象是脚本还是可执行程序，
+        # 如果是脚本则应从 3 开始，否则应从 2 开始。
         if test $process_filetype -eq 0; then # 可执行脚本文件
             process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && ($3==process_full_filepath)) { for (i=3;i<=NF;++i) if (match($i, process_match)) { ++num; break; } } } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath process_match="$process_match"`
         elif test $process_filetype -eq 1; then # 可执行程序文件
             process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if (($1==uid) && ($2==process_full_filepath)) { for (i=3;i<=NF;++i) if (match($i, process_match)) { ++num; break; } } } END { printf("%d",num); }' uid=$uid process_full_filepath=$process_full_filepath process_match="$process_match"`
         else # 未知类型文件
-            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if ($1==uid) { for (i=3;i<=NF;++i) if (match($i, process_match)) { ++num; break; } } } END { printf("%d",num); }' uid=$uid process_match="$process_match"`
+            process_count=`ps -C $process_name h -o euid,args| awk 'BEGIN { num=0; } { if ($1==uid) { for (i=2;i<=NF;++i) if (match($i, process_match)) { ++num; break; } } } END { printf("%d",num); }' uid=$uid process_match="$process_match"`
         fi
     fi
+    #log "[LINE:$LINENO][process_count:$process_count] uid=$uid;process_filetype=$process_filetype;process_name=$process_name;process_match=$process_match;process_full_filepath=$process_full_filepath\n"
 
     if test $ONLY_TEST -eq 1; then
-        log "process_name: $process_name, process_count: $process_count, process_match: $process_match\n"
+        log "[LINE:$LINENO][process_count:$process_count] uid=$uid;process_filetype=$process_filetype;process_name=$process_name;process_match=$process_match;process_full_filepath=$process_full_filepath\n"
     fi
     if test ! -z "$process_count"; then
         if test $process_count -lt 1; then
             # 执行重启脚本，要求这个脚本能够将指定的进程拉起来
-            log "[$process_name/$process_count][process_match:$process_match]restart \"$process_cmdline\"\n"
+            log "[LINE:$LINENO][process_count:$process_count][uid=$uid;process_filetype=$process_filetype;process_name=$process_name;process_match=$process_match;process_full_filepath=$process_full_filepath] Restart \"$process_cmdline\"\n"
             #sh -c "$restart_script" 2>&1 >> $log_filepath
-            msg=`sh -c "$restart_script" 2>&1`
+            msg="`sh -c "$restart_script" 2>&1`"
             if test ! -z "${msg}"; then
-                log "${msg}\n"
+                log "[LINE:$LINENO] ${msg}\n"
             fi
 
             # sleep时间得长一点，原因是启动可能没那么快，以防止启动多个进程
