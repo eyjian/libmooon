@@ -49,6 +49,7 @@
 #include <sys/prctl.h> // prctl
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <time.h>
 
@@ -67,6 +68,16 @@ SYS_NAMESPACE_BEGIN
 static char *g_arg_start = NULL;
 static char *g_arg_end   = NULL;
 static char *g_env_start = NULL;
+
+pid_t gettid(void)
+{
+    return syscall(SYS_gettid);
+}
+
+int tgkill(int tgid, int tid, int sig)
+{
+    return syscall(SYS_tgkill, tgid, tid, sig);
+}
 
 // 函数rdtsc取自Linux内核（linux-4.20）源代码，
 // 所在文件：tools/perf/jvmti/jvmti_agent.c

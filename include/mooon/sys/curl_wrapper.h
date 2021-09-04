@@ -1,5 +1,6 @@
 // Writed by yijian (eyjian@qq.com or eyjian@gmail.com)
 #include <mooon/sys/syscall_exception.h>
+#include <memory>
 #include <string>
 #include <vector>
 #ifndef MOOON_SYS_CURL_WRAPPER_H
@@ -117,6 +118,13 @@ private:
     int _keepidle;
     int _keepseconds;
 };
+
+// 取得当前线程的 CCurlWrapper
+std::shared_ptr<mooon::sys::CCurlWrapper>
+get_thread_curl(
+        bool nosignal=false, bool keepalive=false,
+        int data_timeout_seconds=2, int connect_timeout_seconds=2,
+        int keepidle=120, int keepseconds=60);
 
 /*
  * 普通POST使用示例：

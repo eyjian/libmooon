@@ -6,6 +6,29 @@
 #include <curl/curl.h>
 SYS_NAMESPACE_BEGIN
 
+//
+// get_thread_curl()
+//
+
+static thread_local
+std::shared_ptr<mooon::sys::CCurlWrapper> thread_curl;
+
+std::shared_ptr<mooon::sys::CCurlWrapper> get_thread_curl(
+        bool nosignal, bool keepalive,
+        int data_timeout_seconds, int connect_timeout_seconds,
+        int keepidle, int keepseconds)
+{
+    if (thread_curl.get() == nullptr)
+        thread_curl.reset(new mooon::sys::CCurlWrapper(
+                data_timeout_seconds, connect_timeout_seconds,
+                nosignal, keepalive, keepidle, keepseconds));
+    return thread_curl;
+}
+
+//
+// CHttpPostData
+//
+
 CHttpPostData::CHttpPostData()
     : _last(NULL), _post(NULL)
 {
@@ -74,7 +97,10 @@ void CHttpPostData::add_file(const std::string& name, const std::string& filepat
         THROW_EXCEPTION(utils::CStringUtils::format_string("add file[%s] error", name.c_str()), errcode);
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//
+// CCurlWrapper
+//
+
 void CCurlWrapper::global_init(long flags)
 {
     long flags_ = (-1 == flags)? CURL_GLOBAL_ALL: flags;

@@ -22,8 +22,24 @@
 #include "mooon/sys/syscall_exception.h"
 #include <stdlib.h> // srand
 #include <sys/time.h> // gettimeofday
+#include <sys/types.h> // pid_t
 #include <vector>
 SYS_NAMESPACE_BEGIN
+
+// 取得当前线程的 ID，
+// 注意不同于 get_thread_self() 值。
+// 相关的系统调用：tkill，tgkill 。
+// 如果是主线程，则 gettid 和 getpid 返回相同的值。
+pid_t gettid(void);
+
+// 向指定线程发送指定的信号
+// 如果 tgid 值为 -1 则等同 tkill
+// 使用示例：tgkill(getpid(), gettid(), SIGTERM);
+// 参数说明：
+// 1) tgid 线程组 ID
+// 2) tid 线程 ID
+// 3) sig Linux 信号值
+int tgkill(int tgid, int tid, int sig);
 
 /***
   * 与系统调用有关的工具类函数实现
