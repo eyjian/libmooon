@@ -1373,4 +1373,86 @@ bool CStringUtils::instantiate_str(const std::string& template_str, const std::m
     return true;
 }
 
+// n 中文 utf8 取值 3
+std::string CStringUtils::replace_asterisk(const std::string& str, const std::string& default_str, size_t n)
+{
+    std::vector<std::string> tokens;
+    for (std::string::size_type i=0; i<str.size();)
+    {
+        if (isascii(str[i]))
+        {
+            tokens.push_back(std::string(str, i, 1));
+            i += 1;
+        }
+        else
+        {
+            tokens.push_back(std::string(str, i, n));
+            i += n;
+        }
+    }
+    if (tokens.size() <= 0)
+    {
+        tokens.push_back(default_str);
+    }
+    else if (tokens.size() == 1)
+    {
+        tokens[0] = default_str;
+    }
+    else if (tokens.size() <= 3)
+    {
+        tokens[1] = "*";
+    }
+    else if (tokens.size() <= 5)
+    {
+        tokens[2] = "*";
+        tokens[3] = "*";
+    }
+    else if (tokens.size() <= 7)
+    {
+        tokens[3] = "*";
+        tokens[4] = "*";
+    }
+    else if (tokens.size() <= 9)
+    {
+        tokens[4] = "*";
+        tokens[5] = "*";
+    }
+    else if (tokens.size() <= 11)
+    {
+        tokens[5] = "*";
+        tokens[6] = "*";
+    }
+    else if (tokens.size() <= 13)
+    {
+        tokens[6] = "*";
+        tokens[7] = "*";
+    }
+    else if (tokens.size() <= 15)
+    {
+        tokens[6] = "*";
+        tokens[7] = "*";
+        tokens[8] = "*";
+    }
+    else if (tokens.size() <= 17)
+    {
+        tokens[7] = "*";
+        tokens[8] = "*";
+        tokens[9] = "*";
+    }
+    else if (tokens.size() <= 19)
+    {
+        tokens[9] = "*";
+        tokens[10] = "*";
+        tokens[11] = "*";
+    }
+    else
+    {
+        tokens[10] = "*";
+        tokens[11] = "*";
+        tokens[12] = "*";
+        tokens[13] = "*";
+    }
+    return mooon::utils::CStringUtils::container2string(tokens, "");
+}
+
 UTILS_NAMESPACE_END

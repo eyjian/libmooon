@@ -430,6 +430,11 @@ public:
     // str 存储模板实例化后的字符串
     // errmsg 存储出错原因
     static bool instantiate_str(const std::string& template_str, const std::map<std::string, std::string>& parameters, std::string* str, std::string* errmsg);
+
+    // 字符串
+    // n 中文 utf8 取值 3
+    // 如果 str 只有一个，则使用 default_str 替换，否则对内容使用星号“*”处理
+    static std::string replace_asterisk(const std::string& str, const std::string& default_str, size_t n);
 };
 
 UTILS_NAMESPACE_END
