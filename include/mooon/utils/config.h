@@ -36,6 +36,8 @@
 #include <inttypes.h>
 // __STDC_FORMAT_MACROS
 
+#include <memory> // 要去至少 C++11，即编译需指定：-std=c++11
+
 /* 定义名字空间宏 */
 #define MOOON_NAMESPACE_BEGIN namespace mooon {
 #define MOOON_NAMESPACE_END                   }
@@ -77,25 +79,23 @@ enum
 MOOON_NAMESPACE_END
 
 // 单例
-// 为规避多线程问题，请在所有线程创建之前先调用一次ClassName::get_singleton()，
-// 可以通过delete来删除单例对象
+// 为规避多线程问题，请在所有线程创建之前先调用一次ClassName::get_singleton()
 #define SINGLETON_DECLARE(ClassName) \
     public: \
-        static ClassName* get_singleton(); \
+        static std::shared_ptr<ClassName> get_singleton(); \
         static void destroy()
 
 #define SINGLETON_IMPLEMENT(ClassName) \
-    static ClassName* __sg_singleton_##ClassName = NULL; \
-    ClassName* ClassName::get_singleton() \
+    static std::shared_ptr<ClassName> __sg_singleton_##ClassName = NULL; \
+    std::shared_ptr<ClassName> ClassName::get_singleton() \
     { \
-        if (NULL == __sg_singleton_##ClassName) \
-        __sg_singleton_##ClassName = new ClassName; \
+        if (__sg_singleton_##ClassName.get() == nullptr) \
+        __sg_singleton_##ClassName.reset(new ClassName); \
         return __sg_singleton_##ClassName; \
     } \
     void ClassName::destroy() \
     { \
-        delete __sg_singleton_##ClassName; \
-        __sg_singleton_##ClassName = NULL; \
+        __sg_singleton_##ClassName.reset(); \
     }
 
 /** 回调接口 */

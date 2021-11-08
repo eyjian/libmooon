@@ -50,7 +50,7 @@ UTILS_NAMESPACE_BEGIN
         public: \
             ObjectClass##Creator##index() \
             { \
-                ::mooon::utils::CObjectFacotry* object_factory = ::mooon::utils::CObjectFacotry::get_singleton(); \
+                auto object_factory = ::mooon::utils::CObjectFacotry::get_singleton(); \
                 object_factory->register_object_creater(object_name, this); \
             }\
         private: \
