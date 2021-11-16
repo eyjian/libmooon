@@ -86,7 +86,7 @@ MOOON_NAMESPACE_END
         static void destroy()
 
 #define SINGLETON_IMPLEMENT(ClassName) \
-    static std::shared_ptr<ClassName> __sg_singleton_##ClassName = NULL; \
+    static std::shared_ptr<ClassName> __sg_singleton_##ClassName; \
     std::shared_ptr<ClassName> ClassName::get_singleton() \
     { \
         if (__sg_singleton_##ClassName.get() == nullptr) \
