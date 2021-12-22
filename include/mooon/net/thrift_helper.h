@@ -142,7 +142,7 @@ public:
     void close();
 
     apache::thrift::transport::TSocket* get_socket() { return _socket.get(); }
-    const apache::thrift::transport::TSocket get_socket() const { return _socket.get(); }
+    const apache::thrift::transport::TSocket* get_socket() const { return _socket.get(); }
     ThriftClient* get() { return _client.get(); }
     ThriftClient* get() const { return _client.get(); }
     ThriftClient* operator ->() { return get(); }
