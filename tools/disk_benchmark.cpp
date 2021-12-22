@@ -56,8 +56,7 @@ int main(int argc, char* argv[])
     }
 
     signal(SIGINT, onsignal);
-    strncpy(filename, "disk_benchmark_XXXXXX", sizeof("disk_benchmark_XXXXXX")-1);
-    filename[sizeof("disk_benchmark_XXXXXX")-1] = '\0';
+    memcpy(filename, "disk_benchmark_XXXXXX", sizeof("disk_benchmark_XXXXXX"));
     int fd = mkstemp(filename);
     if (-1 == fd)
     {
