@@ -84,15 +84,33 @@ if (MOOON_HAVE_THRIFT)
     exec_program(${THRIFT_HOME}/bin/thrift ARGS --gen cpp -r -out ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/hbase.thrift)
     exec_program(rm ARGS ${CMAKE_CURRENT_SOURCE_DIR}/THBaseService_server.skeleton.cpp)
 
-    add_executable(hbase_stress hbase_stress.cpp THBaseService.cpp hbase_constants.cpp hbase_types.cpp)
+    add_executable(hbase_stress hbase_stress.cpp THBaseService.cpp hbase_types.cpp)
     target_link_libraries(hbase_stress libmooon.a libthrift.a)
 
-    add_executable(hbase_scan hbase_scan.cpp THBaseService.cpp hbase_constants.cpp hbase_types.cpp)
+    add_executable(hbase_scan hbase_scan.cpp THBaseService.cpp hbase_types.cpp)
     target_link_libraries(hbase_scan libmooon.a libthrift.a)
 
     # CMAKE_INSTALL_PREFIX
     install(
             TARGETS hbase_stress hbase_scan
+            DESTINATION bin
+	)
+endif ()
+
+# thrift_server & thrift_client
+if (MOOON_HAVE_THRIFT)
+    exec_program(${THRIFT_HOME}/bin/thrift ARGS --gen cpp -r -out ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test.thrift)
+    exec_program(rm ARGS ${CMAKE_CURRENT_SOURCE_DIR}/TestService_server.skeleton.cpp)
+
+    add_executable(thrift_server thrift_server.cpp TestService.cpp)
+    target_link_libraries(thrift_server libmooon.a libthriftnb.a libthrift.a libevent.a)
+
+    add_executable(thrift_client thrift_client.cpp TestService.cpp)
+    target_link_libraries(thrift_client libmooon.a libthriftnb.a libthrift.a libevent.a)
+
+    # CMAKE_INSTALL_PREFIX
+    install(
+            TARGETS thrift_server thrift_client
             DESTINATION bin
 	)
 endif ()
