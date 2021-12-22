@@ -119,48 +119,6 @@ public:
       */
     static void get_current_datetime_struct(struct tm* current_datetime_struct);
 
-    /**
-     * 转换后的year为YYYY格式，
-     * 转换后的month为YYYYMM格式，
-     * 转换后的day为YYYYMMDD格式，
-     * 转换后的hour为YYYYMMDDhh格式，
-     * 转换后的minute为YYYYMMDDhhmm格式，
-     * 转换后的second为YYYYMMDDhhmmss格式
-     */
-    static void decompose(const struct tm* tm, int* year=NULL, int* month=NULL, int* day=NULL, int64_t* hour=NULL, int64_t* minute=NULL, int64_t* second=NULL);
-    static void decompose(const struct tm* tm, std::string* year=NULL, std::string* month=NULL, std::string* day=NULL, std::string* hour=NULL, std::string* minute=NULL, std::string* second=NULL);
-    static void decompose(const struct tm& tm, int* year=NULL, int* month=NULL, int* day=NULL, int64_t* hour=NULL, int64_t* minute=NULL, int64_t* second=NULL);
-    static void decompose(const struct tm& tm, std::string* year=NULL, std::string* month=NULL, std::string* day=NULL, std::string* hour=NULL, std::string* minute=NULL, std::string* second=NULL);
-    static void decompose(time_t t, int* year=NULL, int* month=NULL, int* day=NULL, int64_t* hour=NULL, int64_t* minute=NULL, int64_t* second=NULL);
-    static void decompose(time_t t, std::string* year=NULL, std::string* month=NULL, std::string* day=NULL, std::string* hour=NULL, std::string* minute=NULL, std::string* second=NULL);
-    static bool decompose(const char* str, std::string* year=NULL, std::string* month=NULL, std::string* day=NULL, std::string* hour=NULL, std::string* minute=NULL, std::string* second=NULL);
-    static bool decompose(const std::string& str, std::string* year=NULL, std::string* month=NULL, std::string* day=NULL, std::string* hour=NULL, std::string* minute=NULL, std::string* second=NULL);
-
-    // 要求t为YYYY-MM-DD hh:mm:ss格式，不做错误检查，如果长度不够或超出，则什么也不做。
-    static void decompose_datetime(const std::string& t, std::string* year=NULL, std::string* month=NULL, std::string* day=NULL, std::string* hour=NULL, std::string* minute=NULL, std::string* second=NULL);
-    static void decompose_datetime(const char* t, std::string* year=NULL, std::string* month=NULL, std::string* day=NULL, std::string* hour=NULL, std::string* minute=NULL, std::string* second=NULL);
-
-    // 要求t为YYYY-MM-DD格式，不做错误检查，如果长度不够或超出，则什么也不做。
-    static void decompose_date(const std::string& t, std::string* year=NULL, std::string* month=NULL, std::string* day=NULL);
-    static void decompose_date(const char* t, std::string* year=NULL, std::string* month=NULL, std::string* day=NULL);
-
-    // 要求t为hh:mm:ss格式，不做错误检查，如果长度不够或超出，则什么也不做。
-    static void decompose_time(const std::string& t, std::string* hour=NULL, std::string* minute=NULL, std::string* second=NULL);
-    static void decompose_time(const char* t, std::string* hour=NULL, std::string* minute=NULL, std::string* second=NULL);
-
-    /* 转成格式为“YYYY-01-01 00:00:00”格式的值，如果指定了前缀prefix，如PREFIX为y，则输出格式为“yYYYY-01-01 00:00:00” */
-    static std::string to_str_long_year(const struct tm& t, const char* prefix=NULL);
-    /* 转成格式为“YYYY-MM-01 00:00:00”格式的值 */
-    static std::string to_str_long_month(const struct tm& t, const char* prefix=NULL);
-    /* 转成格式为“YYYY-MM-DD 00:00:00”格式的值 */
-    static std::string to_str_long_day(const struct tm& t, const char* prefix=NULL);
-    /* 转成格式为“YYYY-MM-DD hh:00:00”格式的值 */
-    static std::string to_str_long_hour(const struct tm& t, const char* prefix=NULL);
-    /* 转成格式为“YYYY-MM-DD hh:mm:00”格式的值 */
-    static std::string to_str_long_minute(const struct tm& t, const char* prefix=NULL);
-    /* 转成格式为“YYYY-MM-DD hh:mm:ss”格式的值 */
-    static std::string to_str_long_second(const struct tm& t, const char* prefix=NULL);
-
     /** 日期和时间 */
     static void to_current_datetime(const struct tm* current_datetime_struct, char* datetime_buffer, size_t datetime_buffer_size, const char* format="%04d-%02d-%02d %02d:%02d:%02d");
     static std::string to_current_datetime(const struct tm* current_datetime_struct, const char* format="%04d-%02d-%02d %02d:%02d:%02d");
@@ -224,44 +182,6 @@ public:
 
     // 得到当前的微秒值
     static uint64_t get_current_microseconds();
-
-    // 取年、月、日、时、分、秒，周几，如果tm或t值为NULL，则表示为当前时间
-    //
-    // year 年份，如2017，不需要可传NULL
-    // month 月份，如：8，不需要可传NULL
-    // day 月中的天，如：1，不需要可传NULL
-    // hour 小时，如：11，不需要可传NULL
-    // minute 分，如：37，不需要可传NULL
-    // second 秒，如：32，不需要可传NULL
-    // week 周几，如3，不需要可传NULL
-    //
-    // 假设tm或t对应的时间为：2017-08-10 10:53:22，则
-    // year值为2017，
-    // month值为8，
-    // day值为10，
-    // hour值为10，
-    // minute值为53，
-    // second值为22，
-    // week值为4
-    static void get_datetime_number(const struct tm* tm, int* year, int* month=NULL, int* day=NULL, int* hour=NULL, int* minute=NULL, int* second=NULL, int* week=NULL);
-    static void get_datetime_number(const time_t* t, int* year, int* month=NULL, int* day=NULL, int* hour=NULL, int* minute=NULL, int* second=NULL, int* week=NULL);
-    static int get_year_number(const struct tm* tm=NULL);
-    static int get_month_number(const struct tm* tm=NULL);
-    static int get_day_number(const struct tm* tm=NULL);
-    static int get_hour_number(const struct tm* tm=NULL);
-    static int get_minute_number(const struct tm* tm=NULL);
-    static int get_second_number(const struct tm* tm=NULL);
-    static int get_week_number(const struct tm* tm=NULL);
-
-    // 取得两个日期的月天
-    // 如果startdate或为无效时间，包括格式不满足“YYYY-MM-DD”，则返回0，
-    // 如果enddate小于startdate，也返回0，
-    // 成功返回天数
-    //
-    // 示例1：startdate和enddate均为“2017-08-08”时，dayofmonth_array元素为8，
-    // 示例2：startdate为“2017-08-08”，enddate为“2017-08-09”，dayofmonth_array元素为8和9
-    // 示例3：startdate为“2017-08-30”，enddate为“2017-09-01”，dayofmonth_array元素为30、31和1
-    static int get_dayofmonth_array(const std::string& startdate, const std::string& enddate, std::vector<int>* dayofmonth_array);
 };
 
 // 是否为有效的日期时间，str格式要求为“YYYY-MM-DD hh:mm:ss”

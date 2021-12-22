@@ -91,25 +91,6 @@ public:
     virtual uint32_t get_restart_milliseconds() const { return 1000; }
 };
 
-// 用于解除不需要ReportSelf的依赖
-// 因为当前的ReportSelf用到了thrift，
-// 如果不定义这个接口，导致不需要ReportSelf的也不得不编译时链接thrift库
-class IReportSelf
-{
-public:
-    virtual ~IReportSelf() {}
-    virtual void start_report_self() = 0;
-    virtual void stop_report_self() = 0;
-};
-
-// 默认模式，不依赖ReportSelf
-class CNullReportSelf: public IReportSelf
-{
-private:
-    virtual void start_report_self() {}
-    virtual void stop_report_self() {}
-};
-
 /***
   * 通用main函数的模板，
   * main_template总是在main函数中调用，通常如下一行代码即可:
@@ -160,8 +141,6 @@ public:
     // log_level_signo
     // 动态调整日志级别的信号，通过该信号可让日志级别在DEBUG和INFO两个级别间互相切换
     // 如果值为0或负值，表示不启用该功能
-    //
-    // 注意：对传入的ReportSelf，创建者不需要delete，CMainHelper析构时会对它调用delete
     CMainHelper(int log_level_signo=SIGUSR2);
     ~CMainHelper();
     void signal_thread();

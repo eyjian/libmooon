@@ -104,7 +104,6 @@ int main_template(IMainHelper* main_helper, int argc, char* argv[], void* unused
 
     // 退出代码，由子进程决定
     int exit_code = 1;
-    //utils::ScopedPtr<IReportSelf> report_self_((report_self != NULL)? report_self: new CNullReportSelf);
 
     // 忽略掉PIPE信号
     if (main_helper->ignore_pipe_signal())
@@ -201,14 +200,10 @@ void child_process(IMainHelper* main_helper, int argc, char* argv[])
         exit(1);
     }
 
-    // 启动上报
-    //report_self->start_report_self();
-
     // 正式运行
     if (!main_helper->run())
 	{
 		//fprintf(stderr, "Main helper run failed.\n");
-        //report_self->stop_report_self();
 		main_helper->fini();
 		exit(1);
 	}
@@ -229,7 +224,6 @@ void child_process(IMainHelper* main_helper, int argc, char* argv[])
         }
     }
 
-    //report_self->stop_report_self();
     main_helper->fini();
     exit(errcode);
 }
