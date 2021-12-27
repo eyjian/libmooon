@@ -29,12 +29,12 @@ SINGLETON_IMPLEMENT(CObjectFacotry)
 
 CObjectFacotry::~CObjectFacotry()
 {
-    for (ObjectCreatorTable::iterator iter=_object_creator_table.begin(); iter!=_object_creator_table.end(); ++iter)
-    {
-        CObjectCreator* object_creator = iter->second;
-        delete object_creator;
-    }
-
+    // 注意：Creator 是全局对象，不需要 delete 显示释放
+//    for (ObjectCreatorTable::iterator iter=_object_creator_table.begin(); iter!=_object_creator_table.end(); ++iter)
+//    {
+//        CObjectCreator* object_creator = iter->second;
+//        delete object_creator;
+//    }
     _object_creator_table.clear();
 }
 
