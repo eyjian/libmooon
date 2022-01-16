@@ -74,7 +74,7 @@ if (MOOON_HAVE_R3C)
 	
     # CMAKE_INSTALL_PREFIX
     install(
-            TARGETS r3c_stress redis_queue_mover queue_redis2redis queue_file2redis queue_redis2file
+            TARGETS redis_queue_mover queue_redis2redis queue_file2redis queue_redis2file
             DESTINATION bin
 	)
 endif ()
