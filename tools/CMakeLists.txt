@@ -53,8 +53,8 @@ endif ()
 # r3c_stress
 if (MOOON_HAVE_R3C)
     # r3c_stress
-    add_executable(r3c_stress r3c_stress.cpp)
-    target_link_libraries(r3c_stress libmooon.a libr3c.a libhiredis.a)
+    #add_executable(r3c_stress r3c_stress.cpp)
+    #target_link_libraries(r3c_stress libmooon.a libr3c.a libhiredis.a)
 
     # redis_queue_mover
     add_executable(redis_queue_mover redis_queue_mover.cpp)
