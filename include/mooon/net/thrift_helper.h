@@ -16,12 +16,13 @@
  *
  * Author: jian yi, eyjian@qq.com or eyjian@gmail.com
  * 用以简化thrift的使用
+ * 注意依赖boost：thrift的接口中有使用到boost::shared_ptr
  *
  * 从Thrift-0.12.0开始，去掉了对boost库的依赖，但新依赖C++11，
  * 比如使用C++11新增的std::shared_ptr替代了boost库的boost::shared_ptr，
  * Thrift-0.12.0在C++03/C++98中已无法使用。
  *
- * 注意：库 libthriftnb.a 依赖 libthrift.a 和 libevent.a
+ * 目前，本文件只支持boost版本的Thrift。
  */
 #ifndef MOOON_NET_THRIFT_HELPER_H
 #define MOOON_NET_THRIFT_HELPER_H
@@ -29,12 +30,13 @@
 #include <mooon/sys/log.h>
 #include <mooon/utils/string_utils.h>
 #include <mooon/utils/scoped_ptr.h>
-#include <thrift/concurrency/ThreadFactory.h>
+#include <arpa/inet.h>
+#include <boost/scoped_ptr.hpp>
+#include <thrift/concurrency/PosixThreadFactory.h>
 #include <thrift/concurrency/ThreadManager.h>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/server/TNonblockingServer.h>
 #include <thrift/TApplicationException.h>
-#include <thrift/transport/TNonblockingServerSocket.h>
 #include <thrift/transport/TSocketPool.h>
 #include <thrift/transport/TTransportException.h>
 #include <vector>
@@ -142,7 +144,7 @@ public:
     void close();
 
     apache::thrift::transport::TSocket* get_socket() { return _socket.get(); }
-    const apache::thrift::transport::TSocket* get_socket() const { return _socket.get(); }
+    const apache::thrift::transport::TSocket get_socket() const { return _socket.get(); }
     ThriftClient* get() { return _client.get(); }
     ThriftClient* get() const { return _client.get(); }
     ThriftClient* operator ->() { return get(); }
@@ -176,10 +178,10 @@ private:
 
 private:
     // TSocket只支持一个server，而TSocketPool是TSocket的子类支持指定多个server，运行时随机选择一个
-    std::shared_ptr<apache::thrift::transport::TSocket> _socket;
-    std::shared_ptr<apache::thrift::transport::TTransport> _transport;
-    std::shared_ptr<apache::thrift::protocol::TProtocol> _protocol;
-    std::shared_ptr<ThriftClient> _client;
+    boost::shared_ptr<apache::thrift::transport::TSocket> _socket;
+    boost::shared_ptr<apache::thrift::transport::TTransport> _transport;
+    boost::shared_ptr<apache::thrift::protocol::TProtocol> _protocol;
+    boost::shared_ptr<ThriftClient> _client;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -209,8 +211,8 @@ class CThriftServerHelper
 public:
     // set_log_function 是否设置写日志函数，默认设置为debug级别日志
     CThriftServerHelper(
-            std::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler=std::shared_ptr<apache::thrift::server::TServerEventHandler>(),
-            std::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler=std::shared_ptr<apache::thrift::TProcessorEventHandler>(),
+            boost::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler=boost::shared_ptr<apache::thrift::server::TServerEventHandler>(),
+            boost::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler=boost::shared_ptr<apache::thrift::TProcessorEventHandler>(),
             bool set_log_function=true);
 
     // 启动rpc服务，请注意该调用是同步阻塞的，所以需放最后调用
@@ -228,7 +230,6 @@ public:
 
     // 要求ThriftHandler类有方法attach(void*)
     void serve(uint16_t port, void* attached, uint8_t num_worker_threads=1, uint8_t num_io_threads=1);
-    void serve(const std::string& ip, uint16_t port, void* attached, uint8_t num_worker_threads=1, uint8_t num_io_threads=1);
 
     // 对于TNonblockingServer调用stop时是停止所有的IO线程，做法是设置一个结束循环标志：
     // for (uint32_t i = 0; i < ioThreads_.size(); ++i) ioThreads_[i]->stop();
@@ -238,33 +239,33 @@ public:
     // }
     void stop();
 
-    std::shared_ptr<ThriftHandler> get()
+    boost::shared_ptr<ThriftHandler> get()
     {
         return _handler;
     }
 
-    std::shared_ptr<ThriftHandler> get() const
+    boost::shared_ptr<ThriftHandler> get() const
     {
         return _handler;
     }
 
-    std::shared_ptr<apache::thrift::server::TServer> get_server()
+    boost::shared_ptr<apache::thrift::server::TServer> get_server()
     {
         return _server;
     }
 
-    std::shared_ptr<apache::thrift::server::TServer> get_server() const
+    boost::shared_ptr<apache::thrift::server::TServer> get_server() const
     {
         return _server;
     }
 
-    std::shared_ptr<apache::thrift::server::TServerEventHandler>
+    boost::shared_ptr<apache::thrift::server::TServerEventHandler>
     get_server_event_handler()
     {
         return _server_event_handler;
     }
 
-    std::shared_ptr<apache::thrift::server::TServerEventHandler>
+    boost::shared_ptr<apache::thrift::server::TServerEventHandler>
     get_server_event_handler() const
     {
         return _server_event_handler;
@@ -273,8 +274,8 @@ public:
 private:
     // 被构造函数调用
     void init1(
-            std::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler,
-            std::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler,
+            boost::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler,
+            boost::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler,
             bool set_log_function);
     // 被serve函数调用
     void init2(
@@ -285,19 +286,16 @@ private:
 
 private:
     // Virtual interface class that can handle events from the server core.
-    std::shared_ptr<apache::thrift::server::TServerEventHandler> _server_event_handler;
-    std::shared_ptr<ThriftHandler> _handler;
-    std::shared_ptr<apache::thrift::TProcessor> _processor;
+    boost::shared_ptr<apache::thrift::server::TServerEventHandler> _server_event_handler;
+    boost::shared_ptr<ThriftHandler> _handler;
+    boost::shared_ptr<apache::thrift::TProcessor> _processor;
     // Constructs input and output protocol objects given transports.
-    std::shared_ptr<apache::thrift::protocol::TProtocolFactory> _protocol_factory;
-    // Nonblocking Server socket implementation of TNonblockingServerTransport,
-    // wrapper around a unix socket listen and accept calls.
-    std::shared_ptr<apache::thrift::transport::TNonblockingServerTransport> _serverTransport;
+    boost::shared_ptr<apache::thrift::protocol::TProtocolFactory> _protocol_factory;
     // This class manages a pool of threads.
-    std::shared_ptr<apache::thrift::server::ThreadManager> _thread_manager;
+    boost::shared_ptr<apache::thrift::server::ThreadManager> _thread_manager;
     // A thread factory to create posix threads
-    std::shared_ptr<apache::thrift::concurrency::ThreadFactory> _thread_factory;
-    std::shared_ptr<apache::thrift::server::TServer> _server; // Thrift server.
+    boost::shared_ptr<apache::thrift::concurrency::PosixThreadFactory> _thread_factory;
+    boost::shared_ptr<apache::thrift::server::TServer> _server; // Thrift server.
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -449,8 +447,8 @@ uint16_t CThriftClientHelper<ThriftClient, Protocol, Transport>::get_port() cons
 ////////////////////////////////////////////////////////////////////////////////
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
 CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::CThriftServerHelper(
-        std::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler,
-        std::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler,
+        boost::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler,
+        boost::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler,
         bool set_log_function)
 {
     init1(server_event_handler, processor_event_handler, set_log_function);
@@ -472,12 +470,11 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
         uint8_t num_worker_threads,
         uint8_t num_io_threads)
 {
-    init2(ip, port, num_worker_threads, num_io_threads);
+    init2("0.0.0.0", port, num_worker_threads, num_io_threads);
 
     // 这里也可直接调用serve()，但推荐run()
     // !!!注意调用run()的进程或线程会被阻塞
     _server->run();
-
     // 从 thrift-0.9.3 开始已去掉 join
     // join is the same as stop, except that it will
     // block until all the workers have finished their work.
@@ -518,18 +515,7 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
         uint8_t num_worker_threads,
         uint8_t num_io_threads)
 {
-    serve("0.0.0.0", port, attached, num_worker_threads, num_io_threads);
-}
-
-template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
-void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serve(
-        const std::string& ip,
-        uint16_t port,
-        void* attached,
-        uint8_t num_worker_threads,
-        uint8_t num_io_threads)
-{
-    init2(ip, port, num_worker_threads, num_io_threads);
+    init2("0.0.0.0", port, num_worker_threads, num_io_threads);
 
     // 关联
     if (attached != NULL)
@@ -538,8 +524,7 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
     // 这里也可直接调用serve()，但推荐run()
     // !!!注意调用run()的进程或线程会被阻塞
     _server->run();
-    _thread_manager->stop();
-    //_thread_manager->join();
+    _thread_manager->join();
 }
 
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
@@ -554,8 +539,8 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::stop
 // 被构造函数调用
 template <class ThriftHandler, class ServiceProcessor, class ProtocolFactory>
 void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init1(
-        std::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler,
-        std::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler,
+        boost::shared_ptr<apache::thrift::server::TServerEventHandler> server_event_handler,
+        boost::shared_ptr<apache::thrift::TProcessorEventHandler> processor_event_handler,
         bool set_log_function)
 {
     if (set_log_function)
@@ -579,9 +564,8 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init
         uint8_t num_worker_threads,
         uint8_t num_io_threads)
 {
-    _serverTransport.reset(new apache::thrift::transport::TNonblockingServerSocket(ip, static_cast<int>(port)));
     _thread_manager = apache::thrift::server::ThreadManager::newSimpleThreadManager(num_worker_threads);
-    _thread_factory.reset(new apache::thrift::concurrency::ThreadFactory());
+    _thread_factory.reset(new apache::thrift::concurrency::PosixThreadFactory());
 
     _thread_manager->threadFactory(_thread_factory);
     // Starts the thread manager.
@@ -590,7 +574,7 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init
     _thread_manager->start();
 
     apache::thrift::server::TNonblockingServer* server = new apache::thrift::server::TNonblockingServer(
-            _processor, _protocol_factory, _serverTransport, _thread_manager);
+            _processor, _protocol_factory, port, _thread_manager);
     server->setNumIOThreads(num_io_threads);
     server->setServerEventHandler(_server_event_handler);
     _server.reset(server);

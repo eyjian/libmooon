@@ -37,6 +37,7 @@ INTEGER_ARG_DEFINE(uint32_t, requests, 1, 1, std::numeric_limits<int32_t>::max()
 STRING_ARG_DEFINE(prefix, "r3ct", "key prefix"); // 前缀的一个作用是方便清掉测试时产生的数据
 INTEGER_ARG_DEFINE(uint32_t, expire, 60, 1, 3600, "key expired seconds");
 INTEGER_ARG_DEFINE(uint8_t, verbose, 0, 0, 1, "print error");
+INTEGER_ARG_DEFINE(uint8_t, increments, 10, 1, 100, "number of increments for hmincrby");
 INTEGER_ARG_DEFINE(uint16_t, value_length, 10, 1, std::numeric_limits<uint16_t>::max(), "length of value");
 
 static atomic_t sg_success = 0;
@@ -53,6 +54,7 @@ static void setex_test();
 static void setnxex_test();
 static void hset_test();
 static void hget_test();
+static void hmincrby_test();
 static void lpush_test();
 static void rpop_test();
 
@@ -63,6 +65,7 @@ static void setex_stress_thread(uint8_t index);
 static void setnxex_stress_thread(uint8_t index);
 static void hset_stress_thread(uint8_t index);
 static void hget_stress_thread(uint8_t index);
+static void hmincrby_stress_thread(uint8_t index);
 static void lpush_stress_thread(uint8_t index);
 static void rpop_stress_thread(uint8_t index);
 
@@ -92,6 +95,7 @@ int main(int argc, char* argv[])
         hset_test();
         if (is_test_mode())
             hget_test();
+        hmincrby_test();
 
         // QUEUE
         lpush_test();
@@ -325,6 +329,38 @@ void hget_test()
     fprintf(stdout, "microseconds=%u, milliseconds=%u, seconds=%u\n", elapsed_microseconds, elapsed_milliseconds, elapsed_seconds);
     fprintf(stdout, "total: %u, success: %u, failure: %u, not exists: %u\n", success+failure, success, failure, not_exists);
     fprintf(stdout, "qps: %u\n", qps);
+}
+
+void hmincrby_test()
+{
+    atomic_set(&sg_success, 0);
+    atomic_set(&sg_failure, 0);
+    atomic_set(&sg_not_exists, 0);
+
+    mooon::sys::CStopWatch stop_watch;
+    mooon::sys::CThreadEngine** threads = new mooon::sys::CThreadEngine*[mooon::argument::threads->value()];
+    for (uint8_t i=0; i<mooon::argument::threads->value(); ++i)
+        threads[i] = new mooon::sys::CThreadEngine(mooon::sys::bind(hmincrby_stress_thread, i));
+    for (uint8_t i=0; i<mooon::argument::threads->value(); ++i)
+    {
+        threads[i]->join();
+        delete threads[i];
+    }
+    delete []threads;
+
+    if (is_test_mode())
+    {
+        unsigned int elapsed_microseconds = stop_watch.get_elapsed_microseconds();
+        unsigned int elapsed_milliseconds = elapsed_microseconds / 1000;
+        unsigned int elapsed_seconds = elapsed_milliseconds / 1000;
+        unsigned int success = atomic_read(&sg_success);
+        unsigned int failure = atomic_read(&sg_failure);
+        unsigned int qps = (0 == elapsed_seconds)? (success+failure): (success+failure)/elapsed_seconds;
+        fprintf(stdout, "\nhmincrby:\n");
+        fprintf(stdout, "microseconds=%u, milliseconds=%u, seconds=%u\n", elapsed_microseconds, elapsed_milliseconds, elapsed_seconds);
+        fprintf(stdout, "total: %u, success: %u, failure: %u\n", success+failure, success, failure);
+        fprintf(stdout, "qps: %u\n", qps);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -648,6 +684,48 @@ void hget_stress_thread(uint8_t index)
                 atomic_inc(&sg_failure);
                 if (1 == mooon::argument::verbose->value())
                     fprintf(stderr, "HGET [%s:%s] ERROR: %s\n", key.c_str(), field.c_str(), ex.str().c_str());
+            }
+        }
+    }
+    catch (r3c::CRedisException& ex)
+    {
+        fprintf(stderr, "[%s] %s\n", __FUNCTION__, ex.str().c_str());
+    }
+}
+
+void hmincrby_stress_thread(uint8_t index)
+{
+    try
+    {
+        const std::string& key = mooon::utils::CStringUtils::format_string("%s_eval_%d", mooon::argument::prefix->c_value(), index);
+        r3c::CRedisClient redis(mooon::argument::redis->value());
+
+        if (is_clean_mode())
+        {
+            redis.del(key);
+        }
+        else
+        {
+            for (uint32_t i=0; i<mooon::argument::requests->value(); ++i)
+            {
+                std::vector<std::pair<std::string, int64_t> > increments(mooon::argument::increments->value());
+                for (std::vector<std::pair<std::string, int64_t> >::size_type i=0; i<increments.size(); ++i)
+                {
+                    increments[i].first = mooon::utils::CStringUtils::int_tostring(i%100);
+                    increments[i].second = i;
+                }
+
+                try
+                {
+                    redis.hmincrby(key, increments);
+                    atomic_inc(&sg_success);
+                }
+                catch (r3c::CRedisException& ex)
+                {
+                    atomic_inc(&sg_failure);
+                    if (1 == mooon::argument::verbose->value())
+                        fprintf(stderr, "SET [%s] ERROR: %s\n", key.c_str(), ex.str().c_str());
+                }
             }
         }
     }
