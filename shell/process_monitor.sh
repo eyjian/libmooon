@@ -330,7 +330,7 @@ while true; do
 
             # sleep时间得长一点，原因是启动可能没那么快，以防止启动多个进程
             # 在某些环境遇到sleep无效，正常sleep后“$?”值为0，则异常时变成“141”，
-            # 这个是因为收到了信号13，可以使用“trap '' SIGPIPE”忽略SIGPIPE。
+            # 这个是因为收到了信号13（141 - 128 == 13），可以使用“trap '' SIGPIPE”忽略SIGPIPE。
             sleep $start_seconds
         else
             sleep $monitor_interval
