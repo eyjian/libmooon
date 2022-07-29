@@ -150,10 +150,14 @@ static size_t on_write_response_body_into_FILE(void* buffer, size_t size, size_t
 }
 
 CCurlWrapper::CCurlWrapper(
-        int data_timeout_seconds, int connect_timeout_seconds, bool nosignal,
+        long data_timeout_seconds, long connect_timeout_seconds, bool nosignal,
         bool keepalive, int keepidle, int keepseconds)
     : _curl_version_info(NULL), _curl(NULL),
-      _data_timeout_seconds(data_timeout_seconds), _connect_timeout_seconds(connect_timeout_seconds), _nosignal(nosignal),
+      _data_timeout_milliseconds(data_timeout_seconds*1000),
+      _connect_timeout_milliseconds(connect_timeout_seconds*1000),
+      _low_speed_time(0),
+      _low_speed_limit(0),
+      _nosignal(nosignal),
       _keepalive(keepalive), _keepidle(keepidle), _keepseconds(keepseconds)
 {
     _curl_version_info = curl_version_info(CURLVERSION_NOW);
@@ -580,6 +584,26 @@ std::string CCurlWrapper::get_response_content_type() const
     return (content_type!=NULL)? std::string(content_type): std::string("");
 }
 
+void CCurlWrapper::set_data_timeout_milliseconds(long ms)
+{
+    _data_timeout_milliseconds = ms;
+}
+
+void CCurlWrapper::set_connect_timeout_milliseconds(long ms)
+{
+    _connect_timeout_milliseconds = ms;
+}
+
+void CCurlWrapper::set_low_speed_limit(long speedlimit)
+{
+    _low_speed_limit = speedlimit;
+}
+
+void CCurlWrapper::set_low_speed_time(long speedtime)
+{
+    _low_speed_time = speedtime;
+}
+
 void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable_insecure, size_t (*on_write_response_body_into_FILE_proc)(void*, size_t, size_t, void*))
 {
     const curl_version_info_data* curl_version_info = (curl_version_info_data*)_curl_version_info;
@@ -622,12 +646,6 @@ void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable
         if (errcode != CURLE_OK)
             THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
     }
-
-    // CURLOPT_TIMEOUT
-    // In unix-like systems, this might cause signals to be used unless CURLOPT_NOSIGNAL is set.
-    errcode = curl_easy_setopt(curl, CURLOPT_TIMEOUT, _data_timeout_seconds);
-    if (errcode != CURLE_OK)
-        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
     // enable TCP keep-alive for this transfer
     if (_keepalive && (curl_version_info->version_num >= 0x071900))
@@ -686,11 +704,38 @@ void CCurlWrapper::reset(const std::string& url, const char* cookie, bool enable
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
 
-    // CURLOPT_CONNECTTIMEOUT
+    // CURLOPT_TIMEOUT
     // In unix-like systems, this might cause signals to be used unless CURLOPT_NOSIGNAL is set.
-    errcode = curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, _connect_timeout_seconds);
+    //
+    // Default timeout is 0 (zero) which means it never times out during transfer.
+    // If both CURLOPT_TIMEOUT and CURLOPT_TIMEOUT_MS are set, the value set last will be used.
+    errcode = curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, _data_timeout_milliseconds);
     if (errcode != CURLE_OK)
         THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_CONNECTTIMEOUT
+    // In unix-like systems, this might cause signals to be used unless CURLOPT_NOSIGNAL is set.
+    //
+    // Default: 300000
+    // If both CURLOPT_CONNECTTIMEOUT and CURLOPT_CONNECTTIMEOUT_MS are set, the value set last will be used.
+    errcode = curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, _connect_timeout_milliseconds);
+    if (errcode != CURLE_OK)
+        THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+    // CURLOPT_LOW_SPEED_TIME
+    // CURLOPT_LOW_SPEED_LIMIT
+    if (_low_speed_time > 0 && _low_speed_limit > 0)
+    {
+        // CURLOPT_LOW_SPEED_TIME
+        errcode = curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, _low_speed_time);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+
+        // CURLOPT_LOW_SPEED_LIMIT
+        errcode = curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, _low_speed_limit);
+        if (errcode != CURLE_OK)
+            THROW_EXCEPTION(curl_easy_strerror(errcode), errcode);
+    }
 
     // CURLOPT_READFUNCTION
     errcode = curl_easy_setopt(curl, CURLOPT_READFUNCTION, NULL);

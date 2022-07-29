@@ -58,7 +58,7 @@ public:
     // 指定nosignal为true时，DNS解析将不带超时，为此需要configure生成Makefile时指定c-ares（c-ares是一个异步DNS解析库）
     //
     // keepalive特性要求libcurl版本不低于7.25.0，否则忽略
-    CCurlWrapper(int data_timeout_seconds=2, int connect_timeout_seconds=2, bool nosignal=false, bool keepalive=false, int keepidle=120, int keepseconds=60);
+    CCurlWrapper(long data_timeout_seconds=2, long connect_timeout_seconds=2, bool nosignal=false, bool keepalive=false, int keepidle=120, int keepseconds=60);
     ~CCurlWrapper() throw ();
 
     // 一个CCurlWrapper对象多次做不同的get或post调用时，
@@ -101,6 +101,12 @@ public:
     int get_response_code() const;
     std::string get_response_content_type() const;
 
+public:
+    void set_data_timeout_milliseconds(long ms);
+    void set_connect_timeout_milliseconds(long ms);
+    void set_low_speed_time(long speedtime);
+    void set_low_speed_limit(long speedlimit);
+
 private:
     // 重置操作
     void reset(const std::string& url, const char* cookie, bool enable_insecure, size_t (*on_write_response_body_into_FILE_proc)(void*, size_t, size_t, void*));
@@ -109,8 +115,10 @@ private:
     void* _curl_version_info; // curl_version_info_data
     void* _curl;
     void* _head_list;
-    int _data_timeout_seconds;
-    int _connect_timeout_seconds;
+    long _data_timeout_milliseconds; // maximum time the transfer is allowed to complete
+    long _connect_timeout_milliseconds; // timeout for the connect phase
+    long _low_speed_time; // low speed limit time period (0, disabled), abort if slower than _low_speed_limit bytes/sec during _low_speed_time seconds
+    long _low_speed_limit; // low speed limit in bytes per second (0, disabled)
     bool _nosignal;
 
 private:
