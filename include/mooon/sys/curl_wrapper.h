@@ -104,8 +104,8 @@ public:
 public:
     void set_data_timeout_milliseconds(long ms);
     void set_connect_timeout_milliseconds(long ms);
-    void set_low_speed_time(long speedtime);
-    void set_low_speed_limit(long speedlimit);
+    void set_low_speed_time(long speedtime); // speedtime 单位：秒（当 speedtime 时间内传输的速度低于 speedlimit 指定的值时终止）
+    void set_low_speed_limit(long speedlimit); // speedlimit 单位：字节/秒
 
 private:
     // 重置操作
