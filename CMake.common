@@ -257,39 +257,54 @@ if (CMAKE_SIZEOF_VOID_P EQUAL 4)
     add_definitions("-march=pentium4")    
 endif ()
 
+# New in version 3.1.
+# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
+# set_property(TARGET tgt PROPERTY CXX_STANDARD 11)
+# check_cxx_compiler_flag(<flag> <var>)
+
 include(CheckCXXCompilerFlag)
-# 如果编译环境支持C++20，则打开C++20开关
-CHECK_CXX_COMPILER_FLAG("-std=c++20" COMPILER_SUPPORTS_CXX20)
-if (COMPILER_SUPPORTS_CXX20)
-    message("${Yellow}enable C++20${ColourReset}")
-    add_definitions("-std=c++20")
-else ()
-    message("${Yellow}not support C++20${ColourReset}")
 
-    # 如果编译环境支持C++17，则打开C++17开关
-    CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
-    if (COMPILER_SUPPORTS_CXX17)
-        message("${Yellow}enable C++17${ColourReset}")
-        add_definitions("-std=c++17")
-    else ()
-        message("${Yellow}not support C++17${ColourReset}")
+# 如果编译环境支持 c++23，则打开 c++23 开关
+CHECK_CXX_COMPILER_FLAG("-std=c++23" COMPILER_SUPPORTS_CXX23)
+if (COMPILER_SUPPORTS_CXX23)
+    message("${Yellow}enable c++23${ColourReset}")
+    add_definitions("-std=c++23") # 或 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++23")
+else ()    
+    message(STATUS "${Red}The compiler ${CMAKE_CXX_COMPILER} has no c++23 support${ColourReset}.")
 
-        # 如果编译环境支持C++14，则打开C++14开关
-        CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
-        if (COMPILER_SUPPORTS_CXX14)
-            message("${Yellow}enable C++14${ColourReset}")
-            add_definitions("-std=c++14")
+    # 如果编译环境支持 c++20，则打开 c++20 开关
+    CHECK_CXX_COMPILER_FLAG("-std=c++20" COMPILER_SUPPORTS_CXX20)
+    if (COMPILER_SUPPORTS_CXX20)
+        message("${Yellow}enable C++20${ColourReset}")
+        add_definitions("-std=c++20")
+    else ()        
+        message(STATUS "${Red}The compiler ${CMAKE_CXX_COMPILER} has no c++20 support${ColourReset}.")
+
+        # 如果编译环境支持 c++17，则打开 c++17 开关
+        CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
+        if (COMPILER_SUPPORTS_CXX17)
+            message("${Yellow}enable c++17${ColourReset}")
+            add_definitions("-std=c++17")
         else ()
-            message("${Yellow}not support C++14${ColourReset}")
-            
-            # 如果编译环境支持C++11，则打开C++11开关
-            CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-            if (COMPILER_SUPPORTS_CXX11)
-                message("${Yellow}enable C++11${ColourReset}")
-                #add_definitions("-std=c++11")
-                add_compile_options("-std=c++11")
+            message(STATUS "${Red}The compiler ${CMAKE_CXX_COMPILER} has no c++17 support${ColourReset}.")
+
+            # 如果编译环境支持 c++14，则打开 c++14 开关
+            CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+            if (COMPILER_SUPPORTS_CXX14)
+                message("${Yellow}enable c++14${ColourReset}")
+                add_definitions("-std=c++14")
             else ()
-                message("${Yellow}not support C++11${ColourReset}")
+                message(STATUS "${Red}The compiler ${CMAKE_CXX_COMPILER} has no c++14 support${ColourReset}.")
+
+                # 如果编译环境支持 c++11，则打开 c++11 开关
+                CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+                if (COMPILER_SUPPORTS_CXX11)                    
+                    message(STATUS "${Yellow}The compiler ${CMAKE_CXX_COMPILER} has c++11 support${ColourReset}.")
+                    #add_definitions("-std=c++11")
+                    add_compile_options("-std=c++11")
+                else ()
+                    message(STATUS "${Red}The compiler ${CMAKE_CXX_COMPILER} has no c++11 support${ColourReset}.")
+                endif()
             endif()
         endif()
     endif()
