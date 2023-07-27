@@ -19,6 +19,7 @@
 #ifndef MOOON_SYS_MEM_POOL_H
 #define MOOON_SYS_MEM_POOL_H
 #include "mooon/sys/lock.h"
+#include <atomic>
 SYS_NAMESPACE_BEGIN
 
 /***
@@ -79,8 +80,8 @@ private:
     uint8_t _guard_size;        /** 警戒大小，实际需要的内存大小为: (_guard_size+_bucket_size)*_bucket_number */
     uint16_t _bucket_size;      /** 内存大小，包含_guard_size部分，所以实际内存大小应当再减去_guard_size */
     uint32_t _bucket_number;    /** 内存个数 */
-    volatile uint32_t _stack_top_index;  /** 栈顶索引 */
-    volatile uint32_t _available_number; /** 池中还可以分配的内存个数 */
+    std::atomic<uint32_t> _stack_top_index;  /** 栈顶索引 */
+    std::atomic<uint32_t> _available_number; /** 池中还可以分配的内存个数 */
 
 private:
     char* _stack_top;    

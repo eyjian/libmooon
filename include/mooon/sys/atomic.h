@@ -27,7 +27,7 @@ template <>
 class CAtomic<bool>
 {
 public:
-    CAtomic<bool>()
+    CAtomic() // c++20 开始不支持写法 CAtomic<bool>
     {
 #if __cplusplus < 201103L
         atomic_set(&_value, 0);
@@ -36,7 +36,7 @@ public:
 #endif // __cplusplus < 201103L
     }
 
-    CAtomic<bool>(bool value)
+    CAtomic(bool value)
     {
 #if __cplusplus < 201103L
         if (value)
@@ -48,7 +48,7 @@ public:
 #endif
     }
 
-    CAtomic<bool>(const CAtomic<bool>& other)
+    CAtomic(const CAtomic<bool>& other)
     {
 #if __cplusplus < 201103L
         const int v = other.get_value();
@@ -119,7 +119,7 @@ template <>
 class CAtomic<int>
 {
 public:
-    CAtomic<int>()
+    CAtomic()
     {
 #if __cplusplus < 201103L
         atomic_set(&_value, 0);
@@ -128,7 +128,7 @@ public:
 #endif
     }
 
-    CAtomic<int>(int value)
+    CAtomic(int value)
     {
 #if __cplusplus < 201103L
         atomic_set(&_value, value);
@@ -137,7 +137,7 @@ public:
 #endif
     }
 
-    CAtomic<int>(const CAtomic<int>& other)
+    CAtomic(const CAtomic<int>& other)
     {
 #if __cplusplus < 201103L
         const int v = other.get_value();
@@ -265,7 +265,7 @@ template <>
 class CAtomic<int64_t>
 {
 public:
-    CAtomic<int64_t>()
+    CAtomic()
     {
 #if __cplusplus < 201103L
         atomic8_set(&_value, 0);
@@ -274,7 +274,7 @@ public:
 #endif
     }
 
-    CAtomic<int64_t>(int64_t value)
+    CAtomic(int64_t value)
     {
 #if __cplusplus < 201103L
         atomic8_set(&_value, value);
@@ -283,7 +283,7 @@ public:
 #endif
     }
 
-    CAtomic<int64_t>(const CAtomic<int64_t>& other)
+    CAtomic(const CAtomic<int64_t>& other)
     {
 #if __cplusplus < 201103L
         const int64_t v = other.get_value();

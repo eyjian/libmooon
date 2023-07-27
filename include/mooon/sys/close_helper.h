@@ -70,13 +70,13 @@ template <>
 class CloseHelper<int>
 {
 public:
-    CloseHelper<int>(int fd)
+    CloseHelper(int fd) // c++20 开始不支持写法 CloseHelper<int>(int fd)
         :_fd(fd)
     {
     }
     
     /** 析构函数，自动调用::close */
-    ~CloseHelper<int>()
+    ~CloseHelper()
     {
         if (_fd != -1)
             ::close(_fd);
@@ -110,13 +110,13 @@ template <>
 class CloseHelper<FILE*>
 {
 public:
-    CloseHelper<FILE*>(FILE* fp)
+    CloseHelper(FILE* fp) // CloseHelper<FILE*>
         :_fp(fp)
     {
     }
     
     /** 析构函数，自动调用fclose */
-    ~CloseHelper<FILE*>()
+    ~CloseHelper()
     {
         if (_fp != NULL)
             fclose(_fp);
