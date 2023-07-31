@@ -164,6 +164,14 @@ endif ()
 discover_library(LIBIDN libidn)
 #link_libraries(libidn.a)
 
+# idn2（一些环境Curl强依赖idn2）
+#discover_library(LIBIDN2 libidn2)
+#link_libraries(libidn2.a)
+
+# libiconv（libidn2可选依赖libiconv）
+#discover_library(LIBICONV libiconv)
+#link_libraries(libcharset.a libiconv.so)
+
 # C-ares（Curl可选依赖C-ares）
 discover_library(CARES c-ares)
 #link_libraries(libcares.a)
