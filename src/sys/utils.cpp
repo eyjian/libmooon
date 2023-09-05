@@ -24,10 +24,14 @@
 #include "utils/string_utils.h"
 
 #if __cplusplus >= 201103L
-#include <chrono>
-#include <system_error>
-#include <thread>
+    #include <chrono>
+    #include <system_error>
+    #include <thread>
 #endif // __cplusplus >= 201103L
+
+#ifdef __GNUC__
+    #include <ext/stdio_filebuf.h>
+#endif // __GNUC__
 
 #include <arpa/inet.h>
 #include <dirent.h>
@@ -78,6 +82,40 @@ int tgkill(int tgid, int tid, int sig)
 {
     return syscall(SYS_tgkill, tgid, tid, sig);
 }
+
+// 取得 fd 对应的 inode
+ino_t get_inode(int fd)
+{
+    struct stat st;
+    return (fstat(fd, &st) == -1)? -1: st.st_ino;
+}
+
+ino_t get_inode(const char *path)
+{
+    struct stat st;
+    return (stat(path, &st) == -1)? -1: st.st_ino;
+}
+
+#ifdef __GNUC__
+    ino_t get_inode(const std::ifstream& ifs)
+    {
+        const int fd = ifstream2fd(ifs);
+        return (fd == -1)? -1: get_inode(fd);
+    }
+
+    // 仅 GNU C++ 库可用
+    int ifstream2fd(const std::ifstream& fs)
+    {
+        __gnu_cxx::stdio_filebuf<char>* filebuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(fs.rdbuf());
+        return (filebuf != NULL)? filebuf->fd(): -1;
+    }
+
+    int ofstream2fd(const std::ifstream& fs)
+    {
+        __gnu_cxx::stdio_filebuf<char>* filebuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(fs.rdbuf());
+        return (filebuf != NULL)? filebuf->fd(): -1;
+    }
+#endif // __GNUC__
 
 // 函数rdtsc取自Linux内核（linux-4.20）源代码，
 // 所在文件：tools/perf/jvmti/jvmti_agent.c
