@@ -42,13 +42,17 @@ pid_t gettid(void);
 // 3) sig Linux 信号值
 int tgkill(int tgid, int tid, int sig);
 
-// 取得 fd 对应的 inode
-// 返回值：失败返回 -1，错误可通过 errno 取得
+// 取得 fd 或 path 对应的 inode
+// 返回值：失败返回 0，错误可通过 errno 取得
+// ino_t 为 unsigned 类型
 ino_t get_inode(int fd);
 ino_t get_inode(const char *path);
 
 #ifdef __GNUC__
+    // 取得 ifs 对应的 inode
+    // 返回值：失败返回 0
     ino_t get_inode(const std::ifstream& ifs);
+
     // 仅 GNU C++ 库可用
     // 返回值：失败返回 -1，错误可通过 errno 取得
     int ifstream2fd(const std::ifstream& fs);

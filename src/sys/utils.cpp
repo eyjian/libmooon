@@ -87,20 +87,20 @@ int tgkill(int tgid, int tid, int sig)
 ino_t get_inode(int fd)
 {
     struct stat st;
-    return (fstat(fd, &st) == -1)? -1: st.st_ino;
+    return (fstat(fd, &st) == -1)? 0: st.st_ino;
 }
 
 ino_t get_inode(const char *path)
 {
     struct stat st;
-    return (stat(path, &st) == -1)? -1: st.st_ino;
+    return (stat(path, &st) == -1)? 0: st.st_ino;
 }
 
 #ifdef __GNUC__
     ino_t get_inode(const std::ifstream& ifs)
     {
         const int fd = ifstream2fd(ifs);
-        return (fd == -1)? -1: get_inode(fd);
+        return (fd == -1)? 0: get_inode(fd);
     }
 
     // 仅 GNU C++ 库可用
