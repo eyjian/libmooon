@@ -103,16 +103,33 @@ ino_t get_inode(const char *path)
         return (fd == -1)? 0: get_inode(fd);
     }
 
+    // __gnu_cxx::stdio_filebuf:
+    // Provides a layer of compatibility for C/POSIX.
+
+    // 使用 dynamic_cast，需要开启”-frtti“，而指定”-fno-rtti“可禁用，而且要求对象含虚表指针和有虚函数表
+
     // 仅 GNU C++ 库可用
     int ifstream2fd(const std::ifstream& fs)
     {
-        __gnu_cxx::stdio_filebuf<char>* filebuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(fs.rdbuf());
+        // fs.rdbuf() 返回的为“std::basic_filebuf<char, std::char_traits<char> >*”类型
+        //
+        // auto rdbuf = fs.rdbuf();
+        // (gdb) p *rdbuf
+        // $8 = {<std::basic_streambuf<char, std::char_traits<char> >> = {_vptr.basic_streambuf = 0x7ffff7bbfc30 <vtable for std::basic_filebuf<char, std::char_traits<char> >+16>,
+        //
+        // std::ifstream 底层用的是 std::basic_filebuf，而不是 __gnu_cxx::stdio_filebuf，所以 dynamic_cast 不起作用。
+        // 但是 stdio_filebuf 在 basic_filebuf 的基础上没有增加新的数据成员，除了自己的指向虚拟函数表的指针，使得可安全的将 basic_filebuf 强制转换为 stdio_filebuf 使用。
+        // 实际上即使 stdio_filebuf 有新增数据成员，只要不使用到，也是没有问题的，也就是 stdio_filebuf 只能安全地使用 basic_filebuf 有的数据成员，其自身的在这种情况是未初始化的。
+
+        // __gnu_cxx::stdio_filebuf<char>* filebuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(fs.rdbuf());
+        __gnu_cxx::stdio_filebuf<char>* filebuf = static_cast<__gnu_cxx::stdio_filebuf<char>*>(fs.rdbuf());
         return (filebuf != NULL)? filebuf->fd(): -1;
     }
 
     int ofstream2fd(const std::ifstream& fs)
     {
-        __gnu_cxx::stdio_filebuf<char>* filebuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(fs.rdbuf());
+        //__gnu_cxx::stdio_filebuf<char>* filebuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(fs.rdbuf());
+        __gnu_cxx::stdio_filebuf<char>* filebuf = static_cast<__gnu_cxx::stdio_filebuf<char>*>(fs.rdbuf());
         return (filebuf != NULL)? filebuf->fd(): -1;
     }
 #endif // __GNUC__
