@@ -57,6 +57,14 @@ ino_t get_inode(const char *path);
     // 返回值：失败返回 -1，错误可通过 errno 取得
     int ifstream2fd(const std::ifstream& fs);
     int ofstream2fd(const std::ofstream& fs);
+
+    //fd2ifstream
+    //__gnu_cxx::stdio_filebuf<char> fd_file_buf(fd, ios_base::in);
+    //std::istream ifs(&fd_file_buf);
+    //
+    //fd2ofstream
+    //__gnu_cxx::stdio_filebuf<char> fd_file_buf(fd, std::ios_base::out | std::ios_base::binary);
+    //std::ostream ofs(&fd_file_buf);
 #endif // __GNUC__
 
 /***
