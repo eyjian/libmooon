@@ -7,20 +7,20 @@
 # 2、机器能够访问外网
 # 3、机器上有命令：wget、gunzip、bunzip2、cmake
 #
-# 安装环境：X86_64，安装后不支持 32 位应用（--disable-multilib）
+# 安装环境：x86_64，安装后不支持 32 位应用（--disable-multilib）
 #
-# 如果 make 时遇到错误“internal compiler error”，可能是因为内存不足，请换台内存更大的机器，或者更换GCC版本试试。
+# 如果 make 时遇到错误“internal compiler error”，可能是因为内存不足，请换台内存更大的机器，或者更换 gcc 版本试试。
 
-# 对 GCC 13.1.0，以下搭配不可以（Building GCC requires GMP 4.2+, MPFR 3.1.0+ and MPC 0.8.0+）：
+# 对 gcc 13.1.0，以下搭配不可以（Building GCC requires GMP 4.2+, MPFR 3.1.0+ and MPC 0.8.0+）：
 # 1）gmp-6.2.0, mpfr-4.2.0, mpc-1.3.0 # mpc 版本不符合，需用 1.0.0 以内的版本
 #
-# GCC 官网：
+# gcc 官网：
 # https://gcc.gnu.org/
 
-# C++ 官网：
+# c++ 官网：
 # https://isocpp.org/
 #
-# C++ 标准状况：
+# c++ 标准状况：
 # https://isocpp.org/std/status
 
 # 是否静默安装（值 1 表示位静默安装，其它如 0 表示非静默安装）
