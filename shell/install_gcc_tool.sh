@@ -13,12 +13,21 @@
 
 # 对 GCC 13.1.0，以下搭配不可以（Building GCC requires GMP 4.2+, MPFR 3.1.0+ and MPC 0.8.0+）：
 # 1）gmp-6.2.0, mpfr-4.2.0, mpc-1.3.0 # mpc 版本不符合，需用 1.0.0 以内的版本
+#
+# GCC 官网：
+# https://gcc.gnu.org/
+
+# C++ 官网：
+# https://isocpp.org/
+#
+# C++ 标准状况：
+# https://isocpp.org/std/status
 
 # 是否静默安装（值 1 表示位静默安装，其它如 0 表示非静默安装）
 SILENT=1
 
 # 版本设置
-GCC_VERSION="13.1.0"
+GCC_VERSION="13.2.0"
 GMP_VERSION="6.2.0"
 MPFR_VERSION="4.2.0"
 MPC_VERSION="1.3.0"
