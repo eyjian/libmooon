@@ -634,6 +634,7 @@ main()
         mkdir -p $INSTALL_DIR
     fi
 
+    set +e
     install_cmake
     install_boost
     install_openssl
@@ -649,6 +650,7 @@ main()
     install_msyql
     #install_protobuf
     #install_grpc
+    set -e
 }
 
 set +e
