@@ -4,7 +4,7 @@
 # 安装目录
 INSTALL_DIR=/usr/local/thirdparties
 # 是否静默安装（1 静默，0 交互）
-SILENT_INSTALL=1
+SILENT_INSTALL=0
 
 # 版本设置
 CPLUSPLUS_VERSION=23
