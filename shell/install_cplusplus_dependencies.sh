@@ -234,7 +234,7 @@ install_thrift()
         tar xzf thrift-$THRIFT_VERSION.tar.gz
 
         cd thrift-$THRIFT_VERSION
-        ./configure --prefix=$INSTALL_DIR/thrift-$THRIFT_VERSION --with-boost=$INSTALL_DIR/boost --with-libevent=$INSTALL_DIR/libevent --with-openssl=$INSTALL_DIR/openssl --with-cpp=$THRIFT_CPLUSPLUS --with-go=$THRIFT_GO --with-java=THRIFT_JAVA --with-python=THRIFT_PYTHON --with-php=THRIFT_PHP --with-lua=$THRIFT_LUA --with-nodejs=THRIFT_NODEJS --with-qt5=no --with-c_glib=no --with-kotlin=no --with-erlang=no --with-nodets=no --with-py3=no --with-perl=no --with-php_extension=no --with-dart=no --with-ruby=no --with-swift=no --with-rs=no --with-cl=no --with-haxe=no --with-netstd=no --with-d=no --enable-tests=no --enable-tutorial=no --enable-coverage=no
+        ./configure --prefix=$INSTALL_DIR/thrift-$THRIFT_VERSION --with-boost=$INSTALL_DIR/boost --with-libevent=$INSTALL_DIR/libevent --with-openssl=$INSTALL_DIR/openssl --enable-tests=no --enable-tutorial=no --with-cpp=$THRIFT_CPLUSPLUS --with-go=$THRIFT_GO --with-java=THRIFT_JAVA --with-python=THRIFT_PYTHON --with-php=THRIFT_PHP --with-lua=$THRIFT_LUA --with-nodejs=THRIFT_NODEJS --with-qt5=no --with-c_glib=no --with-kotlin=no --with-erlang=no --with-nodets=no --with-py3=no --with-perl=no --with-php_extension=no --with-dart=no --with-ruby=no --with-swift=no --with-rs=no --with-cl=no --with-haxe=no --with-netstd=no --with-d=no --enable-tests=no --enable-tutorial=no --enable-coverage=no
         make&&make install
 
         if test -h $INSTALL_DIR/thrift; then
@@ -631,10 +631,10 @@ install_grpc()
 set_gcc()
 {
     # 当为 g++ 同时指定了多个 -std 选项时，实际生效的是最后一个
-    #export CXX="g++ -std=c++$CPLUSPLUS_VERSION"
-    #export CXXCPP="g++ -E -std=c++$CPLUSPLUS_VERSION"
+    #export CXX="g++ -std=c++$CPLUSPLUS_VERSION" # C++ compiler command
+    #export CXXCPP="g++ -E -std=c++$CPLUSPLUS_VERSION" # C++ preprocessor
+    #export CXXFLAGS="-std=c++$CPLUSPLUS_VERSION"    # C++ compiler flags
     #export AM_CXXFLAGS="-std=c++$CPLUSPLUS_VERSION"
-    #export CXXFLAGS="-std=c++$CPLUSPLUS_VERSION"
 }
 
 main()
