@@ -35,7 +35,7 @@ THRIFT_NODEJS=no
 
 # 工作目录
 workdir="`pwd`"
-rm -f $workdir/install.success
+rm -f $workdir/install.log
 
 install_cmake()
 {
