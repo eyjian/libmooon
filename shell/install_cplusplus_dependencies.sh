@@ -628,6 +628,15 @@ install_grpc()
     fi
 }
 
+set_gcc()
+{
+    # 当为 g++ 同时指定了多个 -std 选项时，实际生效的是最后一个
+    #export CXX="g++ -std=c++$CPLUSPLUS_VERSION"
+    #export CXXCPP="g++ -E -std=c++$CPLUSPLUS_VERSION"
+    #export AM_CXXFLAGS="-std=c++$CPLUSPLUS_VERSION"
+    #export CXXFLAGS="-std=c++$CPLUSPLUS_VERSION"
+}
+
 main()
 {
     # 准备好安装目录
@@ -636,6 +645,8 @@ main()
     fi
 
     set -e
+    set_gcc
+
     install_cmake
     install_boost
     install_openssl
@@ -651,6 +662,7 @@ main()
     install_msyql
     #install_protobuf
     #install_grpc
+
     set +e
 }
 
