@@ -227,7 +227,7 @@ install_thrift()
         echo -e "$INSTALL_DIR/thrift-$THRIFT_VERSION \033[1;33mstarting\033[m"
 
         if test ! -f thrift-$THRIFT_VERSION.tar.gz; then
-            wget --no-check-certificate "http://www.apache.org/dyn/closer.cgi?path=/thrift/0.19.0/thrift-$THRIFT_VERSION.tar.gz"
+            wget --no-check-certificate "https://archive.apache.org/dist/thrift/$THRIFT_VERSION/thrift-$THRIFT_VERSION.tar.gz" -O thrift-$THRIFT_VERSION.tar.gz
         fi
         rm -fr thrift-$THRIFT_VERSION
         tar xzf thrift-$THRIFT_VERSION.tar.gz
@@ -634,7 +634,7 @@ main()
         mkdir -p $INSTALL_DIR
     fi
 
-    set +e
+    set -e
     install_cmake
     install_boost
     install_openssl
@@ -650,9 +650,7 @@ main()
     install_msyql
     #install_protobuf
     #install_grpc
-    set -e
+    set +e
 }
 
-set +e
 main
-set -e
