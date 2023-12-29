@@ -1,5 +1,6 @@
 #!/bin/sh
 # Writed by yijian on 2023/12/29
+# 安装常用 C++ 开源库工具
 
 # 安装目录
 INSTALL_DIR=/usr/local/thirdparties
@@ -7,8 +8,8 @@ INSTALL_DIR=/usr/local/thirdparties
 SILENT_INSTALL=0
 
 # 版本设置
-CPLUSPLUS_VERSION=23
-CMAKE_VERSION=3.28.1
+CPLUSPLUS_VERSION=23 # C++ 版本
+CMAKE_VERSION=3.28.1 # CMake 版本
 BOOST_VERSION=1_84_0
 OPENSSL_VERSION=3.2.0
 LIBEVENT_VERSION=2.1.12
