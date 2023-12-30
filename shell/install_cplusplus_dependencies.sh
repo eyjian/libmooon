@@ -507,7 +507,7 @@ install_rapidjson()
         tar xzf rapidjson-$RAPIDJSON_VERSION.tar.gz
 
         cd rapidjson-$RAPIDJSON_VERSION
-        cmake -DCMAKE_CXX_STANDARD=$CPLUSPLUS_VERSION -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR/rapidjson-$RAPIDJSON_VERSION .
+        cmake -DCMAKE_VERBOSE_MAKEFILE=on -DCMAKE_CXX_STANDARD=$CPLUSPLUS_VERSION -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR/rapidjson-$RAPIDJSON_VERSION .
         make&&make install
 
         if test -h $INSTALL_DIR/rapidjson; then
