@@ -305,8 +305,10 @@ install_libssh2()
         cd "$workdir"
         echo -e "$INSTALL_DIR/libssh2-$LIBSSH2_VERSION \033[1;33mstarging\033[m"
 
-        if test ! -f ; then
-            wget --no-check-certificate "https://libssh2.org/download/libssh2-$LIBSSH2_VERSION.tar.gz"
+        if test ! -f libssh2-$LIBSSH2_VERSION.tar.gz; then
+            cmd="wget --no-check-certificate \"https://libssh2.org/download/libssh2-$LIBSSH2_VERSION.tar.gz\""
+            echo "$cmd"
+            sh -c "$cmd"
         fi
         tar xzf libssh2-$LIBSSH2_VERSION.tar.gz
 
