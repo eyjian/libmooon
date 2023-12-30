@@ -273,7 +273,7 @@ install_cares()
         tar xzf c-ares-$CARES_VERSION.tar.gz
 
         cd c-ares-$CARES_VERSION
-        ./configure --prefix=$INSTALL_DIR/c-ares-$CARES_VERSION
+        ./configure --prefix=$INSTALL_DIR/c-ares-$CARES_VERSION --enable-tests=false
         make&&make install
 
         if test $INSTALL_DIR/c-ares; then
