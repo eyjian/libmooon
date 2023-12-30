@@ -630,6 +630,7 @@ install_grpc()
 
 set_gcc()
 {
+    echo "set gcc"
     # 当为 g++ 同时指定了多个 -std 选项时，实际生效的是最后一个
     #export CXX="g++ -std=c++$CPLUSPLUS_VERSION" # C++ compiler command
     #export CXXCPP="g++ -E -std=c++$CPLUSPLUS_VERSION" # C++ preprocessor
