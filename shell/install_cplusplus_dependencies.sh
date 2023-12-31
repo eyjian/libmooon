@@ -3,13 +3,13 @@
 # 安装常用 C++ 开源库工具
 
 # 安装目录
-INSTALL_DIR=/usr/local/thirdparties
+INSTALL_DIR=`echo "${INSTALL_DIR:-/usr/local/thirdparties}"`
 # 是否静默安装（1 静默，0 交互）
-SILENT_INSTALL=0
+SILENT_INSTALL=`echo "${SILENT_INSTALL:-0}"`
 
 # 版本设置
-CPLUSPLUS_VERSION=23 # C++ 版本
-CMAKE_VERSION=3.28.1 # CMake 版本
+CPLUSPLUS_VERSION=`echo "${CPLUSPLUS_VERSION:-23}"` # C++ 版本
+CMAKE_VERSION=`echo "${CMAKE_VERSION:-3.28.1}"` # CMake 版本
 BOOST_VERSION=1_84_0
 OPENSSL_VERSION=3.2.0
 LIBEVENT_VERSION=2.1.12
@@ -582,15 +582,17 @@ install_sqlite()
         cd "$workdir"
         echo -e "$INSTALL_DIR/sqlite3-$SQLITE_VERSION \033[1;33mstarting\033[m"
 
-        if test ! -f sqlite3-$SQLITE_VERSION-linux-glibc2.5-x86_64.tar.gz; then
+        if test ! -f sqlite3-$SQLITE_VERSION.tar.gz; then
             wget --no-check-certificate "https://www.sqlite.org/2023/sqlite-autoconf-3440200.tar.gz" -O sqlite3-$SQLITE_VERSION.tar.gz
         fi
-        rm -fr sqlite3-$SQLITE_VERSION
+        rm -fr sqlite-autoconf-*
         tar xzf sqlite3-$SQLITE_VERSION.tar.gz
+        mv sqlite-autoconf-* sqlite3-$SQLITE_VERSION
 
         cd sqlite3-$SQLITE_VERSION
-        ./configure --prefix=$INSTALL_DIR/sqlite3
+        ./configure --prefix=$INSTALL_DIR/sqlite3-$SQLITE_VERSION
         make&&make install
+        libtool --finish $INSTALL_DIR/sqlite3-$SQLITE_VERSION/lib
 
         ln -s $INSTALL_DIR/sqlite3-$SQLITE_VERSION $INSTALL_DIR/sqlite3
         touch $INSTALL_DIR/sqlite3-$SQLITE_VERSION/installed
@@ -675,12 +677,16 @@ install_grpc()
 
 set_gcc()
 {
-    echo "set gcc"
+    echo "Set gcc"
+    set -x
+
     # 当为 g++ 同时指定了多个 -std 选项时，实际生效的是最后一个
     #export CXX="g++ -std=c++$CPLUSPLUS_VERSION" # C++ compiler command
     export CXXCPP="g++ -E -std=c++$CPLUSPLUS_VERSION" # C++ preprocessor
     export CXXFLAGS="-std=c++$CPLUSPLUS_VERSION"    # C++ compiler flags
     #export AM_CXXFLAGS="-std=c++$CPLUSPLUS_VERSION"
+    set +x
+    echo ""
 }
 
 main()
