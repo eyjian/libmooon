@@ -3,7 +3,7 @@
 # 安装常用 C++ 开源库工具
 
 # 安装目录
-INSTALL_DIR=`echo "${INSTALL_DIR:-/usr/local/thirdparties}"`
+INSTALL_DIR=`echo "${INSTALL_DIR:-/usr/local/thirdparty}"`
 # 是否静默安装（1 静默，0 交互）
 SILENT_INSTALL=`echo "${SILENT_INSTALL:-0}"`
 
