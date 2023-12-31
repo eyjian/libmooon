@@ -22,6 +22,7 @@ LIBRDKAFKA_VERSION=2.3.0
 HIREDIS_VERSION=1.2.0
 RAPIDJSON_VERSION=1.1.0
 MYSQL_VERSION=5.6.17
+SQLITE_VERSION=3.44.2
 PROTOBUF_VERSION=25.1
 GRPC_VERSION=1.60.0
 
@@ -561,6 +562,43 @@ install_msyql()
     fi
 }
 
+install_sqlite()
+{
+    if test $SILENT_INSTALL -eq 0; then
+        echo -en "Install \033[1;33msqlite3-$SQLITE_VERSION\033[m? ENTER or YES to install, NO or no to skip installing.\n"
+        read -r -p "" yes_or_no
+        if test "X$yes_or_no" = "Xno" -o "X$yes_or_no" = "XNO"; then
+            echo -e "$INSTALL_DIR/sqlite3-$SQLITE_VERSION \033[1;33mskipped\033[m"
+            echo "[SKIP] sqlite3-$SQLITE_VERSION" >> $workdir/install.log
+            return
+        fi
+    fi
+
+
+    if test -f $INSTALL_DIR/sqlite3-$SQLITE_VERSION/installed; then
+        echo -e "$INSTALL_DIR/sqlite3-$SQLITE_VERSION \033[1;33minstalled\033[m"
+        echo "[INSTALLED] sqlite3-$SQLITE_VERSION" >> $workdir/install.log
+    else
+        cd "$workdir"
+        echo -e "$INSTALL_DIR/sqlite3-$SQLITE_VERSION \033[1;33mstarting\033[m"
+
+        if test ! -f sqlite3-$SQLITE_VERSION-linux-glibc2.5-x86_64.tar.gz; then
+            wget --no-check-certificate "https://www.sqlite.org/2023/sqlite-autoconf-3440200.tar.gz" -O sqlite3-$SQLITE_VERSION.tar.gz
+        fi
+        rm -fr sqlite3-$SQLITE_VERSION
+        tar xzf sqlite3-$SQLITE_VERSION.tar.gz
+
+        cd sqlite3-$SQLITE_VERSION
+        ./configure --prefix=$INSTALL_DIR/sqlite3
+        make&&make install
+
+        ln -s $INSTALL_DIR/sqlite3-$SQLITE_VERSION $INSTALL_DIR/sqlite3
+        touch $INSTALL_DIR/sqlite3-$SQLITE_VERSION/installed
+        echo -e "$INSTALL_DIR/sqlite3-$SQLITE_VERSION \033[1;33msuccess\033[m"
+        echo "[SUCCESS] sqlite3-$SQLITE_VERSION" >> $workdir/install.log
+    fi
+}
+
 install_protobuf()
 {
     if test $SILENT_INSTALL -eq 0; then
@@ -668,6 +706,7 @@ main()
     install_hiredis
     install_rapidjson
     install_msyql
+    install_sqlite
     #install_protobuf
     #install_grpc
 
