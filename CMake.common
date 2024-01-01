@@ -166,11 +166,11 @@ discover_library(LIBIDN libidn)
 #link_libraries(libidn.a)
 
 # idn2（一些环境Curl强依赖idn2）
-discover_library(LIBIDN2 libidn2)
+#discover_library(LIBIDN2 libidn2)
 #link_libraries(libidn2.a)
 
 # openldap（Curl依赖Openldap）
-discover_library(OPENLDAP openldap)
+#discover_library(OPENLDAP openldap)
 #link_libraries(libldap.a liblber.a)
 
 # libiconv（libidn2可选依赖libiconv）
