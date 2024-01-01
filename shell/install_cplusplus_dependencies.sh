@@ -10,14 +10,14 @@ SILENT_INSTALL=`echo "${SILENT_INSTALL:-0}"`
 # 版本设置
 CPLUSPLUS_VERSION=`echo "${CPLUSPLUS_VERSION:-23}"` # C++ 版本
 CMAKE_VERSION=`echo "${CMAKE_VERSION:-3.28.1}"` # CMake 版本
-BOOST_VERSION=1_84_0
-OPENSSL_VERSION=3.2.0
-LIBEVENT_VERSION=2.1.12
+BOOST_VERSION=1_84_0 # thrift 依赖
+OPENSSL_VERSION=3.2.0 # thrift 等依赖
+LIBEVENT_VERSION=2.1.12 # thrift 依赖
 THRIFT_VERSION=0.19.0
-CARES_VERSION=1.24.0
-LIBIDN_VERSION=1.41
-LIBIDN_VERSION=1.41
-LIBSSH2_VERSION=1.11.0
+CARES_VERSION=1.24.0 # curl 依赖
+LIBIDN_VERSION=1.41 # curl 依赖
+LIBSSH2_VERSION=1.11.0 # curl 依赖
+OPENLDAP_VERSION=2.5.16 # curl 依赖
 CURL_VERSION=8.5.0
 CGICC_VERSION=3.2.20
 LIBRDKAFKA_VERSION=2.3.0
@@ -368,6 +368,45 @@ install_libssh2()
         touch $INSTALL_DIR/libssh2-$LIBSSH2_VERSION/installed
         echo -e "$INSTALL_DIR/libssh2-$LIBSSH2_VERSION \033[1;33msuccess\033[m"
         echo "[SUCCESS] libssh2-$LIBSSH2_VERSION" >> $workdir/install.log
+    fi
+}
+
+install_openldap()
+{
+    if test $SILENT_INSTALL -eq 0; then
+        echo -en "Install \033[1;33mopenldap-$OPENLDAP_VERSION\033[m? ENTER or YES to install, NO or no to skip installing.\n"
+        read -r -p "" yes_or_no
+        if test "X$yes_or_no" = "Xno" -o "X$yes_or_no" = "XNO"; then
+            echo -e "$INSTALL_DIR/openldap-$OPENLDAP_VERSION \033[1;33mskipped\033[m"
+            echo "[SKIP] openldap-$OPENLDAP_VERSION" >> $workdir/install.log
+            return
+        fi
+    fi
+
+    if test -f $INSTALL_DIR/openldap-$OPENLDAP_VERSION/installed; then
+        echo -e "$INSTALL_DIR/openldap-$OPENLDAP_VERSION \033[1;33minstalled\033[m"
+        echo "[INSTALLED] openldap-$OPENLDAP_VERSION" >> $workdir/install.log
+    else
+        cd "$workdir"
+        echo -e "$INSTALL_DIR/openldap-$OPENLDAP_VERSION \033[1;33mstarting\033[m"
+
+        if test ! -f openldap-$OPENLDAP_VERSION.tgz; then
+            wget --no-check-certificate "https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-$OPENLDAP_VERSION.tgz"
+        fi
+        rm -fr openldap-$OPENLDAP_VERSION
+        tar xzf openldap-$OPENLDAP_VERSION.tgz
+
+        cd openldap-$OPENLDAP_VERSION
+        ./configure --prefix=$INSTALL_DIR/openldap-$OPENLDAP_VERSION
+        make&&make install
+
+        if test -h $INSTALL_DIR/openldap; then
+            rm -f $INSTALL_DIR/openldap
+        fi
+        ln -s $INSTALL_DIR/openldap-$OPENLDAP_VERSION $INSTALL_DIR/openldap
+        touch $INSTALL_DIR/openldap-$OPENLDAP_VERSION/installed
+        echo -e "$INSTALL_DIR/openldap-$OPENLDAP_VERSION \033[1;33msuccess\033[m"
+        echo "[SUCCESS] openldap-$OPENLDAP_VERSION" >> $workdir/install.log
     fi
 }
 
@@ -748,6 +787,7 @@ main()
     install_cares
     install_libidn
     install_libssh2
+    install_openldap
     install_curl
     install_cgicc
     install_librdkafka
