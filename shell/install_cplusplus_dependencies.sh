@@ -626,7 +626,7 @@ install_sqlite()
         if test ! -f sqlite3-$SQLITE_VERSION.tar.gz; then
             wget --no-check-certificate "https://www.sqlite.org/2023/sqlite-autoconf-3440200.tar.gz" -O sqlite3-$SQLITE_VERSION.tar.gz
         fi
-        rm -fr sqlite-autoconf-*
+        rm -fr sqlite3-$SQLITE_VERSION sqlite-autoconf-*
         tar xzf sqlite3-$SQLITE_VERSION.tar.gz
         mv sqlite-autoconf-* sqlite3-$SQLITE_VERSION
 
