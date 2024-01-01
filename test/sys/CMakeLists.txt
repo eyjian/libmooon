@@ -12,5 +12,5 @@ add_executable(ut_fs_utils ut_fs_utils.cpp)
 
 if (MOOON_HAVE_LIBIDN)
     add_executable(curl_get test_curl_wrapper.cpp)
-    target_link_libraries(curl_get libcurl.a libcares.a libidn.a libssh2.a libssl.a libcrypto.a)
+    target_link_libraries(curl_get libcurl.a libcares.a libidn.a libssh2.a libldap.a libssl.a libcrypto.a)
 endif ()
