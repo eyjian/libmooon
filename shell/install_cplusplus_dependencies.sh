@@ -15,6 +15,8 @@ OPENSSL_VERSION=3.2.0
 LIBEVENT_VERSION=2.1.12
 THRIFT_VERSION=0.19.0
 CARES_VERSION=1.24.0
+LIBIDN_VERSION=1.41
+LIBIDN_VERSION=1.41
 LIBSSH2_VERSION=1.11.0
 CURL_VERSION=8.5.0
 CGICC_VERSION=3.2.20
@@ -290,6 +292,45 @@ install_cares()
     fi
 }
 
+install_libidn()
+{
+    if test $SILENT_INSTALL -eq 0; then
+        echo -en "Install \033[1;33mlibidn-$LIBIDN_VERSION\033[m? ENTER or YES to install, NO or no to skip installing.\n"
+        read -r -p "" yes_or_no
+        if test "X$yes_or_no" = "Xno" -o "X$yes_or_no" = "XNO"; then
+            echo -e "$INSTALL_DIR/libidn-$LIBIDN_VERSION \033[1;33mskipped\033[m"
+            echo "[SKIP] libidn-$LIBIDN_VERSION" >> $workdir/install.log
+            return
+        fi
+    fi
+
+    if test -f $INSTALL_DIR/libidn-$LIBIDN_VERSION/installed; then
+        echo -e "$INSTALL_DIR/libidn-$LIBIDN_VERSION \033[1;33minstalled\033[m"
+        echo "[INSTALLED] libidn-$LIBIDN_VERSION" >> $workdir/install.log
+    else
+        cd "$workdir"
+        echo -e "$INSTALL_DIR/libidn-$LIBIDN_VERSION \033[1;33mstarting\033[m"
+
+        if test ! -f libidn-$LIBIDN_VERSION.tar.gz; then
+            wget --no-check-certificate "https://ftp.gnu.org/gnu/libidn/libidn-$LIBIDN_VERSION.tar.gz"
+        fi
+        rm -fr libidn-$LIBIDN_VERSION
+        tar xzf libidn-$LIBIDN_VERSION.tar.gz
+
+        cd libidn-$LIBIDN_VERSION
+        ./configure --prefix=$INSTALL_DIR/libidn-$LIBIDN_VERSION --disable-doc
+        make&&make install
+
+        if test $INSTALL_DIR/libidn; then
+            rm -f $INSTALL_DIR/libidn
+        fi
+        ln -s $INSTALL_DIR/libidn-$LIBIDN_VERSION $INSTALL_DIR/libidn
+        touch $INSTALL_DIR/libidn-$LIBIDN_VERSION/installed
+        echo -e "$INSTALL_DIR/libidn-$LIBIDN_VERSION \033[1;33msuccess\033[m"
+        echo "[SUCCESS] libidn-$LIBIDN_VERSION" >> $workdir/install.log
+    fi
+}
+
 install_libssh2()
 {
     if test $SILENT_INSTALL -eq 0; then
@@ -356,7 +397,7 @@ install_curl()
         tar xzf curl-$CURL_VERSION.tar.gz
 
         cd curl-$CURL_VERSION
-        ./configure --prefix=$INSTALL_DIR/curl-$CURL_VERSION --enable-ares=$INSTALL_DIR/c-ares --with-ssl=$INSTALL_DIR/openssl # --with-libssh2=$INSTALL_DIR/libssh2
+        ./configure --prefix=$INSTALL_DIR/curl-$CURL_VERSION --enable-ares=$INSTALL_DIR/c-ares --with-ssl=$INSTALL_DIR/openssl --with-libidn=/usr/local/libidn --with-libssh2=$INSTALL_DIR/libssh2
         make&&make install
 
         if test -h $INSTALL_DIR/curl; then
@@ -705,6 +746,7 @@ main()
     install_libevent
     install_thrift
     install_cares
+    install_libidn
     install_libssh2
     install_curl
     install_cgicc
