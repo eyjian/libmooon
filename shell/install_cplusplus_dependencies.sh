@@ -1,6 +1,6 @@
 #!/bin/sh
 # Writed by yijian on 2023/12/29
-# 安装常用 C++ 开源库工具
+# 安装常用 C++ 开源库工具，执行需访问 github.com 等
 
 # 安装目录
 INSTALL_DIR=`echo "${INSTALL_DIR:-/usr/local/thirdparty}"`
