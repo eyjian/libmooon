@@ -19,6 +19,7 @@
 #include "mooon/utils/sha_helper.h"
 #include "mooon/utils/scoped_ptr.h"
 #if MOOON_HAVE_OPENSSL == 1
+#include <openssl/hmac.h>
 #include <openssl/sha.h>
 #include <openssl/crypto.h>
 UTILS_NAMESPACE_BEGIN
@@ -363,6 +364,43 @@ std::string CSHAHelper::to_string(bool uppercase) const
     std::string str;
 	to_string(&str, uppercase);
     return str;
+}
+
+static std::string to_hex(unsigned char *data, size_t size, bool uppercase)
+{
+    std::string hex;
+    for (size_t i = 0; i < size; ++i) {
+        char buf[3];
+        if (uppercase)
+            sprintf(buf, "%02X", data[i]);
+        else
+            sprintf(buf, "%02x", data[i]);
+        hex += buf;
+    }
+    return hex;
+}
+
+static std::string hmac_sha256(const std::string &key, const std::string &data, bool uppercase)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    HMAC_CTX hmac;
+    HMAC_CTX_init(&hmac);
+    HMAC_Init_ex(&hmac, &key[0], key.length(), EVP_sha256(), NULL);
+    HMAC_Update(&hmac, (unsigned char*)&data[0], data.length());
+    unsigned int len = SHA256_DIGEST_LENGTH;
+    HMAC_Final(&hmac, hash, &len);
+    HMAC_CTX_cleanup(&hmac);
+    return to_hex(hash, len, uppercase);
+}
+
+std::string lowercase_hmac_sha256(const std::string &key, const std::string &data)
+{
+    return hmac_sha256(key, data, false);
+}
+
+std::string uppercase_hmac_sha256(const std::string &key, const std::string &data)
+{
+    return hmac_sha256(key, data, true);
 }
 
 UTILS_NAMESPACE_END

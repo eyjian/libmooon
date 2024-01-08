@@ -59,5 +59,8 @@ private:
     void* _sha_context;
 };
 
+std::string lowercase_hmac_sha256(const std::string &key, const std::string &data);
+std::string uppercase_hmac_sha256(const std::string &key, const std::string &data);
+
 UTILS_NAMESPACE_END
 #endif // MOOON_UTILS_SHA_HELPER_H
