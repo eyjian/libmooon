@@ -58,7 +58,6 @@ void release_private_key(void** pkey)
     }
 }
 
-EVP_PKEY*  pk = nullptr;
 bool init_private_key_from_file(void** pkey, const std::string& private_key_file, std::string* errmsg)
 {
     // 初始化为空
@@ -86,8 +85,6 @@ bool init_private_key_from_file(void** pkey, const std::string& private_key_file
         else
         {
             *pkey = private_key;
-            pk = private_key;
-            printf("pkey in init_private_key_from_file: %p\n", private_key);
             return true;
         }
     }
@@ -139,7 +136,8 @@ bool RSA256_sign(std::string* signature_str, void* pkey, const std::string& data
     else
     {
         RSA* rsa = EVP_PKEY_get1_RSA(pkey_);
-        if (rsa == nulptr) {
+        if (rsa == nullptr)
+        {
             if (errmsg != nullptr)
                 *errmsg = "unable to get RSA private key from EVP_PKEY";
             return false;
@@ -159,16 +157,20 @@ bool RSA256_sign(std::string* signature_str, void* pkey, const std::string& data
             }
             else
             {
+                BIO* bio = BIO_new(BIO_s_mem());
+                BUF_MEM* buf_mem = nullptr;
+
                 EVP_MD_CTX_destroy(ctx);
                 RSA_free(rsa);
 
-                BIO* bio = BIO_new(BIO_s_mem());
                 BIO_write(bio, signature_bytes, signature_len);
-                BUF_MEM* buf_mem;
                 BIO_get_mem_ptr(bio, &buf_mem);
+#if 1
                 std::string str(buf_mem->data, buf_mem->length);
-                std::string signature_base64;
                 mooon::utils::base64_encode(str, signature_str);
+#else
+                mooon::utils::base64_encode(std::string(buf_mem->data, buf_mem->length), signature_str);
+#endif
                 BIO_free(bio);
 
                 return true;

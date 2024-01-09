@@ -31,11 +31,13 @@ int main(int argc, char* argv[])
             if (!mooon::utils::RSA256_sign(&signature, pkey, data, &errmsg))
             {
                 fprintf(stderr, "RSA256_sign error: %s\n", errmsg.c_str());
+                mooon::utils::release_private_key(&pkey);
                 return 1;
             }
             else
             {
                 fprintf(stdout, "signature: %s\n", signature.c_str());
+                mooon::utils::release_private_key(&pkey);
                 return 0;
             }
         }
