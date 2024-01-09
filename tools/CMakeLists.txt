@@ -16,6 +16,9 @@ if (MOOON_HAVE_OPENSSL)
 
     add_executable(sha sha.cpp)
     target_link_libraries(sha libmooon.a libcrypto.a)
+    
+    add_executable(rsa256_sign rsa256_sign.cpp)
+    target_link_libraries(rsa256_sign libmooon.a libcrypto.a)
 endif ()
 
 # 硬盘性能测试工具
