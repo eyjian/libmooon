@@ -58,6 +58,7 @@ void release_private_key(void** pkey)
     }
 }
 
+EVP_PKEY*  pk = nullptr;
 bool init_private_key_from_file(void** pkey, const std::string& private_key_file, std::string* errmsg)
 {
     // 初始化为空
@@ -84,7 +85,9 @@ bool init_private_key_from_file(void** pkey, const std::string& private_key_file
         }
         else
         {
-            *pkey = &private_key;
+            *pkey = private_key;
+            pk = private_key;
+            printf("pkey in init_private_key_from_file: %p\n", private_key);
             return true;
         }
     }
@@ -123,9 +126,11 @@ bool init_private_key(void** pkey, const std::string& private_key_str, std::stri
     }
 }
 
-bool RSA256_sign(std::string* signature, void* pkey, const std::string& data, std::string* errmsg)
+bool RSA256_sign(std::string* signature_str, void* pkey, const std::string& data, std::string* errmsg)
 {
-    if (pkey == nullptr)
+    EVP_PKEY* pkey_ = (EVP_PKEY*)pkey;
+
+    if (pkey_ == nullptr)
     {
         if (errmsg != nullptr)
             *errmsg = "private key is not initialized";
@@ -133,44 +138,37 @@ bool RSA256_sign(std::string* signature, void* pkey, const std::string& data, st
     }
     else
     {
-        // 获取RSA私钥
-        RSA* rsa = EVP_PKEY_get1_RSA((EVP_PKEY*)pkey);
-        if (rsa == nullptr)
-        {
+        RSA* rsa = EVP_PKEY_get1_RSA(pkey_);
+        if (rsa == nulptr) {
             if (errmsg != nullptr)
                 *errmsg = "unable to get RSA private key from EVP_PKEY";
             return false;
         }
         else
         {
-            // 签名内容
-            unsigned char signature_bytes[EVP_PKEY_size((EVP_PKEY*)pkey)];
-            size_t signature_len = 0;
+            unsigned char signature_bytes[EVP_PKEY_size(pkey_)];
+            size_t signature_len;
             EVP_MD_CTX* ctx = EVP_MD_CTX_create();
-            EVP_DigestSignInit(ctx, NULL, EVP_sha256(), NULL, (EVP_PKEY*)pkey);
+            EVP_DigestSignInit(ctx, NULL, EVP_sha256(), NULL, pkey_);
             EVP_DigestSignUpdate(ctx, data.c_str(), data.length());
             if (EVP_DigestSignFinal(ctx, signature_bytes, &signature_len) != 1)
             {
                 if (errmsg != nullptr)
-                    *errmsg = mooon::utils::CStringUtils::format_string(
-                        "unable to sign content: %s",
-                        ERR_error_string(ERR_get_error(), NULL));
+                    *errmsg = mooon::utils::CStringUtils::format_string("unable to sign data: %s", ERR_error_string(ERR_get_error(), NULL));
                 return false;
             }
             else
             {
-                // 释放资源
                 EVP_MD_CTX_destroy(ctx);
                 RSA_free(rsa);
 
-                // 将签名结果转换为 Base64 编码
-                BUF_MEM* buf_mem;
                 BIO* bio = BIO_new(BIO_s_mem());
                 BIO_write(bio, signature_bytes, signature_len);
+                BUF_MEM* buf_mem;
                 BIO_get_mem_ptr(bio, &buf_mem);
-
-                const std::string src(buf_mem->data, buf_mem->length);
-                base64_encode(src, signature);
+                std::string str(buf_mem->data, buf_mem->length);
+                std::string signature_base64;
+                mooon::utils::base64_encode(str, signature_str);
                 BIO_free(bio);
 
                 return true;
