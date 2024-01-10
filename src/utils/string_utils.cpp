@@ -26,6 +26,7 @@
 #include <limits>
 #include <stdarg.h>
 #include <zlib.h>
+#include <random>
 UTILS_NAMESPACE_BEGIN
 
 /***
@@ -1503,5 +1504,33 @@ void CStringUtils::utf8_to_gbk(std::string* gbk_str, const std::string& utf8_str
 {
     charset_conv(gbk_str, utf8_str, "GBK", "UTF-8");
 }
+
+#if __cplusplus >= 201103L
+void CStringUtils::generate_random_string(std::string* random_string, size_t length)
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis('a', 'z');
+    std::uniform_int_distribution<> dis_num('0', '9');
+    std::uniform_int_distribution<> dis_upper('A', 'Z');
+
+    for (size_t i=0; i<length; ++i)
+    {
+        if (i % 3 == 0)
+            random_string->push_back(dis(gen));
+        else if (i % 3 == 1)
+            random_string->push_back(dis_num(gen));
+        else
+            random_string->push_back(dis_upper(gen));
+    }
+}
+
+std::string CStringUtils::generate_random_string(size_t length)
+{
+    std::string random_string;
+    generate_random_string(&random_string, length);
+    return random_string;
+}
+#endif // __cplusplus >= 201103L
 
 UTILS_NAMESPACE_END

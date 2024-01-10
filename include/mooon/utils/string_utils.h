@@ -449,6 +449,12 @@ public:
     // utf8 转 gbk
     // 出错抛异常 mooon::utils::CExcepiton
     static void utf8_to_gbk(std::string* gbk_str, const std::string& utf8_str);
+
+    // 生成指定长度的随机字符串
+#if __cplusplus >= 201103L
+    static void generate_random_string(std::string* random_string, size_t length);
+    static std::string generate_random_string(size_t length);
+#endif // __cplusplus >= 201103L
 };
 
 UTILS_NAMESPACE_END

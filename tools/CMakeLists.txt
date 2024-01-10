@@ -45,6 +45,10 @@ target_link_libraries(killall libmooon.a)
 add_executable(charset_conv charset_conv.cpp)
 target_link_libraries(charset_conv libmooon.a)
 
+# random_string
+add_executable(random_string random_string.cpp)
+target_link_libraries(random_string libmooon.a)
+
 if (MOOON_HAVE_LIBSSH2)
 	# 远程命令工具
 	add_executable(mooon_ssh mooon_ssh.cpp)
