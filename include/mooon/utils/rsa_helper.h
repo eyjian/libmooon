@@ -24,7 +24,7 @@
 #include <stdint.h>
 UTILS_NAMESPACE_BEGIN
 
-// RSA填充模式
+// RSA 填充模式
 enum RSAPaddingMode
 {
     // RSAES-PKCS1-v1_5/RSASSA-PKCS1-v1_5填充
@@ -54,9 +54,10 @@ enum RSAPaddingMode
     PKCS1_PSS_PADDING = 6
 };
 
-// RSA是一种非对称加密算法
-// 1977年由罗纳德·李维斯特（Ron Rivest）、阿迪·萨莫尔（Adi Shamir）和伦纳德·阿德曼（Leonard Adleman）一起提出的
-// RSA是他们三人姓氏开头字母拼在一起组成
+// RSA 是一种非对称加密算法（用公钥加密的数据，只有对应的私钥可解密；用私钥加密的数据，只有对应的公钥可解密）
+// 1977 年由罗纳德·李维斯特（Ron Rivest）、阿迪·萨莫尔（Adi Shamir）和伦纳德·阿德曼（Leonard Adleman）一起提出的
+// RSA 是他们三人姓氏开头字母拼在一起组成
+// RSA 加解密有长度限制，不超过 117 字节，超过需要采取分段加解密
 class CRSAHelper
 {
 public:
