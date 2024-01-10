@@ -68,7 +68,9 @@ void CRSAHelper::public_encrypt_bykeyfile(const std::string& pub_keyfile, const 
     {
         public_encrypt(rsa, instr, outstr, mode);
         RSA_free(rsa);
+        rsa = NULL;
         fclose(fp);
+        fp = NULL;
     }
     catch (...)
     {
@@ -105,7 +107,9 @@ void CRSAHelper::private_decrypt_bykeyfile(const std::string& priv_keyfile, cons
     {
         private_decrypt(rsa, instr, outstr, mode);
         RSA_free(rsa);
+        rsa = NULL;
         fclose(fp);
+        fp = NULL;
     }
     catch (...)
     {
@@ -142,7 +146,9 @@ void CRSAHelper::private_encrypt_bykeyfile(const std::string& priv_keyfile, cons
     {
         private_encrypt(rsa, instr, outstr, mode);
         RSA_free(rsa);
+        rsa = NULL;
         fclose(fp);
+        fp = NULL;
     }
     catch (...)
     {
@@ -179,7 +185,9 @@ void CRSAHelper::public_decrypt_bykeyfile(const std::string& pub_keyfile, const 
     {
         public_decrypt(rsa, instr, outstr, mode);
         RSA_free(rsa);
+        rsa = NULL;
         fclose(fp);
+        fp = NULL;
     }
     catch (...)
     {
@@ -222,7 +230,9 @@ void CRSAHelper::public_encrypt_bykey(const std::string& pub_key, const std::str
         {
             public_encrypt(rsa, instr, outstr, mode);
             RSA_free(rsa);
+            rsa = NULL;
             BIO_free(keybio);
+            keybio = NULL;
         }
     }
     catch (...)
@@ -260,7 +270,9 @@ void CRSAHelper::private_decrypt_bykey(const std::string& priv_key, const std::s
         {
             private_decrypt(rsa, instr, outstr, mode);
             RSA_free(rsa);
+            rsa = NULL;
             BIO_free(keybio);
+            keybio = NULL;
         }
     }
     catch (...)
@@ -298,7 +310,9 @@ void CRSAHelper::private_encrypt_bykey(const std::string& priv_key, const std::s
         {
             private_encrypt(rsa, instr, outstr, mode);
             RSA_free(rsa);
+            rsa = NULL;
             BIO_free(keybio);
+            keybio = NULL;
         }
     }
     catch (...)
@@ -336,7 +350,9 @@ void CRSAHelper::public_decrypt_bykey(const std::string& pub_key, const std::str
         {
             public_decrypt(rsa, instr, outstr, mode);
             RSA_free(rsa);
+            rsa = NULL;
             BIO_free(keybio);
+            keybio = NULL;
         }
     }
     catch (...)
