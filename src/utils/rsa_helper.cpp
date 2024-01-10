@@ -68,8 +68,10 @@ void CRSAHelper::public_encrypt_bykeyfile(const std::string& pub_keyfile, const 
     }
     catch (...)
     {
-        RSA_free(rsa);
-        fclose(fp);
+        if (rsa != NULL)
+            RSA_free(rsa);
+        if (fp != NULL)
+            fclose(fp);
         throw;
     }
 }
@@ -103,8 +105,10 @@ void CRSAHelper::private_decrypt_bykeyfile(const std::string& priv_keyfile, cons
     }
     catch (...)
     {
-        RSA_free(rsa);
-        fclose(fp);
+        if (rsa != NULL)
+            RSA_free(rsa);
+        if (fp != NULL)
+            fclose(fp);
         throw;
     }
 }
@@ -138,8 +142,10 @@ void CRSAHelper::private_encrypt_bykeyfile(const std::string& priv_keyfile, cons
     }
     catch (...)
     {
-        RSA_free(rsa);
-        fclose(fp);
+        if (rsa != NULL)
+            RSA_free(rsa);
+        if (fp != NULL)
+            fclose(fp);
         throw;
     }
 }
@@ -173,8 +179,10 @@ void CRSAHelper::public_decrypt_bykeyfile(const std::string& pub_keyfile, const 
     }
     catch (...)
     {
-        RSA_free(rsa);
-        fclose(fp);
+        if (rsa != NULL)
+            RSA_free(rsa);
+        if (fp != NULL)
+            fclose(fp);
         throw;
     }
 }
@@ -201,14 +209,24 @@ void CRSAHelper::public_encrypt_bykey(const std::string& pub_key, const std::str
     try
     {
         PEM_read_bio_RSA_PUBKEY(keybio, &rsa, NULL, NULL);
-        public_encrypt(rsa, instr, outstr, mode);
-        RSA_free(rsa);
-        BIO_free(keybio);
+        if (rsa == NULL)
+        {
+            errcode = ERR_get_error();
+            THROW_EXCEPTION("failed to read public key", errcode);
+        }
+        else
+        {
+            public_encrypt(rsa, instr, outstr, mode);
+            RSA_free(rsa);
+            BIO_free(keybio);
+        }
     }
     catch (...)
     {
-        RSA_free(rsa);
-        BIO_free(keybio);
+        if (rsa != NULL)
+            RSA_free(rsa);
+        if (keybio != NULL)
+            BIO_free(keybio);
         throw;
     }
 }
@@ -229,14 +247,24 @@ void CRSAHelper::private_decrypt_bykey(const std::string& priv_key, const std::s
     try
     {
         PEM_read_bio_RSAPrivateKey(keybio, &rsa, NULL, NULL);
-        private_decrypt(rsa, instr, outstr, mode);
-        RSA_free(rsa);
-        BIO_free(keybio);
+        if (rsa == NULL)
+        {
+            errcode = ERR_get_error();
+            THROW_EXCEPTION("failed to read public key", errcode);
+        }
+        else
+        {
+            private_decrypt(rsa, instr, outstr, mode);
+            RSA_free(rsa);
+            BIO_free(keybio);
+        }
     }
     catch (...)
     {
-        RSA_free(rsa);
-        BIO_free(keybio);
+        if (rsa != NULL)
+            RSA_free(rsa);
+        if (keybio != NULL)
+            BIO_free(keybio);
         throw;
     }
 }
@@ -257,14 +285,24 @@ void CRSAHelper::private_encrypt_bykey(const std::string& priv_key, const std::s
     try
     {
         PEM_read_bio_RSAPrivateKey(keybio, &rsa, NULL, NULL);
-        private_encrypt(rsa, instr, outstr, mode);
-        RSA_free(rsa);
-        BIO_free(keybio);
+        if (rsa == NULL)
+        {
+            errcode = ERR_get_error();
+            THROW_EXCEPTION("failed to read public key", errcode);
+        }
+        else
+        {
+            private_encrypt(rsa, instr, outstr, mode);
+            RSA_free(rsa);
+            BIO_free(keybio);
+        }
     }
     catch (...)
     {
-        RSA_free(rsa);
-        BIO_free(keybio);
+        if (rsa != NULL)
+            RSA_free(rsa);
+        if (keybio != NULL)
+            BIO_free(keybio);
         throw;
     }
 }
@@ -285,14 +323,24 @@ void CRSAHelper::public_decrypt_bykey(const std::string& pub_key, const std::str
     try
     {
         PEM_read_bio_RSA_PUBKEY(keybio, &rsa, NULL, NULL);
-        public_decrypt(rsa, instr, outstr, mode);
-        RSA_free(rsa);
-        BIO_free(keybio);
+        if (rsa == NULL)
+        {
+            errcode = ERR_get_error();
+            THROW_EXCEPTION("failed to read public key", errcode);
+        }
+        else
+        {
+            public_decrypt(rsa, instr, outstr, mode);
+            RSA_free(rsa);
+            BIO_free(keybio);
+        }
     }
     catch (...)
     {
-        RSA_free(rsa);
-        BIO_free(keybio);
+        if (rsa != NULL)
+            RSA_free(rsa);
+        if (keybio != NULL)
+            BIO_free(keybio);
         throw;
     }
 }
