@@ -1,6 +1,7 @@
 #!/bin/sh
 # Writed by yijian on 2023/12/29
-# 安装常用 C++ 开源库工具，执行需访问 github.com 等
+# 安装常用 C++ 开源库工具，执行需访问 github.com 等。
+# 如果不能连接网络，可将目标库的安装包放在执行目录下，这样可跳过网络下载。
 
 # 安装目录
 INSTALL_DIR=`echo "${INSTALL_DIR:-/usr/local/thirdparty}"`
