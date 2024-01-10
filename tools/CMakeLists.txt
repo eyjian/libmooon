@@ -41,6 +41,10 @@ target_link_libraries(pidof libmooon.a)
 add_executable(killall killall.cpp)
 target_link_libraries(killall libmooon.a)
 
+# charset_conv
+add_executable(charset_conv charset_conv.cpp)
+target_link_libraries(charset_conv libmooon.a)
+
 if (MOOON_HAVE_LIBSSH2)
 	# 远程命令工具
 	add_executable(mooon_ssh mooon_ssh.cpp)

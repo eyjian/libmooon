@@ -435,6 +435,20 @@ public:
     // n 中文 utf8 取值 3
     // 如果 str 只有一个，则使用 default_str 替换，否则对内容使用星号“*”处理
     static std::string replace_asterisk(const std::string& str, const std::string& default_str, size_t n);
+
+    // 字符集转换
+    // dest_charset 目标字符集，如："UTF-8"
+    // src_charset 源字符集，如："GBK"
+    // 出错抛异常 mooon::utils::CExcepiton
+    static void charset_conv(std::string* dest_str, const std::string& src_str, const std::string& dest_charset, const std::string& src_charset);
+
+    // gbk 转 utf8
+    // 出错抛异常 mooon::utils::CExcepiton
+    static void gbk_to_utf8(std::string* utf8_str, const std::string& gbk_str);
+
+    // utf8 转 gbk
+    // 出错抛异常 mooon::utils::CExcepiton
+    static void utf8_to_gbk(std::string* gbk_str, const std::string& utf8_str);
 };
 
 UTILS_NAMESPACE_END

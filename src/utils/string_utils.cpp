@@ -16,11 +16,13 @@
  *
  * Author: jian yi, eyjian@qq.com or eyjian@gmail.com
  */
+#include "utils/exception.h"
 #include "utils/string_utils.h"
 #include "utils/scoped_ptr.h"
 #include "utils/tokener.h"
 //#include <alloca.h>
 #include <ctype.h> // toupper
+#include <iconv.h>
 #include <limits>
 #include <stdarg.h>
 #include <zlib.h>
@@ -1453,6 +1455,53 @@ std::string CStringUtils::replace_asterisk(const std::string& str, const std::st
         tokens[13] = "*";
     }
     return mooon::utils::CStringUtils::container2string(tokens, "");
+}
+
+void CStringUtils::charset_conv(std::string* dest_str, const std::string& src_str, const std::string& dest_charset, const std::string& src_charset)
+{
+    // The iconv_open() function returns a freshly allocated conversion descriptor.
+    // In case of error, it sets errno and returns (iconv_t)-1.
+    iconv_t cd = iconv_open(dest_charset.c_str(), src_charset.c_str());
+    if (cd == (iconv_t)-1)
+    {
+        THROW_EXCEPTION(format_string("iconv open error: %s", strerror(errno)), errno);
+    }
+    else
+    {
+        std::vector<char> in_buf(src_str.begin(), src_str.end());
+        std::vector<char> out_buf(in_buf.size() * 4); // 假设 UTF-8 编码的最大长度为 4 个字节
+
+        char *in_ptr = in_buf.data();
+        char *out_ptr = out_buf.data();
+        size_t in_bytes = in_buf.size();
+        size_t out_bytes = out_buf.size();
+
+        // The iconv() function returns the number of characters converted in a nonreversible way during this call;
+        // reversible conversions are not counted.
+        // In case of error, it sets errno and returns (size_t) -1.
+        const size_t result = iconv(cd, &in_ptr, &in_bytes, &out_ptr, &out_bytes);
+        if (result == (size_t)-1)
+        {
+            const int errcode = errno;
+            iconv_close(cd);
+            THROW_EXCEPTION(format_string("iconv error: %s", strerror(errcode)), errcode);
+        }
+        else
+        {
+            iconv_close(cd);
+            dest_str->assign(out_buf.data(), out_ptr - out_buf.data());
+        }
+    }
+}
+
+void CStringUtils::gbk_to_utf8(std::string* utf8_str, const std::string& gbk_str)
+{
+    charset_conv(utf8_str, gbk_str, "UTF-8", "GBK");
+}
+
+void CStringUtils::utf8_to_gbk(std::string* gbk_str, const std::string& utf8_str)
+{
+    charset_conv(gbk_str, utf8_str, "GBK", "UTF-8");
 }
 
 UTILS_NAMESPACE_END
