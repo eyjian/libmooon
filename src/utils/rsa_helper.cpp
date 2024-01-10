@@ -48,7 +48,7 @@ void CRSAHelper::public_encrypt_bykeyfile(const std::string& pub_keyfile, const 
     if (fp == NULL)
     {
         errcode = errno;
-        THROW_EXCEPTION(utils::CStringUtils::format_string("open %s failed: %s", pub_keyfile.c_str(), strerror(errcode)), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("open public key file://%s failed: %s", pub_keyfile.c_str(), strerror(errcode)), errcode);
     }
     rsa = PEM_read_RSA_PUBKEY(fp, NULL, NULL, NULL);
     if (rsa == NULL)
@@ -57,7 +57,7 @@ void CRSAHelper::public_encrypt_bykeyfile(const std::string& pub_keyfile, const 
         utils::ScopedArray<char> buf(new char[SIZE_4K]);
         ERR_error_string_n(errcode, buf.get(), SIZE_4K);
         fclose(fp);
-        THROW_EXCEPTION(utils::CStringUtils::format_string("read %s failed: %s", pub_keyfile.c_str(), buf.get()), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("read public key from file://%s failed: %s", pub_keyfile.c_str(), buf.get()), errcode);
     }
 
     try
@@ -85,7 +85,7 @@ void CRSAHelper::private_decrypt_bykeyfile(const std::string& priv_keyfile, cons
     if (fp == NULL)
     {
         errcode = errno;
-        THROW_EXCEPTION(utils::CStringUtils::format_string("open %s failed: %s", priv_keyfile.c_str(), strerror(errcode)), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("open private key file://%s failed: %s", priv_keyfile.c_str(), strerror(errcode)), errcode);
     }
     rsa = PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL);
     if (rsa == NULL)
@@ -94,7 +94,7 @@ void CRSAHelper::private_decrypt_bykeyfile(const std::string& priv_keyfile, cons
         utils::ScopedArray<char> buf(new char[SIZE_4K]);
         ERR_error_string_n(errcode, buf.get(), SIZE_4K);
         fclose(fp);
-        THROW_EXCEPTION(utils::CStringUtils::format_string("read %s failed: %s", priv_keyfile.c_str(), buf.get()), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("read private key from file://%s failed: %s", priv_keyfile.c_str(), buf.get()), errcode);
     }
 
     try
@@ -122,7 +122,7 @@ void CRSAHelper::private_encrypt_bykeyfile(const std::string& priv_keyfile, cons
     if (fp == NULL)
     {
         errcode = errno;
-        THROW_EXCEPTION(utils::CStringUtils::format_string("open %s failed: %s", priv_keyfile.c_str(), strerror(errcode)), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("open private key file://%s failed: %s", priv_keyfile.c_str(), strerror(errcode)), errcode);
     }
     rsa = PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL);
     if (rsa == NULL)
@@ -131,7 +131,7 @@ void CRSAHelper::private_encrypt_bykeyfile(const std::string& priv_keyfile, cons
         utils::ScopedArray<char> buf(new char[SIZE_4K]);
         ERR_error_string_n(errcode, buf.get(), SIZE_4K);
         fclose(fp);
-        THROW_EXCEPTION(utils::CStringUtils::format_string("read %s failed: %s", priv_keyfile.c_str(), buf.get()), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("read private key from file://%s failed: %s", priv_keyfile.c_str(), buf.get()), errcode);
     }
 
     try
@@ -159,7 +159,7 @@ void CRSAHelper::public_decrypt_bykeyfile(const std::string& pub_keyfile, const 
     if (fp == NULL)
     {
         errcode = errno;
-        THROW_EXCEPTION(utils::CStringUtils::format_string("open %s failed: %s", pub_keyfile.c_str(), strerror(errcode)), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("open public key from file://%s failed: %s", pub_keyfile.c_str(), strerror(errcode)), errcode);
     }
     rsa = PEM_read_RSA_PUBKEY(fp, NULL, NULL, NULL);
     if (rsa == NULL)
@@ -168,7 +168,7 @@ void CRSAHelper::public_decrypt_bykeyfile(const std::string& pub_keyfile, const 
         utils::ScopedArray<char> buf(new char[SIZE_4K]);
         ERR_error_string_n(errcode, buf.get(), SIZE_4K);
         fclose(fp);
-        THROW_EXCEPTION(utils::CStringUtils::format_string("read %s failed: %s", pub_keyfile.c_str(), buf.get()), errcode);
+        THROW_EXCEPTION(utils::CStringUtils::format_string("read public key from file://%s failed: %s", pub_keyfile.c_str(), buf.get()), errcode);
     }
 
     try
@@ -203,7 +203,7 @@ void CRSAHelper::public_encrypt_bykey(const std::string& pub_key, const std::str
     if (keybio == NULL)
     {
         errcode = ERR_get_error();
-        THROW_EXCEPTION("failed to create key BIO", errcode);
+        THROW_EXCEPTION("failed to create public key BIO", errcode);
     }
 
     try
@@ -241,7 +241,7 @@ void CRSAHelper::private_decrypt_bykey(const std::string& priv_key, const std::s
     if (keybio == NULL)
     {
         errcode = ERR_get_error();
-        THROW_EXCEPTION("failed to create key BIO", errcode);
+        THROW_EXCEPTION("failed to create private key BIO", errcode);
     }
 
     try
@@ -250,7 +250,7 @@ void CRSAHelper::private_decrypt_bykey(const std::string& priv_key, const std::s
         if (rsa == NULL)
         {
             errcode = ERR_get_error();
-            THROW_EXCEPTION("failed to read public key", errcode);
+            THROW_EXCEPTION("failed to read private key", errcode);
         }
         else
         {
@@ -279,7 +279,7 @@ void CRSAHelper::private_encrypt_bykey(const std::string& priv_key, const std::s
     if (keybio == NULL)
     {
         errcode = ERR_get_error();
-        THROW_EXCEPTION("failed to create key BIO", errcode);
+        THROW_EXCEPTION("failed to create private key BIO", errcode);
     }
 
     try
@@ -317,7 +317,7 @@ void CRSAHelper::public_decrypt_bykey(const std::string& pub_key, const std::str
     if (keybio == NULL)
     {
         errcode = ERR_get_error();
-        THROW_EXCEPTION("failed to create key BIO", errcode);
+        THROW_EXCEPTION("failed to create public key BIO", errcode);
     }
 
     try
