@@ -7,7 +7,7 @@ link_directories(../src)
 link_libraries(dl pthread rt z)
 
 if (MOOON_HAVE_OPENSSL)
-   	 # 计算md5工具
+   	# 计算md5工具
     add_executable(md5 md5.cpp)
     target_link_libraries(md5 libmooon.a libcrypto.a)
 
@@ -19,6 +19,14 @@ if (MOOON_HAVE_OPENSSL)
     
     add_executable(rsa256_sign rsa256_sign.cpp)
     target_link_libraries(rsa256_sign libmooon.a libcrypto.a)
+
+    # 私钥解密
+    add_executable(rsa_priv_decrypt rsa_priv_decrypt.cpp)
+    target_link_libraries(rsa_priv_decrypt libmooon.a libcrypto.a)
+
+    # 公钥加密
+    add_executable(rsa_pub_encrypt rsa_pub_encrypt.cpp)
+    target_link_libraries(rsa_pub_encrypt libmooon.a libcrypto.a)
 endif ()
 
 # 硬盘性能测试工具
