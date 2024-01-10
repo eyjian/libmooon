@@ -12,6 +12,7 @@ CPLUSPLUS_VERSION=`echo "${CPLUSPLUS_VERSION:-23}"` # C++ 版本
 CMAKE_VERSION=`echo "${CMAKE_VERSION:-3.28.1}"` # CMake 版本
 BOOST_VERSION=1_84_0 # thrift 依赖
 OPENSSL_VERSION=3.2.0 # thrift 等依赖
+LIBICONV_VERSION=1.17
 LIBEVENT_VERSION=2.1.12 # thrift 依赖
 THRIFT_VERSION=0.19.0
 CARES_VERSION=1.24.0 # curl 依赖
@@ -220,6 +221,45 @@ install_openssl()
         echo "[SUCCESS] openssl-$OPENSSL_VERSION" >> $workdir/install.log
     fi
 
+}
+
+install_libiconv()
+{
+    if test $SILENT_INSTALL -eq 0; then
+        echo -en "Install \033[1;33mlibiconv-$LIBICONV_VERSION\033[m? ENTER or YES to install, NO or no to skip installing.\n"
+        read -r -p "" yes_or_no
+        if test "X$yes_or_no" = "Xno" -o "X$yes_or_no" = "XNO"; then
+            echo -e "$INSTALL_DIR/libiconv-$LIBICONV_VERSION \033[1;33mskipped\033[m"
+            echo "[SKIP] libiconv-$LIBICONV_VERSION" >> $workdir/install.log
+            return
+        fi
+    fi
+
+    if test -f $INSTALL_DIR/libiconv-$LIBICONV_VERSION/installed; then
+        echo -e "$INSTALL_DIR/libiconv-$LIBICONV_VERSION \033[1;33minstalled\033[m"
+        echo "[INSTALLED] libiconv-$LIBICONV_VERSION" >> $workdir/install.log
+    else
+        cd "$workdir"
+        echo -e "$INSTALL_DIR/libiconv-$LIBICONV_VERSION \033[1;33mstarting\033[m"
+
+        if test ! -f libiconv-$LIBICONV_VERSION.tar.gz; then
+            wget --no-check-certificate "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$LIBICONV_VERSION.tar.gz" -O libiconv-$LIBICONV_VERSION.tar.gz
+        fi
+        rm -fr libiconv-$LIBICONV_VERSION
+        tar xzf libiconv-$LIBICONV_VERSION.tar.gz
+
+        cd libiconv-$LIBICONV_VERSION
+        ./configure --prefix=$INSTALL_DIR/libiconv-$LIBICONV_VERSION
+        make&&make install
+
+        if test -h $INSTALL_DIR/libiconv; then
+            rm -f $INSTALL_DIR/libiconv
+        fi
+        ln -s $INSTALL_DIR/libiconv-$LIBICONV_VERSION $INSTALL_DIR/libiconv
+        touch $INSTALL_DIR/libiconv-$LIBICONV_VERSION/installed
+        echo -e "$INSTALL_DIR/libiconv-$LIBICONV_VERSION \033[1;33msuccess\033[m"
+        echo "[SUCCESS] libiconv-$LIBICONV_VERSION" >> $workdir/install.log
+    fi
 }
 
 install_libevent()
@@ -840,6 +880,7 @@ main()
     install_cmake
     install_boost
     install_openssl
+    install_libiconv
     install_libevent
     install_thrift
     install_cares
