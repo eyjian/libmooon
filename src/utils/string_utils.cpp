@@ -26,6 +26,9 @@
 #include <limits>
 #include <stdarg.h>
 #include <zlib.h>
+#include <chrono>
+#include <iomanip>
+#include <iostream>
 #include <random>
 UTILS_NAMESPACE_BEGIN
 
@@ -1530,6 +1533,56 @@ std::string CStringUtils::generate_random_string(size_t length)
     std::string random_string;
     generate_random_string(&random_string, length);
     return random_string;
+}
+
+bool CStringUtils::extract_birthdate_from_identity_card_number(std::string* birthdate, const std::string& id_number)
+{
+    if (id_number.length() != 15 && id_number.length() != 18)
+    {
+        return false;
+    }
+    else
+    {
+        const std::string birthdate_str = id_number.substr(6, 8);
+        const int year = std::stoi(birthdate_str.substr(0, 4));
+        const int month = std::stoi(birthdate_str.substr(4, 2));
+        const int day = std::stoi(birthdate_str.substr(6, 2));
+
+        if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31)
+        {
+            return false;
+        }
+        else
+        {
+            std::stringstream ss;
+            ss << std::setfill('0')<< std::setw(4)<< year << "-"
+               << std::setfill('0')<< std::setw(2)<< month << "-"
+               << std::setfill('0')<< std::setw(2)<< day;
+            *birthdate = ss.str();
+            return true;
+        }
+    }
+}
+
+bool CStringUtils::is_age_reached(const std::string& birthdate_str, int target_age)
+{
+    // 将字符串格式的出生日期转换为time_t类型
+    std::tm birthdate_tm = {};
+    sscanf(birthdate_str.c_str(), "%d-%d-%d", &birthdate_tm.tm_year, &birthdate_tm.tm_mon, &birthdate_tm.tm_mday);
+    birthdate_tm.tm_year -= 1900; // 年份需要减去1900
+    birthdate_tm.tm_mon -= 1;    // 月份需要减去1
+
+    const std::time_t birth_time = mktime(&birthdate_tm);
+
+    // 获取当前时间
+    const auto current_time = std::chrono::system_clock::now();
+    const auto current_time_t = std::chrono::system_clock::to_time_t(current_time);
+
+    // 计算年龄
+    const int age = static_cast<int>(std::difftime(current_time_t, birth_time) / 31536000); // 31536000 一年中总秒数的常数
+
+    // 判断是否满足指定岁数
+    return age >= target_age;
 }
 #endif // __cplusplus >= 201103L
 

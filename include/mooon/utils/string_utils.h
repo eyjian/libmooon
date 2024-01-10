@@ -454,6 +454,14 @@ public:
 #if __cplusplus >= 201103L
     static void generate_random_string(std::string* random_string, size_t length);
     static std::string generate_random_string(size_t length);
+
+    // 从身份证提取出生日期
+    static bool extract_birthdate_from_identity_card_number(std::string* birthdate, const std::string& id_number);
+
+    // 判断年龄是否达指定的周岁
+    // birthdate_str 出生日期，格式为：YYYY-MM-DD，函数不做格式判断，调用者需保证传入合法的值
+    // target_age 周岁值，比如 14
+    static bool is_age_reached(const std::string& birthdate_str, int target_age);
 #endif // __cplusplus >= 201103L
 };
 
