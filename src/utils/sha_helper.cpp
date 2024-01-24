@@ -380,8 +380,8 @@ static std::string to_hex(unsigned char *data, size_t size, bool uppercase)
     return hex;
 }
 
-// HMAC: 哈希运算消息认证码（Hash-based Message Authentication Code），
-// 由 H.Krawezyk、M.Bellare 和 R.Canetti 于 1996 年提出的一种基于 Hash 函数和密钥进行消息认证的方法，并于 1997 年作为 RFC2104 被公布
+// HMAC: 哈希运算消息认证码（Hash-based Message Authentication Code），带密钥的 Hash 函数。
+// 由 H.Krawezyk、M.Bellare 和 R.Canetti 于 1996 年提出的一种基于 Hash 函数和密钥进行消息认证的方法，并于 1997 年作为 RFC2104 被公布。
 static std::string hmac_sha256(const std::string &key, const std::string &data, bool uppercase)
 {
     unsigned char hash[SHA256_DIGEST_LENGTH];
