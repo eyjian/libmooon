@@ -232,6 +232,10 @@ discover_library(RAPIDJSON rapidjson)
 discover_library(RAPIDXML rapidxml)
 # rapidxml纯头文件，没有库文件
 
+# tinyxml2
+discover_library(TINYXML2 tinyxml2)
+#link_libraries(libtinyxml2.a)
+
 # OpenSSL
 discover_library(OPENSSL openssl)
 #link_libraries(libssl.a libcrypto.a)
