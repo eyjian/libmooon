@@ -4,9 +4,6 @@
 
 int main(int argc, char* argv[])
 {
-    int sha_type;
-    std::string sha;
-
     if (argc < 3)
     {
         fprintf(stderr, "usage: rsa256_sign private_filepath data_to_sign\n");

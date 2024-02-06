@@ -71,7 +71,8 @@ public:
     void* pkey_ctx() { return _pkey_ctx; }
 
 public: // 失败抛 mooon::utils::CException 异常
-    void rsa_decrypt(std::string* decrypted_data, void* pkey, void* ctx, const std::string& encrypted_data);
+    // 本函数不做 base64 解码，需调用者 base64 解码后再调用
+    void rsa_decrypt(std::string* decrypted_data, const std::string& base64_encrypted_data, void* pkey, void* ctx);
 
 private:
     const std::string _private_key_filepath;

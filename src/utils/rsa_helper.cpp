@@ -118,11 +118,12 @@ void CRSAHelper::release()
     }
 }
 
-// 本函数不做 base64 解码
-void CRSAHelper::rsa_decrypt(std::string* decrypted_data, void* pkey, void* ctx, const std::string& encrypted_data)
+// 本函数不做 base64 解码，需调用者 base64 解码后再调用
+void CRSAHelper::rsa_decrypt(std::string* decrypted_data, const std::string& base64_encrypted_data, void* pkey, void* ctx)
 {
     int errcode = 0;
 
+    // 初始化解密操作，并没明确指定哈希算法
     if (EVP_PKEY_decrypt_init(get_pkey_ctx(_pkey_ctx)) <= 0)
     {
         errcode = ERR_get_error();
@@ -133,7 +134,15 @@ void CRSAHelper::rsa_decrypt(std::string* decrypted_data, void* pkey, void* ctx,
 
     // 得到长度
     size_t decrypted_len = 0;
-    if (EVP_PKEY_decrypt(get_pkey_ctx(ctx), nullptr, &decrypted_len, (unsigned char*)encrypted_data.data(), encrypted_data.size()) <= 0)
+
+    // EVP_PKEY_decrypt 函数是一个通用的公钥解密函数，它可以处理多种加密算法，包括 RSA、DSA、DH 等，
+    // 哈希算法的选择取决于在 EVP_PKEY_CTX 结构中设置的参数。
+    // 哈希算法的选择是在创建 EVP_PKEY_CTX 时确定的，这通常是在调用 EVP_PKEY_CTX_new 或 EVP_PKEY_CTX_new_id 函数时完成的。
+    // 这可以通过调用 EVP_PKEY_CTX_set_rsa_padding 和 EVP_PKEY_CTX_set_signature_md 函数来完成，如：
+    // EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING);
+    // EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256());
+    // 这将确保在解密操作中使用 SHA-256 哈希算法，且需在调用 EVP_PKEY_decrypt_init 之前完成。
+    if (EVP_PKEY_decrypt(get_pkey_ctx(ctx), nullptr, &decrypted_len, (unsigned char*)base64_encrypted_data.data(), base64_encrypted_data.size()) <= 0)
     {
         errcode = ERR_get_error();
         utils::ScopedArray<char> errmsg(new char[SIZE_4K]);
@@ -143,7 +152,7 @@ void CRSAHelper::rsa_decrypt(std::string* decrypted_data, void* pkey, void* ctx,
 
     // 解密数据
     decrypted_data->resize(decrypted_len, '\0');
-    if (EVP_PKEY_decrypt(get_pkey_ctx(ctx), (unsigned char*)decrypted_data->data(), &decrypted_len, (unsigned char*)encrypted_data.data(), encrypted_data.size()) <= 0)
+    if (EVP_PKEY_decrypt(get_pkey_ctx(ctx), (unsigned char*)decrypted_data->data(), &decrypted_len, (unsigned char*)base64_encrypted_data.data(), base64_encrypted_data.size()) <= 0)
     {
         errcode = ERR_get_error();
         utils::ScopedArray<char> errmsg(new char[SIZE_4K]);
