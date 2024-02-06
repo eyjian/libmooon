@@ -122,6 +122,7 @@ void CRSAHelper::release()
 void CRSAHelper::rsa_decrypt(std::string* decrypted_data, const std::string& base64_encrypted_data, void* pkey, void* ctx)
 {
     int errcode = 0;
+    size_t decrypted_len = 0;
 
     // 初始化解密操作，并没明确指定哈希算法
     if (EVP_PKEY_decrypt_init(get_pkey_ctx(_pkey_ctx)) <= 0)
@@ -131,9 +132,6 @@ void CRSAHelper::rsa_decrypt(std::string* decrypted_data, const std::string& bas
         ERR_error_string_n(errcode, errmsg.get(), SIZE_4K);
         THROW_EXCEPTION(errmsg.get(), errcode);
     }
-
-    // 得到长度
-    size_t decrypted_len = 0;
 
     // EVP_PKEY_decrypt 函数是一个通用的公钥解密函数，它可以处理多种加密算法，包括 RSA、DSA、DH 等，
     // 哈希算法的选择取决于在 EVP_PKEY_CTX 结构中设置的参数。
