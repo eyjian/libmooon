@@ -229,11 +229,28 @@ CRsaPublicHelper::~CRsaPublicHelper()
 
 void CRsaPublicHelper::init()
 {
-    RSA* rsa = RSA_new();
     BIO* key_bio = BIO_new_file(_public_key_filepath.c_str(), "rb"); // public_key.pem
-    PEM_read_bio_RSA_PUBKEY(key_bio, &rsa, nullptr, nullptr);
-    BIO_free(key_bio);
-    _public_key = rsa;
+    if (key_bio == nullptr)
+    {
+        THROW_EXCEPTION("error opening public key file", errno);
+    }
+    else
+    {
+        RSA* rsa = RSA_new();
+        if (PEM_read_bio_RSA_PUBKEY(key_bio, &rsa, nullptr, nullptr) == nullptr)
+        {
+            int errcode = ERR_get_error();
+            utils::ScopedArray<char> errmsg(new char[SIZE_4K]);
+            ERR_error_string_n(errcode, errmsg.get(), SIZE_4K);
+            BIO_free(key_bio);
+            THROW_EXCEPTION(errmsg.get(), errcode);
+        }
+        else
+        {
+            BIO_free(key_bio);
+            _public_key = rsa;
+        }
+    }
 }
 
 void CRsaPublicHelper::release()
