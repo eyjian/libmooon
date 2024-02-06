@@ -70,10 +70,6 @@ public:
     void* pkey() { return _pkey; }
     void* pkey_ctx() { return _pkey_ctx; }
 
-public: // 失败抛 mooon::utils::CException 异常
-    // RSA 私钥解密，本函数不做 base64 解码，需调用者 base64 解码后再调用
-    void rsa_decrypt(std::string* decrypted_data, const std::string& base64_encrypted_data, void* pkey, void* ctx);
-
 private:
     const std::string _private_key_filepath;
     FILE* _pkey_fp;
@@ -82,7 +78,13 @@ private:
 };
 
 void* pkey2rsa(void* pkey);
-void rsa256sign(std::string* signature_str, void* pkey, const std::string& data); // 失败抛 mooon::utils::CException 异常
+
+// RSA 私钥解密，本函数不做 base64 解码，需调用者 base64 解码后再调用，失败抛 mooon::utils::CException 异常
+void rsa_decrypt(std::string* decrypted_data, const std::string& base64_encrypted_data, void* pkey, void* pkey_ctx);
+
+// RSA256 私钥签名
+// 失败抛 mooon::utils::CException 异常
+void rsa256sign(std::string* signature_str, void* pkey, const std::string& data);
 
 UTILS_NAMESPACE_END
 #endif // MOOON_UTILS_SHA_HELPER_H

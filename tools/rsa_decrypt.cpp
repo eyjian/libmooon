@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 
             rsa_helper.init();
             mooon::utils::base64_decode(base64_data, &encrypted_data);
-            rsa_helper.rsa_decrypt(&decrypted_data, encrypted_data, rsa_helper.pkey(), rsa_helper.pkey_ctx());
+            mooon::utils::rsa_decrypt(&decrypted_data, encrypted_data, rsa_helper.pkey(), rsa_helper.pkey_ctx());
             fprintf(stdout, "signature: %s\n", decrypted_data.c_str());
             return 0;
         }

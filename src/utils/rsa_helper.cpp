@@ -119,13 +119,13 @@ void CRSAHelper::release()
 }
 
 // 本函数不做 base64 解码，需调用者 base64 解码后再调用
-void CRSAHelper::rsa_decrypt(std::string* decrypted_data, const std::string& base64_encrypted_data, void* pkey, void* ctx)
+void rsa_decrypt(std::string* decrypted_data, const std::string& base64_encrypted_data, void* pkey, void* pkey_ctx)
 {
     int errcode = 0;
     size_t decrypted_len = 0;
 
     // 初始化解密操作，并没明确指定哈希算法
-    if (EVP_PKEY_decrypt_init(get_pkey_ctx(_pkey_ctx)) <= 0)
+    if (EVP_PKEY_decrypt_init(get_pkey_ctx(pkey_ctx)) <= 0)
     {
         errcode = ERR_get_error();
         utils::ScopedArray<char> errmsg(new char[SIZE_4K]);
@@ -140,7 +140,7 @@ void CRSAHelper::rsa_decrypt(std::string* decrypted_data, const std::string& bas
     // EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING);
     // EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256());
     // 这将确保在解密操作中使用 SHA-256 哈希算法，且需在调用 EVP_PKEY_decrypt_init 之前完成。
-    if (EVP_PKEY_decrypt(get_pkey_ctx(ctx), nullptr, &decrypted_len, (unsigned char*)base64_encrypted_data.data(), base64_encrypted_data.size()) <= 0)
+    if (EVP_PKEY_decrypt(get_pkey_ctx(pkey_ctx), nullptr, &decrypted_len, (unsigned char*)base64_encrypted_data.data(), base64_encrypted_data.size()) <= 0)
     {
         errcode = ERR_get_error();
         utils::ScopedArray<char> errmsg(new char[SIZE_4K]);
@@ -150,7 +150,7 @@ void CRSAHelper::rsa_decrypt(std::string* decrypted_data, const std::string& bas
 
     // 解密数据
     decrypted_data->resize(decrypted_len, '\0');
-    if (EVP_PKEY_decrypt(get_pkey_ctx(ctx), (unsigned char*)decrypted_data->data(), &decrypted_len, (unsigned char*)base64_encrypted_data.data(), base64_encrypted_data.size()) <= 0)
+    if (EVP_PKEY_decrypt(get_pkey_ctx(pkey_ctx), (unsigned char*)decrypted_data->data(), &decrypted_len, (unsigned char*)base64_encrypted_data.data(), base64_encrypted_data.size()) <= 0)
     {
         errcode = ERR_get_error();
         utils::ScopedArray<char> errmsg(new char[SIZE_4K]);
