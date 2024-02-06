@@ -546,6 +546,15 @@ void release_private_key(void** pkey)
     }
 }
 
+/**
+`PEM_read_PrivateKey` 和 `PEM_read_RSAPrivateKey` 函数都用于从 PEM 格式的文件中读取私钥，但它们之间存在一些差异：
+1. `PEM_read_PrivateKey`：此函数用于读取任意类型的私钥（例如，RSA、DSA、ECDSA 等）。
+   它返回一个 `EVP_PKEY` 结构，该结构可以表示多种类型的私钥。如果不知道私钥的确切类型，或者希望处理多种类型的私钥，那么使用 `PEM_read_PrivateKey` 是一个更通用的选择。
+2. `PEM_read_RSAPrivateKey`：此函数专门用于读取 RSA 私钥。
+   它返回一个 `RSA` 结构，该结构仅表示 RSA 私钥。如果知道私钥是 RSA 类型，那么使用 `PEM_read_RSAPrivateKey` 是更直接和简单的选择。
+3. 将 EVP_PKEY 转换为 RSA：RSA *rsa = EVP_PKEY_get1_RSA(private_key);
+4. 清理：EVP_PKEY_free(private_key);RSA_free(rsa);
+*/
 bool init_private_key_from_file(void** pkey, const std::string& private_key_file, std::string* errmsg)
 {
     // 初始化为空
