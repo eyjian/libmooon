@@ -30,6 +30,15 @@
 #include <openssl/err.h>
 UTILS_NAMESPACE_BEGIN
 
+static RSA* get_rsa(void* rsa)
+{
+    return (RSA*)rsa;
+}
+
+//
+// CRsaPrivateHelper
+//
+
 static EVP_PKEY* get_pkey(void* pkey)
 {
     return (EVP_PKEY*)pkey;
@@ -38,11 +47,6 @@ static EVP_PKEY* get_pkey(void* pkey)
 static EVP_PKEY_CTX* get_pkey_ctx(void *ctx)
 {
     return (EVP_PKEY_CTX*)ctx;
-}
-
-static RSA* get_rsa(void* rsa)
-{
-    return (RSA*)rsa;
 }
 
 void* pkey2rsa(void* pkey)
@@ -206,6 +210,66 @@ void rsa256sign(std::string* signature, void* pkey, const std::string& data)
             BIO_free(bio);
         }
     }
+}
+
+//
+// CRsaPublicHelper
+//
+
+CRsaPublicHelper::CRsaPublicHelper(const std::string& public_key_filepath)
+    : _public_key_filepath(public_key_filepath),
+      _public_key(nullptr)
+{
+}
+
+CRsaPublicHelper::~CRsaPublicHelper()
+{
+    release();
+}
+
+void CRsaPublicHelper::init()
+{
+    RSA* rsa = RSA_new();
+    BIO* key_bio = BIO_new_file(_public_key_filepath.c_str(), "rb"); // public_key.pem
+    PEM_read_bio_RSA_PUBKEY(key_bio, &rsa, nullptr, nullptr);
+    BIO_free(key_bio);
+    _public_key = rsa;
+}
+
+void CRsaPublicHelper::release()
+{
+    if (_public_key != nullptr)
+    {
+        RSA_free(get_rsa(_public_key));
+        _public_key = nullptr;
+    }
+}
+
+void rsa_encrypt(std::string* encrypted_data, const std::string& plaintext_data, void* public_key)
+{
+    int errcode = 0;
+
+    // 计算所需的加密缓冲区大小
+    int encrypted_len = RSA_size(get_rsa(public_key));
+    encrypted_data->resize(encrypted_len);
+
+    // 使用公钥加密数据
+    int result = RSA_public_encrypt(plaintext_data.size(),
+                                    reinterpret_cast<const unsigned char*>(plaintext_data.data()),
+                                    reinterpret_cast<unsigned char*>((*encrypted_data)[0]),
+                                    get_rsa(public_key),
+                                    RSA_PKCS1_PADDING);
+
+    if (result == -1)
+    {
+        errcode = ERR_get_error();
+        utils::ScopedArray<char> errmsg(new char[SIZE_4K]);
+        ERR_error_string_n(errcode, errmsg.get(), SIZE_4K);
+        THROW_EXCEPTION(errmsg.get(), errcode);
+    }
+
+    // 调整加密数据的大小
+    encrypted_data->resize(result);
 }
 
 UTILS_NAMESPACE_END

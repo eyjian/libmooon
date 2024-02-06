@@ -22,6 +22,9 @@ if (MOOON_HAVE_OPENSSL)
     
     add_executable(rsa_decrypt rsa_decrypt.cpp)
     target_link_libraries(rsa_decrypt libmooon.a libcrypto.a)
+    
+    add_executable(rsa_encrypt rsa_encrypt.cpp)
+    target_link_libraries(rsa_encrypt libmooon.a libcrypto.a)
 endif ()
 
 # 硬盘性能测试工具

@@ -87,5 +87,26 @@ void rsa_decrypt(std::string* decrypted_data, const std::string& base64_encrypte
 // 失败抛 mooon::utils::CException 异常
 void rsa256sign(std::string* signature_str, void* pkey, const std::string& data);
 
+class CRsaPublicHelper
+{
+public:
+    // public_key_filepath 公钥文件
+    CRsaPublicHelper(const std::string& public_key_filepath);
+    ~CRsaPublicHelper(); // 释放资源
+
+public:
+    void init(); // 失败抛 mooon::utils::CException 异常
+    void release();
+    void* public_key() { return _public_key; }
+
+private:
+    const std::string _public_key_filepath;
+    void* _public_key;
+};
+
+// 公钥加密，本函数不做 base64 编码，需调用者调用后再 base64 编码
+// 失败抛 mooon::utils::CException 异常
+void rsa_encrypt(std::string* encrypted_data, const std::string& plaintext_data, void* public_key);
+
 UTILS_NAMESPACE_END
 #endif // MOOON_UTILS_SHA_HELPER_H

@@ -5,9 +5,6 @@
 
 int main(int argc, char* argv[])
 {
-    int sha_type;
-    std::string sha;
-
     if (argc < 3)
     {
         fprintf(stderr, "usage: rsa_decrypt private_filepath base64_data_to_decrypt\n");
