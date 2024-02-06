@@ -51,24 +51,24 @@ void* pkey2rsa(void* pkey)
     return EVP_PKEY_get1_RSA(get_pkey(pkey));
 }
 
-CRSAHelper::CRSAHelper(const std::string& private_key_filepath)
-    : _private_key_filepath(private_key_filepath),
-      _pkey_fp(nullptr),
+CRsaHelper::CRsaHelper()
+    : _pkey_fp(nullptr),
       _pkey(nullptr),
       _pkey_ctx(nullptr)
 {
 }
 
-CRSAHelper::~CRSAHelper()
+CRsaHelper::~CRsaHelper()
 {
     release();
 }
 
-void CRSAHelper::init()
+void CRsaHelper::init_private_key(const std::string& private_key_filepath)
 {
     try
     {
         int errcode = 0;
+        _private_key_filepath = private_key_filepath;
 
         // _pkey_fp
         _pkey_fp = fopen(_private_key_filepath.c_str(), "rb");
@@ -99,7 +99,7 @@ void CRSAHelper::init()
     }
 }
 
-void CRSAHelper::release()
+void CRsaHelper::release()
 {
     if (_pkey_ctx != NULL)
     {

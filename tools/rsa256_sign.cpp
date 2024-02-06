@@ -13,13 +13,13 @@ int main(int argc, char* argv[])
     {
         const std::string data = argv[2];
         const std::string& private_key_file = argv[1];
-        mooon::utils::CRSAHelper rsa_helper(private_key_file);
+        mooon::utils::CRsaHelper rsa_helper;
 
         try
         {
             std::string signature;
 
-            rsa_helper.init();
+            rsa_helper.init_private_key(private_key_file);
             mooon::utils::rsa256sign(&signature, rsa_helper.pkey(), data);
             fprintf(stdout, "signature: %s\n", signature.c_str());
             return 0;

@@ -57,21 +57,22 @@ enum RSAPaddingMode
 // 1977 年由罗纳德·李维斯特（Ron Rivest）、阿迪·萨莫尔（Adi Shamir）和伦纳德·阿德曼（Leonard Adleman）一起提出的
 // RSA 是他们三人姓氏开头字母拼在一起组成
 // RSA 加解密有长度限制，不超过 117 字节，超过需要采取分段加解密
-class CRSAHelper
+class CRsaHelper
 {
 public:
-    // private_key_filepath 私钥文件
-    CRSAHelper(const std::string &private_key_filepath);
-    ~CRSAHelper(); // 释放 pkey 等资源
+    CRsaHelper();
+    ~CRsaHelper(); // 释放 pkey 等资源
 
 public:
-    void init(); // 失败抛 mooon::utils::CException 异常
+    // private_key_filepath 私钥文件
+    void init_private_key(const std::string &private_key_filepath); // 失败抛 mooon::utils::CException 异常
     void release();
     void* pkey() { return _pkey; }
     void* pkey_ctx() { return _pkey_ctx; }
+    const std::string& private_key_filepath() const { return _private_key_filepath; }
 
 private:
-    const std::string _private_key_filepath;
+    std::string _private_key_filepath;
     FILE* _pkey_fp;
     void* _pkey;
     void* _pkey_ctx;
