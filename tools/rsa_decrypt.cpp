@@ -17,14 +17,14 @@ int main(int argc, char* argv[])
     {
         const std::string base64_data = argv[2];
         const std::string& private_key_filepath = argv[1];
-        mooon::utils::CRsaPrivateHelper rsa_helper;
+        mooon::utils::CRsaPrivateHelper rsa_helper(private_key_filepath);
 
         try
         {
             std::string encrypted_data;
             std::string decrypted_data;
 
-            rsa_helper.init_private_key(private_key_filepath);
+            rsa_helper.init();
             mooon::utils::base64_decode(base64_data, &encrypted_data);
             mooon::utils::rsa_decrypt(&decrypted_data, encrypted_data, rsa_helper.pkey(), rsa_helper.pkey_ctx());
             fprintf(stdout, "signature: %s\n", decrypted_data.c_str());

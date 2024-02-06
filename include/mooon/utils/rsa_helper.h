@@ -60,19 +60,19 @@ enum RSAPaddingMode
 class CRsaPrivateHelper
 {
 public:
-    CRsaPrivateHelper();
+    // private_key_filepath 私钥文件
+    CRsaPrivateHelper(const std::string& private_key_filepath);
     ~CRsaPrivateHelper(); // 释放 pkey 等资源
 
 public:
-    // private_key_filepath 私钥文件
-    void init_private_key(const std::string &private_key_filepath); // 失败抛 mooon::utils::CException 异常
+    void init(); // 失败抛 mooon::utils::CException 异常
     void release();
     void* pkey() { return _pkey; }
     void* pkey_ctx() { return _pkey_ctx; }
     const std::string& private_key_filepath() const { return _private_key_filepath; }
 
 private:
-    std::string _private_key_filepath;
+    const std::string _private_key_filepath;
     FILE* _pkey_fp;
     void* _pkey;
     void* _pkey_ctx;
