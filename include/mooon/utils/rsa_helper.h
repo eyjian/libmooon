@@ -81,6 +81,12 @@ public:
     static void public_decrypt(void* rsa, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
 };
 
+// 从 EVP_PKEY* 得到 RSA*
+void *EvpPKey2rsa(void* private_key);
+
+// 释放 rsa
+void release_rsa(void* rsa);
+
 // 释放私钥
 void release_private_key(void** pkey);
 
