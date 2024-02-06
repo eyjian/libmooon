@@ -9,37 +9,28 @@ int main(int argc, char* argv[])
 
     if (argc < 3)
     {
-        fprintf(stderr, "usage: rsa256_sign private_file data\n");
+        fprintf(stderr, "usage: rsa256_sign private_filepath data_to_sign\n");
         return 1;
     }
     else
     {
+        const std::string data = argv[2];
         const std::string& private_key_file = argv[1];
-        std::string errmsg;
-        void* pkey = nullptr;
+        mooon::utils::CRSAHelper rsa_helper(private_key_file);
 
-        if (!mooon::utils::init_private_key_from_file(&pkey, private_key_file, &errmsg))
+        try
         {
-            fprintf(stderr, "init_private_key_from_file error: %s\n", errmsg.c_str());
-            return 1;
-        }
-        else
-        {
-            const std::string data = argv[2];
             std::string signature;
 
-            if (!mooon::utils::RSA256_sign(&signature, pkey, data, &errmsg))
-            {
-                fprintf(stderr, "RSA256_sign error: %s\n", errmsg.c_str());
-                mooon::utils::release_private_key(&pkey);
-                return 1;
-            }
-            else
-            {
-                fprintf(stdout, "signature: %s\n", signature.c_str());
-                mooon::utils::release_private_key(&pkey);
-                return 0;
-            }
+            rsa_helper.init();
+            mooon::utils::rsa256sign(&signature, rsa_helper.pkey(), data);
+            fprintf(stdout, "signature: %s\n", signature.c_str());
+            return 0;
+        }
+        catch (mooon::utils::CException& ex)
+        {
+            fprintf(stderr, "%s\n", ex.str().c_str());
+            return 1;
         }
     }
 }

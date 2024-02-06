@@ -20,7 +20,6 @@
 #define MOOON_UTILS_RSA_HELPER_H
 #include "mooon/utils/exception.h"
 #include "mooon/utils/string_utils.h"
-#include <stdarg.h>
 #include <stdint.h>
 UTILS_NAMESPACE_BEGIN
 
@@ -61,49 +60,28 @@ enum RSAPaddingMode
 class CRSAHelper
 {
 public:
-    // pub_keyfile 存储了公钥的文件
-    // priv_keyfile 存储了私钥的文件
-    // 如果出错，则抛出异常mooon::utils::CException
-    static void public_encrypt_bykeyfile(const std::string& pub_keyfile, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-    static void private_decrypt_bykeyfile(const std::string& priv_keyfile, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-    static void private_encrypt_bykeyfile(const std::string& priv_keyfile, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-    static void public_decrypt_bykeyfile(const std::string& pub_keyfile, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-
-    static void public_encrypt_bykey(const std::string& pub_key, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-    static void private_decrypt_bykey(const std::string& priv_key, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-    static void private_encrypt_bykey(const std::string& priv_key, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-    static void public_decrypt_bykey(const std::string& pub_key, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
+    // private_key_filepath 私钥文件
+    CRSAHelper(const std::string &private_key_filepath);
+    ~CRSAHelper(); // 释放 pkey 等资源
 
 public:
-    static void public_encrypt(void* rsa, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-    static void private_decrypt(void* rsa, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-    static void private_encrypt(void* rsa, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
-    static void public_decrypt(void* rsa, const std::string& instr, std::string* outstr, RSAPaddingMode mode);
+    void init(); // 失败抛 mooon::utils::CException 异常
+    void release();
+    void* pkey() { return _pkey; }
+    void* pkey_ctx() { return _pkey_ctx; }
+
+public: // 失败抛 mooon::utils::CException 异常
+    void rsa_decrypt(std::string* decrypted_data, void* pkey, void* ctx, const std::string& encrypted_data);
+
+private:
+    const std::string _private_key_filepath;
+    FILE* _pkey_fp;
+    void* _pkey;
+    void* _pkey_ctx;
 };
 
-// 从 EVP_PKEY* 得到 RSA*
-void* EvpPKey2rsa(void* private_key);
-
-// 释放 rsa
-void release_rsa(void* rsa);
-
-// 释放私钥
-void release_private_key(void** pkey);
-
-// 从文件初始化私钥
-// private_key_file 私钥文件
-bool init_private_key_from_file(void** pkey, const std::string& private_key_file, std::string* errmsg);
-
-// 从字符串初始化私钥
-// private_key_str 私钥字符串
-bool init_private_key_from_str(void** pkey, const std::string& private_key_str, std::string* errmsg);
-
-// 基于 sha256 的签名
-// signature 签名值
-// pkey 私钥
-// data 需要签名的数据
-// errmsg 签名失败时存储出错信息
-bool RSA256_sign(std::string* signature, void* pkey, const std::string& data, std::string* errmsg);
+void* pkey2rsa(void* pkey);
+void rsa256sign(std::string* signature_str, void* pkey, const std::string& data); // 失败抛 mooon::utils::CException 异常
 
 UTILS_NAMESPACE_END
 #endif // MOOON_UTILS_SHA_HELPER_H
