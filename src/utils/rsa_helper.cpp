@@ -51,19 +51,19 @@ void* pkey2rsa(void* pkey)
     return EVP_PKEY_get1_RSA(get_pkey(pkey));
 }
 
-CRsaHelper::CRsaHelper()
+CRsaPrivateHelper::CRsaPrivateHelper()
     : _pkey_fp(nullptr),
       _pkey(nullptr),
       _pkey_ctx(nullptr)
 {
 }
 
-CRsaHelper::~CRsaHelper()
+CRsaPrivateHelper::~CRsaPrivateHelper()
 {
     release();
 }
 
-void CRsaHelper::init_private_key(const std::string& private_key_filepath)
+void CRsaPrivateHelper::init_private_key(const std::string& private_key_filepath)
 {
     try
     {
@@ -99,7 +99,7 @@ void CRsaHelper::init_private_key(const std::string& private_key_filepath)
     }
 }
 
-void CRsaHelper::release()
+void CRsaPrivateHelper::release()
 {
     if (_pkey_ctx != NULL)
     {

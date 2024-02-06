@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     {
         const std::string data = argv[2];
         const std::string& private_key_file = argv[1];
-        mooon::utils::CRsaHelper rsa_helper;
+        mooon::utils::CRsaPrivateHelper rsa_helper;
 
         try
         {
