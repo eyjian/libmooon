@@ -536,6 +536,17 @@ void CRSAHelper::public_decrypt(void* rsa, const std::string& instr, std::string
     }
 }
 
+void* EvpPKey2rsa(void* private_key)
+{
+    RSA* rsa = EVP_PKEY_get1_RSA((EVP_PKEY*)private_key);
+    return rsa;
+}
+
+void release_rsa(void* rsa)
+{
+    if (rsa != NULL)
+        RSA_free((RSA*)rsa);
+}
 
 void release_private_key(void** pkey)
 {
