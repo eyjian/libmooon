@@ -82,7 +82,7 @@ public:
 };
 
 // 从 EVP_PKEY* 得到 RSA*
-void *EvpPKey2rsa(void* private_key);
+void* EvpPKey2rsa(void* private_key);
 
 // 释放 rsa
 void release_rsa(void* rsa);
