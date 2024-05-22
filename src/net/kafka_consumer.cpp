@@ -470,7 +470,10 @@ int CKafkaConsumer::consume_batch(int batch_size, std::vector<std::string>* logs
                 mi->offset = message->offset();
                 mi->timestamp = message->timestamp().timestamp;
                 mi->topicname = message->topic_name();
-                mi->key = *(message->key());
+
+                const auto key = message->key();
+                if (key != nullptr)
+                    mi->key = *key;
             }
             delete message;
             ++num_logs;
