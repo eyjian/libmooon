@@ -2,3 +2,6 @@
 .settings
 .cproject
 .project
+.codebuddy
+.claude
+.cursor
